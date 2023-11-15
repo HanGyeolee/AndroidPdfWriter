@@ -32,6 +32,7 @@ public class PDFTableLayout extends PDFLayout{
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
+
         int i, j;
         int totalHeight = 0;
         int gapWidth = 0;
@@ -69,9 +70,19 @@ public class PDFTableLayout extends PDFLayout{
                 // 자식 컴포넌트의 Margin 무시
                 child.get(i).margin.set(childMargin);
                 child.get(index).measure(totalWidth, totalHeight);
-                if (maxHeight < child.get(index).getTotalHeight()) {
-                    maxHeight = child.get(index).getTotalHeight();
+                if (maxHeight < child.get(index).measureHeight) {
+                    maxHeight = child.get(index).measureHeight;
                 }
+                totalWidth += gapWidth + childMargin.left + childMargin.right;
+            }
+            totalWidth = 0;
+            for(j = 0; j < rows; j++){
+                index = i*rows + j;
+                gapWidth = gaps[j];
+                child.get(index).width = gapWidth;
+                child.get(index).height = maxHeight;
+                child.get(index).measure(totalWidth, totalHeight);
+                child.get(index).force(gapWidth, maxHeight);
                 totalWidth += gapWidth + childMargin.left + childMargin.right;
             }
             totalHeight += maxHeight;
@@ -125,7 +136,7 @@ public class PDFTableLayout extends PDFLayout{
     }
 
     @Override
-    public PDFTableLayout setSize(int width, int height) {
+    public PDFTableLayout setSize(Integer width, Integer height) {
         super.setSize(width, height);
         return this;
     }
@@ -172,14 +183,8 @@ public class PDFTableLayout extends PDFLayout{
     }
 
     @Override
-    public PDFTableLayout setAnchor(int vertical, int horizontal) {
+    public PDFTableLayout setAnchor(Integer vertical, Integer horizontal) {
         super.setAnchor(vertical, horizontal);
-        return this;
-    }
-
-    @Override
-    public PDFTableLayout setAnchor(int axis, boolean isHorizontal) {
-        super.setAnchor(axis, isHorizontal);
         return this;
     }
 

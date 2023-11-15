@@ -2,6 +2,7 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
@@ -19,6 +20,14 @@ public class  PDFImage extends PDFComponent{
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
+        int dx = 0, dy = 0;
+        // 이미지에서는 gap을 직접 연산함으로 상단 super.measure()에서 연산된 measureX,Y 를 다시 잡아준다.
+        if(parent != null){
+            dx += parent.measureX + parent.border.size.left + parent.padding.left;
+            dy += parent.measureY + parent.border.size.top + parent.padding.top;
+        }
+        measureX = relativeX + margin.left + dx;
+        measureY = relativeY + margin.top + dy;
 
         if(buffer != null && !buffer.isRecycled()) buffer.recycle();
 
@@ -41,8 +50,16 @@ public class  PDFImage extends PDFComponent{
                 fit = Fit.NONE;
             }
         }
+        /*
+        height 가 measureHeight 보다 크다면?
+        상위 컴포넌트의 Height를 업데이트 한다.
+        */
+        if (height > measureHeight) {
+            updateHeight(height - measureHeight);
+        }
         buffer = Bitmap.createBitmap(measureWidth, measureHeight, Bitmap.Config.ARGB_8888);
         Canvas transparentCanvas = new Canvas(buffer);
+        transparentCanvas.drawColor(Color.TRANSPARENT);
 
         switch (fit) {
             case Fit.FILL:
@@ -110,11 +127,10 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
-    public PDFImage setSize(int width, int height) {
+    public PDFImage setSize(Integer width, Integer height) {
         super.setSize(width, height);
         return this;
     }
-
     @Override
     public PDFImage setBackgroundColor(int color) {
         super.setBackgroundColor(color);
@@ -152,14 +168,8 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
-    public PDFImage setAnchor(int vertical, int horizontal) {
+    public PDFImage setAnchor(Integer vertical, Integer horizontal) {
         super.setAnchor(vertical, horizontal);
-        return this;
-    }
-
-    @Override
-    public PDFImage setAnchor(int axis, boolean isHorizontal) {
-        super.setAnchor(axis, isHorizontal);
         return this;
     }
 
@@ -184,7 +194,7 @@ public class  PDFImage extends PDFComponent{
      * @param bitmap 이미지
      * @return 자기자신
      */
-    public PDFImage setImage(Bitmap bitmap){
+    private PDFImage setImage(Bitmap bitmap){
         this.origin = bitmap;
         width = this.origin.getWidth();
         height = this.origin.getHeight();
@@ -192,6 +202,13 @@ public class  PDFImage extends PDFComponent{
         anchor.horizontal = Anchor.Center;
         return this;
     }
+
+    /**
+     * 컴포넌트의 크기를 기준으로 이미지 확대, 축소 조건 설정<br>
+     * Set image enlargement and reduction conditions based on component size
+     * @param fit 조건
+     * @return 자기자신
+     */
     public PDFImage setFit(@Fit.FitInt int fit){
         this.fit = fit;
         return this;

@@ -1,13 +1,13 @@
 package com.hangyeolee.androidpdfwriter;
 
-import static android.os.Environment.DIRECTORY_DOWNLOADS;
-
 import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Rect;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Environment;
 import android.provider.MediaStore;
 
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
@@ -20,11 +20,19 @@ import java.io.OutputStream;
 public class PDFBuilder<T extends PDFLayout> {
     PdfDocument document = new PdfDocument();
     int pageWidth, pageHeight;
+    Rect contentRect;
     public T root = null;
 
     public PDFBuilder(int pageWidth, int pageHeight){
         this.pageWidth = pageWidth;
         this.pageHeight = pageHeight;
+        contentRect = new Rect(0, 0, pageWidth, pageHeight);
+    }
+
+    public PDFBuilder<T> setPagePadding(int vertical, int horizontal){
+        this.contentRect.set(horizontal, vertical,
+                this.pageWidth - horizontal, this.pageHeight - vertical);
+        return this;
     }
 
     /**
@@ -33,17 +41,31 @@ public class PDFBuilder<T extends PDFLayout> {
      */
     public PDFBuilder<T> draw(){
         if(root != null) {
-            root.setSize(pageWidth, pageHeight)
-                    .measure();
+            int contentWidth = contentRect.width();
+            int contentHeight = contentRect.height();
+            root.setSize(contentWidth,0).measure();
 
-            int pageCount = (int) Math.ceil(root.getTotalHeight() / (float)pageHeight);
+            // 필요한 페이지 개수
+            int pageCount = (int) Math.ceil(root.getTotalHeight() / (float)contentHeight);
 
-            PdfDocument.PageInfo info = new PdfDocument.PageInfo.Builder(root.getTotalWidth(), pageHeight, pageCount).create();
-            PdfDocument.Page page = document.startPage(info);
+            // 하나의 비트맵으로 그려내기
+            Bitmap longBitmap = Bitmap.createBitmap(contentWidth, contentHeight * pageCount, Bitmap.Config.ARGB_8888);
+            Canvas longCanvas = new Canvas(longBitmap);
+            root.draw(longCanvas);
 
-            root.draw(page.getCanvas());
+            // 비트맵을 쪼개서 페이지로 표현
+            for(int i = 0; i < pageCount; i++) {
+                PdfDocument.PageInfo info = new PdfDocument.PageInfo
+                        .Builder(pageWidth, pageHeight, i)
+                        .setContentRect(contentRect)
+                        .create();
+                PdfDocument.Page page = document.startPage(info);
+                Canvas pageCanvas = page.getCanvas();
+                pageCanvas.drawBitmap(longBitmap, 0, -(contentHeight * i), null);
+                document.finishPage(page);
+            }
 
-            document.finishPage(page);
+            longBitmap.recycle();
         }
         return this;
     }

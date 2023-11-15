@@ -8,8 +8,8 @@ public class PDFH1 extends PDFText{
 
     public PDFH1(String text){
         super(text);
-        this.paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        this.paint.setTextSize(fontSize);
+        this.bufferPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        this.bufferPaint.setTextSize(fontSize);
     }
     public PDFH1(String text, TextPaint paint){
         super(text, paint);

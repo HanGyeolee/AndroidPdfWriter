@@ -9,8 +9,8 @@ public class PDFH2 extends PDFText{
 
     public PDFH2(String text){
         super(text);
-        this.paint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
-        this.paint.setTextSize(fontSize);
+        this.bufferPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+        this.bufferPaint.setTextSize(fontSize);
     }
     public PDFH2(String text, TextPaint paint){
         super(text, paint);

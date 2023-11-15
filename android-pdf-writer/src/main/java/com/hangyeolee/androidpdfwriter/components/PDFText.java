@@ -17,9 +17,8 @@ import java.util.function.Function;
 
 public class PDFText extends PDFComponent {
     String text = null;
-    TextPaint paint = null;
     Layout.Alignment align = null;
-    StaticLayout layout;
+    StaticLayout layout = null;
 
     @Override
     public void measure(float x, float y) {
@@ -30,37 +29,40 @@ public class PDFText extends PDFComponent {
         int _height = (int) (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
 
-        if(text != null && paint != null) {
+        if(text != null && bufferPaint != null) {
             layout = StaticLayout.Builder.obtain(text,
                             0,
                             text.length(),
-                            paint,
+                            (TextPaint) bufferPaint,
                             _width)
                     .setAlignment(align)
                     .build();
 
-            if (buffer != null && !buffer.isRecycled()) buffer.recycle();
+            if (buffer != null && !buffer.isRecycled()) {
+                buffer.recycle();
+                buffer = null;
+            }
 
             int updatedHeight = layout.getHeight();
-            buffer = Bitmap.createBitmap(_width, updatedHeight, Bitmap.Config.ARGB_8888);
-            bufferPaint = new Paint();
+            Bitmap origin = Bitmap.createBitmap(_width, updatedHeight, Bitmap.Config.ARGB_8888);
             // 텍스트를 캔버스를 통해 비트맵에 그린다.
-            layout.draw(new Canvas(buffer));
+            layout.draw(new Canvas(origin));
+            layout = null;
             /*
             상대 위치+updatedHeight 가 measureHeight 보다 크다면?
             상위 컴포넌트의 Height를 업데이트 한다.
             */
-            if (y + updatedHeight > _height) {
-                updateHeight(y + updatedHeight - _height);
+            if (updatedHeight > _height) {
+                updateHeight(updatedHeight - _height);
                 _width = (int) (measureWidth - border.size.left - padding.left
                         - border.size.right - padding.right);
-
-                buffer = Bitmap.createBitmap(buffer,
-                        0, 0,
-                        _width, updatedHeight);
             }
             measureHeight = (int) (updatedHeight + border.size.top + padding.top
                     + border.size.bottom + padding.bottom);
+            buffer = Bitmap.createBitmap(origin,
+                    0, 0,
+                    _width, updatedHeight);
+            origin.recycle();
         }
     }
 
@@ -74,7 +76,7 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
-    public PDFText setSize(int width, int height) {
+    public PDFText setSize(Integer width, Integer height) {
         super.setSize(width, height);
         return this;
     }
@@ -116,14 +118,8 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
-    public PDFText setAnchor(int vertical, int horizontal) {
+    public PDFText setAnchor(Integer vertical, Integer horizontal) {
         super.setAnchor(vertical, horizontal);
-        return this;
-    }
-
-    @Override
-    public PDFText setAnchor(int axis, boolean isHorizontal) {
-        super.setAnchor(axis, isHorizontal);
         return this;
     }
 
@@ -145,21 +141,21 @@ public class PDFText extends PDFComponent {
     }
     public PDFText setTextPaint(TextPaint paint){
         if(paint == null){
-            this.paint = new TextPaint();
+            this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.paint.setTextSize(16);
+            this.bufferPaint.setTextSize(16);
         }else{
-            this.paint = paint;
+            this.bufferPaint = paint;
         }
         return this;
     }
     public PDFText setTextColor(@ColorInt int color){
-        if(paint == null){
-            this.paint = new TextPaint();
+        if(bufferPaint == null){
+            this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.paint.setTextSize(16);
+            this.bufferPaint.setTextSize(16);
         }
-        this.paint.setColor(color);
+        this.bufferPaint.setColor(color);
         return this;
     }
     public PDFText setTextAlign(@TextAlign.TextAlignInt int align){
@@ -178,4 +174,5 @@ public class PDFText extends PDFComponent {
     }
 
     public static PDFText build(String text){return new PDFText(text);}
+
 }

@@ -30,21 +30,24 @@ public class PDFLinearLayout extends PDFLayout {
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
+
         int i;
         int gap = 0;
         int totalAxis = 0;
+        int lastWidth = (int) (measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right);
         switch (orientation){
             case Orientation.Column:
                 for(i = 0; i < child.size(); i++){
                     child.get(i).measure(0,totalAxis);
                     gap = child.get(i).getTotalHeight();
+                    child.get(i).force(lastWidth ,null);
                     totalAxis += gap;
                 }
                 break;
             case Orientation.Row:
                 int zero_count = 0;
-                int lastWidth = (int) (measureWidth - border.size.left - padding.left
-                        - border.size.right - padding.right);
+                int maxHeight = 0;
                 // 가로 길이 자동 조절
                 for(i = 0; i < child.size(); i++) {
                     if(gaps.get(i) > lastWidth) gaps.set(i, 0);
@@ -68,11 +71,24 @@ public class PDFLinearLayout extends PDFLayout {
                     gap = gaps.get(i);
                     child.get(i).width = gap;
                     child.get(i).measure(totalAxis,0);
+                    if (maxHeight < child.get(i).measureHeight) {
+                        maxHeight = child.get(i).measureHeight;
+                    }
+                    totalAxis += gap + child.get(i).margin.left + child.get(i).margin.right;
+                }
+                totalAxis = 0;
+                for(i = 0; i < child.size(); i++){
+                    gap = gaps.get(i);
+                    child.get(i).width = gap;
+                    child.get(i).height = maxHeight;
+                    child.get(i).measure(totalAxis,0);
+                    child.get(i).force(gap, maxHeight);
                     totalAxis += gap + child.get(i).margin.left + child.get(i).margin.right;
                 }
                 break;
         }
     }
+
 
     @Override
     public void draw(Canvas canvas) {
@@ -120,7 +136,7 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setSize(int width, int height) {
+    public PDFLinearLayout setSize(Integer width, Integer height) {
         super.setSize(width, height);
         return this;
     }
@@ -162,17 +178,10 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setAnchor(int vertical, int horizontal) {
+    public PDFLinearLayout setAnchor(Integer vertical, Integer horizontal) {
         super.setAnchor(vertical, horizontal);
         return this;
     }
-
-    @Override
-    public PDFLinearLayout setAnchor(int axis, boolean isHorizontal) {
-        super.setAnchor(axis, isHorizontal);
-        return this;
-    }
-
     @Override
     protected PDFLinearLayout setParent(PDFComponent parent) {
         super.setParent(parent);

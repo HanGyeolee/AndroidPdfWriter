@@ -15,9 +15,9 @@ public class Anchor{
     public static final int End = 2;
 
     @AnchorInt
-    public int horizontal = Start;
+    public int horizontal = Center;
     @AnchorInt
-    public int vertical = Start;
+    public int vertical = Center;
 
     public Anchor(){}
     public Anchor(@AnchorInt int vertical, @AnchorInt int horizontal){

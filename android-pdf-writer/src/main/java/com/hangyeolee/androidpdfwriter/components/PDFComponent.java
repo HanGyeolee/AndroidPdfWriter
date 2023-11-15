@@ -115,6 +115,63 @@ public abstract class PDFComponent{
     }
 
     /**
+     * 부모 컴포넌트에서 부모 컴포넌트의 연산에 맞게<br>
+     * 자식 컴포넌트를 강제로 수정해야할 떄 사용<br>
+     * Used when a parent component needs to force a child component ~<br>
+     * to be modified to match the parent component's operations
+     * @param width
+     * @param height
+     */
+    protected void force(Integer width, Integer height) {
+        int max;
+        int gap = 0;
+        float d;
+        if (width != null) {
+            max = (int) (width - margin.left - margin.right);
+            gap = max - measureWidth;
+            // Measure X Anchor and Y Anchor
+            d = Anchor.getDeltaPixel(anchor.horizontal, gap);
+            if (parent != null)
+                d += parent.measureX + parent.border.size.left + parent.padding.left;
+            // Set Absolute Position From Parent
+            measureWidth = max;
+            measureX = relativeX + margin.left + d;
+        }
+        if(height != null) {
+            max = (int) (height - margin.top - margin.bottom);
+            gap = max - measureHeight;
+            // Measure X Anchor and Y Anchor
+            d = Anchor.getDeltaPixel(anchor.vertical, gap);
+            if (parent != null)
+                d += parent.measureY + parent.border.size.top + parent.padding.top;
+            // Set Absolute Position From Parent
+            measureHeight = max;
+            measureY = relativeY + margin.top + d;
+        }
+    }
+
+    public void draw(Canvas canvas){
+        //---------------배경 그리기-------------//
+        Paint background = new Paint();
+        background.setColor(backgroundColor);
+        background.setStyle(Paint.Style.FILL);
+        float left = relativeX + margin.left;
+        float top = relativeY + margin.top;
+        if (parent != null) {
+            left += parent.measureX + parent.border.size.left + parent.padding.left;
+            top += parent.measureY + parent.border.size.top + parent.padding.top;
+        }
+        if(measureWidth > 0 && measureHeight > 0) {
+            canvas.drawRect(left, top,
+                    left + measureWidth, top + measureHeight,
+                    background);
+        }
+
+        //--------------테두리 그리기-------------//
+        border.draw(canvas, left, top, measureWidth, measureHeight);
+    }
+
+    /**
      * 하위 컴포넌트로 상위 컴포넌트 업데이트 <br>
      * Update parent components to child components
      * @param heightGap
@@ -152,12 +209,13 @@ public abstract class PDFComponent{
      * @param height 세로 크기
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setSize(int width, int height){
-        this.width = width;
-        this.height = height;
+    public PDFComponent setSize(Integer width, Integer height){
+        if(width != null)
+            this.width = width;
+        if(height != null)
+            this.height = height;
         return this;
     }
-
     /**
      * 컴포넌트 내의 배경의 색상 설정<br>
      * Set the color of the background within the component
@@ -236,26 +294,14 @@ public abstract class PDFComponent{
      * @param horizontal 가로 고정점
      * @return 자기자신
      */
-    public PDFComponent setAnchor(@Anchor.AnchorInt int vertical, @Anchor.AnchorInt int horizontal){
-        anchor.horizontal = horizontal;
-        anchor.vertical = vertical;
+    public PDFComponent setAnchor(@Anchor.AnchorInt Integer vertical, @Anchor.AnchorInt Integer horizontal){
+        if(vertical != null)
+            anchor.vertical = vertical;
+        if(horizontal != null)
+            anchor.horizontal = horizontal;
         return  this;
     }
-    /**
-     * 컴포넌트의 고정점 지정 <br>
-     * Anchoring components
-     * @param axis 고정점
-     * @param isHorizontal 변경할 축 설정
-     * @return 자기자신
-     */
-    public PDFComponent setAnchor(@Anchor.AnchorInt int axis, boolean isHorizontal){
-        if(isHorizontal) {
-            anchor.horizontal = axis;
-        }else {
-            anchor.vertical = axis;
-        }
-        return  this;
-    }
+
     /**
      * 해당 컴포넌트의 부모 추가<br>
      * Add the parent of that component
@@ -265,20 +311,6 @@ public abstract class PDFComponent{
     protected PDFComponent setParent(PDFComponent parent){
         this.parent = parent;
         return this;
-    }
-
-
-    public void draw(Canvas canvas){
-        Paint background = new Paint();
-        background.setColor(backgroundColor);
-        background.setStyle(Paint.Style.FILL);
-        float right = measureX + measureWidth;
-        float bottom = measureY + measureHeight;
-        if(right > measureX && bottom > measureY) {
-            canvas.drawRect(measureX, measureY,
-                    right, bottom, background);
-        }
-        border.draw(canvas, measureX, measureY, measureWidth, measureHeight);
     }
 
     @Override
