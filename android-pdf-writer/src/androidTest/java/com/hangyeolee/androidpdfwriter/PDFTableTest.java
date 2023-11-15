@@ -1,0 +1,91 @@
+package com.hangyeolee.androidpdfwriter;
+
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+
+import com.hangyeolee.androidpdfwriter.components.PDFH1;
+import com.hangyeolee.androidpdfwriter.components.PDFH3;
+import com.hangyeolee.androidpdfwriter.components.PDFImage;
+import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
+import com.hangyeolee.androidpdfwriter.components.PDFTableLayout;
+import com.hangyeolee.androidpdfwriter.utils.Fit;
+import com.hangyeolee.androidpdfwriter.utils.Orientation;
+import com.hangyeolee.androidpdfwriter.utils.TextAlign;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import java.io.File;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
+
+@RunWith(AndroidJUnit4.class)
+public class PDFTableTest {
+    Context context;
+    PDFBuilder<PDFLinearLayout> builder;
+
+    @Before
+    public void setUp() {
+        context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(com.hangyeolee.androidpdfwriter.test.R.drawable.test);
+        Bitmap b = BitmapFactory.decodeStream(stream);
+
+        int a4X = 595;
+        int a4Y = 842;
+        builder = new PDFBuilder<>(a4X, a4Y);
+        {
+            builder.root = PDFLinearLayout.build()
+                    .setOrientation(Orientation.Column)
+                    .setPadding(10, 10, 10, 10)
+                    .setBackgroundColor(Color.BLUE)
+                    .addChild(PDFH1.build("제목")
+                            .setBackgroundColor(Color.WHITE)
+                            .setTextAlign(TextAlign.Center))
+                    .addChild(PDFTableLayout.build(3, 5)
+                            .setMargin(10, 10, 10, 10)
+                            .setBackgroundColor(Color.WHITE)
+                            .setBorder(border -> border
+                                    .setLeft(4, Color.BLACK)
+                                    .setTop(4, Color.RED)
+                                    .setRight(4, Color.GREEN)
+                                    .setBottom(4, Color.MAGENTA)
+                            )
+                            .addChild(0, 0, PDFH3.build("번호"))
+                            .addChild(1, 0, PDFH3.build("이름")
+                                    .setBackgroundColor(Color.YELLOW)
+                                    .setTextAlign(TextAlign.Center))
+                            .addChild(2, 0, PDFH3.build("내용")
+                                    .setBackgroundColor(Color.BLACK)
+                                    .setTextColor(Color.WHITE)
+                                    .setTextAlign(TextAlign.Center))
+                            .addChild(0, 1, PDFH3.build("001"))
+                            .addChild(1, 2, PDFH3.build("홍길동")
+                                    .setBackgroundColor(Color.YELLOW)
+                                    .setTextAlign(TextAlign.Center))
+                            .addChild(2, 3, PDFH3.build("에베베베베베베베베베베베베베베베")
+                                    .setBackgroundColor(Color.BLACK)
+                                    .setTextColor(Color.WHITE)
+                                    .setTextAlign(TextAlign.Center))
+                            .addChild(1, 4, PDFImage.build(b)
+                                    .setBackgroundColor(Color.GRAY)
+                                    .setFit(Fit.COVER))
+                    );
+        }
+    }
+
+    @Test
+    public void testTableSave() {
+        builder.draw();
+        System.out.println(builder.root.getTotalHeight());
+        builder.save(context, "Download/result.pdf");
+    }
+}

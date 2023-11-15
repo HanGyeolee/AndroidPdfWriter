@@ -15,7 +15,7 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.util.function.Function;
 
-public class PDFText extends PDFComponent{
+public class PDFText extends PDFComponent {
     String text = null;
     TextPaint paint = null;
     Layout.Alignment align = null;

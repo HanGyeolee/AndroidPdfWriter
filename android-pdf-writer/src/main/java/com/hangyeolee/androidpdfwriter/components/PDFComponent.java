@@ -26,7 +26,7 @@ public abstract class PDFComponent{
     final Anchor anchor = new Anchor();
 
     Bitmap buffer = null;
-    Paint bufferPaint;
+    Paint bufferPaint = null;
 
     float relativeX = 0;
     float relativeY = 0;
@@ -97,9 +97,9 @@ public abstract class PDFComponent{
             // 설정한 Width 나 Height 가 최대값을 넘지 않으면, 설정한 값으로
             if(0 < width && width + relativeX <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
-            else measureWidth = maxW;
+            else measureWidth = (int) (maxW - relativeX);
             if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight = maxH;
+            else measureHeight = (int) (maxH - relativeY);
 
             gapX = maxW - measureWidth;
             gapY = maxH - measureHeight;
@@ -112,43 +112,6 @@ public abstract class PDFComponent{
         }
         measureX = relativeX + left + dx;
         measureY = relativeY + top + dy;
-        measureAnchor(true);
-        measureAnchor(false);
-    }
-
-    protected void measureAnchor(boolean isHorizontal){
-        int max;
-        int gap = 0;
-        float d;
-        if(isHorizontal){
-            if(parent != null) {
-                max = (int) (parent.measureWidth
-                        - parent.border.size.left - parent.border.size.right
-                        - parent.padding.left - parent.padding.right
-                        - margin.left - margin.right);
-                gap = max - measureWidth;
-            }
-            // Measure X Anchor and Y Anchor
-            d = Anchor.getDeltaPixel(anchor.horizontal, gap);
-            if(parent != null)
-                d += parent.measureX + parent.border.size.left + parent.padding.left;
-            // Set Absolute Position From Parent
-            measureX = relativeX + margin.left + d;
-        }else {
-            if(parent != null) {
-                max = (int) (parent.measureHeight
-                        - parent.border.size.top - parent.border.size.bottom
-                        - parent.padding.top - parent.padding.bottom
-                        - margin.top - margin.bottom);
-                gap = max - measureHeight;
-            }
-            // Measure X Anchor and Y Anchor
-            d = Anchor.getDeltaPixel(anchor.vertical, gap);
-            if(parent != null)
-                d += parent.measureY + parent.border.size.top + parent.padding.top;
-            // Set Absolute Position From Parent
-            measureY = relativeY + margin.top + d;
-        }
     }
 
     /**

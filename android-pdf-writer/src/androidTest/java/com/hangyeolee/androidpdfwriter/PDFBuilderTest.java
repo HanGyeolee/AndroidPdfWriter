@@ -46,7 +46,7 @@ public class PDFBuilderTest {
                                 .setLeft(4, Color.BLACK)
                                 .setTop(4, Color.RED)
                                 .setRight(4, Color.GREEN)
-                                .setBottom(4, Color.BLUE)
+                                .setBottom(4, Color.MAGENTA)
                         )
                         .addChild(PDFH3.build("번호"))
                         .addChild(PDFH3.build("이름")

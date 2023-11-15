@@ -31,7 +31,7 @@ public class PDFBuilder<T extends PDFLayout> {
      * PDF 그리기<br>
      * draw PDF
      */
-    public void draw(){
+    public PDFBuilder<T> draw(){
         if(root != null) {
             root.setSize(pageWidth, pageHeight)
                     .measure();
@@ -45,6 +45,7 @@ public class PDFBuilder<T extends PDFLayout> {
 
             document.finishPage(page);
         }
+        return this;
     }
 
     /**

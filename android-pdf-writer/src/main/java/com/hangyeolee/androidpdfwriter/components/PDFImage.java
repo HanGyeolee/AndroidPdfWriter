@@ -14,7 +14,7 @@ import java.util.function.Function;
 public class  PDFImage extends PDFComponent{
     Bitmap origin = null;
     @Fit.FitInt
-    int fit = Fit.FILL;
+    int fit = Fit.NONE;
 
     @Override
     public void measure(float x, float y) {
@@ -22,9 +22,9 @@ public class  PDFImage extends PDFComponent{
 
         if(buffer != null && !buffer.isRecycled()) buffer.recycle();
 
-        bufferPaint = new Paint();
-
-        double aspectRatio = (double) origin.getHeight() / (double) origin.getWidth();
+        float aspectRatio = 1;
+        if(this.origin.getWidth() > 0)
+            aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
 
         int resizeW = measureWidth;
         int resizeH = measureHeight;
@@ -33,14 +33,16 @@ public class  PDFImage extends PDFComponent{
         Bitmap scaled;
         if (fit == Fit.SCALE_DOWN){
             fit = Fit.CONTAIN;
-            if (origin.getWidth() > origin.getHeight()) {
-                if(resizeW > origin.getWidth()){
+            if (this.origin.getWidth() > this.origin.getHeight()) {
+                if(resizeW > this.origin.getWidth()){
                     fit = Fit.NONE;
                 }
-            } else if(resizeH > origin.getHeight()){
+            } else if(resizeH > this.origin.getHeight()){
                 fit = Fit.NONE;
             }
         }
+        buffer = Bitmap.createBitmap(measureWidth, measureHeight, Bitmap.Config.ARGB_8888);
+        Canvas transparentCanvas = new Canvas(buffer);
 
         switch (fit) {
             case Fit.FILL:
@@ -48,7 +50,7 @@ public class  PDFImage extends PDFComponent{
                         measureWidth, measureHeight, false);
                 break;
             case Fit.CONTAIN:
-                if (origin.getWidth() > origin.getHeight()) {
+                if (this.origin.getWidth() > this.origin.getHeight()) {
                     resizeH = (int) (resizeW * aspectRatio);
                     gapX = 0;
                     gapY = (measureHeight - resizeH);
@@ -62,18 +64,17 @@ public class  PDFImage extends PDFComponent{
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 scaled = Bitmap.createScaledBitmap(origin,
                         resizeW, resizeH, false);
-                buffer = Bitmap.createBitmap(scaled,
-                        (int)gapX, (int)gapY,
-                        measureWidth, measureHeight);
+                transparentCanvas.drawBitmap(scaled,
+                        (int)gapX, (int)gapY, null);
                 scaled.recycle();
                 break;
             case Fit.COVER:
-                if (origin.getWidth() > origin.getHeight()) {
-                    resizeW = (int) (measureHeight * aspectRatio);
+                if (this.origin.getWidth() > this.origin.getHeight()) {
+                    resizeW = (int) (measureHeight / aspectRatio);
                     gapX = (measureWidth - resizeW);
                     gapY = 0;
                 } else {
-                    resizeH = (int) (measureWidth / aspectRatio);
+                    resizeH = (int) (measureWidth * aspectRatio);
                     gapX = 0;
                     gapY = (measureHeight - resizeH);
                 }
@@ -82,22 +83,18 @@ public class  PDFImage extends PDFComponent{
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 scaled = Bitmap.createScaledBitmap(origin,
                         resizeW, resizeH, false);
-                buffer = Bitmap.createBitmap(scaled,
-                        (int)gapX, (int)gapY,
-                        measureWidth + (int)gapX, measureHeight + (int)gapY);
+                transparentCanvas.drawBitmap(scaled,
+                        (int)gapX, (int)gapY, null);
                 scaled.recycle();
                 break;
             case Fit.NONE:
-                resizeH = origin.getHeight();
-                resizeW = origin.getWidth();
-                gapX = (resizeW - measureWidth);
-                gapY = (resizeH - measureHeight);
+                gapX = (this.origin.getWidth() - measureWidth);
+                gapY = (this.origin.getHeight() - measureHeight);
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
-                buffer = Bitmap.createBitmap(origin,
-                        (int)-gapX, (int)-gapY,
-                        measureWidth, measureHeight);
+                transparentCanvas.drawBitmap(origin,
+                        (int)-gapX, (int)-gapY, null);
                 break;
             case Fit.SCALE_DOWN:
                 break;
@@ -178,10 +175,21 @@ public class  PDFImage extends PDFComponent{
     public PDFImage(Bitmap bitmap, @Fit.FitInt int fit){
         setImage(bitmap).setFit(fit);
     }
+
+    /**
+     * 이미지 컴포넌트의 크기는 기본적으로 이미지의 크기를 가진다.<br>
+     * 기본적으로 고정점은 중앙이다.<br>
+     * The size of the image component basically has the size of the image.<br>
+     * Basically, the anchor is the center.
+     * @param bitmap 이미지
+     * @return 자기자신
+     */
     public PDFImage setImage(Bitmap bitmap){
         this.origin = bitmap;
-        width = bitmap.getWidth();
-        height = bitmap.getHeight();
+        width = this.origin.getWidth();
+        height = this.origin.getHeight();
+        anchor.vertical = Anchor.Center;
+        anchor.horizontal = Anchor.Center;
         return this;
     }
     public PDFImage setFit(@Fit.FitInt int fit){
@@ -195,4 +203,6 @@ public class  PDFImage extends PDFComponent{
             this.origin.recycle();
         super.finalize();
     }
+
+    public static PDFImage build(Bitmap bitmap){return new PDFImage(bitmap);}
 }

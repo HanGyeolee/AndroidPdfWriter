@@ -3,19 +3,13 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
-import androidx.annotation.IntDef;
-
-import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-public class PDFLinearLayout extends PDFLayout{
+public class PDFLinearLayout extends PDFLayout {
     @Orientation.OrientationInt
     int orientation = Orientation.Column;
 
@@ -43,7 +37,6 @@ public class PDFLinearLayout extends PDFLayout{
             case Orientation.Column:
                 for(i = 0; i < child.size(); i++){
                     child.get(i).measure(0,totalAxis);
-                    child.get(i).measureAnchor(true);
                     gap = child.get(i).getTotalHeight();
                     totalAxis += gap;
                 }
@@ -56,6 +49,7 @@ public class PDFLinearLayout extends PDFLayout{
                 for(i = 0; i < child.size(); i++) {
                     if(gaps.get(i) > lastWidth) gaps.set(i, 0);
                     lastWidth -= child.get(i).margin.left + child.get(i).margin.right;
+                    if(lastWidth < 0) gaps.set(i, 0);
                     if(gaps.get(i) == 0){
                         zero_count += 1;
                     }else{
@@ -74,7 +68,6 @@ public class PDFLinearLayout extends PDFLayout{
                     gap = gaps.get(i);
                     child.get(i).width = gap;
                     child.get(i).measure(totalAxis,0);
-                    child.get(i).measureAnchor(false);
                     totalAxis += gap + child.get(i).margin.left + child.get(i).margin.right;
                 }
                 break;
@@ -98,21 +91,19 @@ public class PDFLinearLayout extends PDFLayout{
      */
     @Override
     public PDFLinearLayout addChild(PDFComponent component){
-        gaps.add(0);
-        super.addChild(component);
-        return this;
+        return addChild(component, 0);
     }
 
     /**
      * 레이아웃에 자식 추가<br>
      * Add children to layout
      * @param component 자식 컴포넌트
-     * @param gap 자식 컴포넌트가 차지하는 가로 길이
+     * @param width 자식 컴포넌트가 차지하는 가로 길이
      * @return 자기자신
      */
-    public PDFLinearLayout addChild(PDFComponent component, int gap){
-        if(gap < 0) gap = 0;
-        gaps.add(gap);
+    public PDFLinearLayout addChild(PDFComponent component, int width){
+        if(width < 0) width = 0;
+        gaps.add(width);
         super.addChild(component);
         return this;
     }
