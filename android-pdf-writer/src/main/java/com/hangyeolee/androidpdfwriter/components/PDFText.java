@@ -3,6 +3,7 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.os.Build;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -15,6 +16,16 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public class PDFText extends PDFComponent {
+    /*
+     * Line spacing multiplier for default line spacing.
+     */
+    public static final float DEFAULT_LINESPACING_MULTIPLIER = 1.0f;
+
+    /*
+     * Line spacing addition for default line spacing.
+     */
+    public static final float DEFAULT_LINESPACING_ADDITION = 0.0f;
+
     String text = null;
     Layout.Alignment align = null;
     StaticLayout layout = null;
@@ -29,17 +40,20 @@ public class PDFText extends PDFComponent {
                 - border.size.bottom - padding.bottom);
 
         if(text != null && bufferPaint != null) {
-            Rect textRect = new Rect();
-            bufferPaint.getTextBounds(text, 0, text.length(), textRect);
-            int textWidth = textRect.width();
-            int textHeight = textRect.height();
-            layout = StaticLayout.Builder.obtain(text,
-                            0,
-                            text.length(),
-                            (TextPaint) bufferPaint,
-                            _width)
-                    .setAlignment(align)
-                    .build();
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+                layout = StaticLayout.Builder.obtain(text,
+                                0,
+                                text.length(),
+                                (TextPaint) bufferPaint,
+                                _width)
+                        .setAlignment(align)
+                        .build();
+            }else{
+                layout = new StaticLayout(
+                        text, 0, text.length(), (TextPaint) bufferPaint, _width, align,
+                        DEFAULT_LINESPACING_MULTIPLIER, DEFAULT_LINESPACING_ADDITION,
+                        true,null, _width);
+            }
 
             if (buffer != null && !buffer.isRecycled()) {
                 buffer.recycle();

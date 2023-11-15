@@ -3,16 +3,19 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    compileSdk 29
 
     defaultConfig {
-        //applicationId "com.hangyeolee.androidpdfwriter"
-        minSdk 24
+        namespace "com.hangyeolee.androidpdfwriter"
+        minSdk 19
         targetSdk 32
         versionCode 1
-        versionName "1.0"
+        versionName '0.0.1'
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aarMetadata{
+            minCompileSdk = 29
+        }
     }
 
     buildTypes {
