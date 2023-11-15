@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "AndroidPdfWriter"
-include ':app'
+include ':android-pdf-writer'
