@@ -7,7 +7,7 @@ import com.hangyeolee.androidpdfwriter.exceptions.TableCellHaveNotIndexException
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.util.ArrayList;
-import java.util.function.Function;
+import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public class PDFTableLayout extends PDFLayout{
     int rows, columns;
@@ -177,7 +177,7 @@ public class PDFTableLayout extends PDFLayout{
     }
 
     @Override
-    public PDFTableLayout setBorder(Function<Border, Border> action) {
+    public PDFTableLayout setBorder(Action<Border, Border> action) {
         super.setBorder(action);
         return this;
     }

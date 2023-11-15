@@ -2,7 +2,6 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.Layout;
 import android.text.StaticLayout;
@@ -13,7 +12,7 @@ import androidx.annotation.ColorInt;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
-import java.util.function.Function;
+import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public class PDFText extends PDFComponent {
     String text = null;
@@ -30,6 +29,10 @@ public class PDFText extends PDFComponent {
                 - border.size.bottom - padding.bottom);
 
         if(text != null && bufferPaint != null) {
+            Rect textRect = new Rect();
+            bufferPaint.getTextBounds(text, 0, text.length(), textRect);
+            int textWidth = textRect.width();
+            int textHeight = textRect.height();
             layout = StaticLayout.Builder.obtain(text,
                             0,
                             text.length(),
@@ -112,7 +115,7 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
-    public PDFText setBorder(Function<Border, Border> action) {
+    public PDFText setBorder(Action<Border, Border> action) {
         super.setBorder(action);
         return this;
     }

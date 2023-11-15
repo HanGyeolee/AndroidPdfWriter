@@ -7,7 +7,7 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
 import java.util.ArrayList;
-import java.util.function.Function;
+import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public class PDFLinearLayout extends PDFLayout {
     @Orientation.OrientationInt
@@ -172,7 +172,7 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setBorder(Function<Border, Border> action) {
+    public PDFLinearLayout setBorder(Action<Border, Border> action) {
         super.setBorder(action);
         return this;
     }

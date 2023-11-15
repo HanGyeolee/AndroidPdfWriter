@@ -29,6 +29,10 @@ public class PDFTableTest {
     Context context;
     PDFBuilder<PDFLinearLayout> builder;
 
+    /**
+     * The first page of the pdf file that is output by executing the code below is as follows:
+     * com.hangyeolee.androidpdfwriter.test.R.drawable.pdftabletest_resultimage
+     */
     @Before
     public void setUp() {
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();

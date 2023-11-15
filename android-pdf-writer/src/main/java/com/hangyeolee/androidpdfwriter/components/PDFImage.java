@@ -3,14 +3,13 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Rect;
 
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 
-import java.util.function.Function;
+import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public class  PDFImage extends PDFComponent{
     Bitmap origin = null;
@@ -162,7 +161,7 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
-    public PDFImage setBorder(Function<Border, Border> action) {
+    public PDFImage setBorder(Action<Border, Border> action) {
         super.setBorder(action);
         return this;
     }

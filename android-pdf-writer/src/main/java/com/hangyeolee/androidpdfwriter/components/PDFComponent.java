@@ -11,7 +11,7 @@ import androidx.annotation.ColorInt;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
-import java.util.function.Function;
+import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public abstract class PDFComponent{
     PDFComponent parent = null;
@@ -282,8 +282,8 @@ public abstract class PDFComponent{
      * Specify border thickness and color
      * @param action 테두리 변경 함수
      */
-    public PDFComponent setBorder(Function<Border, Border> action){
-        border.copy(action.apply(border));
+    public PDFComponent setBorder(Action<Border, Border> action){
+        border.copy(action.invoke(border));
         return this;
     }
 
