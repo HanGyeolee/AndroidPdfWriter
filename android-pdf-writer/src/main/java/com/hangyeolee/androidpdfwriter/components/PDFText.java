@@ -10,44 +10,75 @@ import com.hangyeolee.androidpdfwriter.exceptions.LayoutSizeException;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 
 public class PDFText extends PDFComponent{
-    String text;
-    TextPaint paint;
+    String text = null;
+    TextPaint paint = null;
     StaticLayout layout;
 
     @Override
-    public void measure(int globalX, int globalY, PDFComponent parent) {
-        super.measure(globalX, globalY, parent);
+    public void measure(int x, int y) {
+        super.measure(x, y);
 
-        layout = StaticLayout.Builder.obtain(text,
-                0,
-                text.length(),
-                paint,
-                measureWidth).build();
+        int width = measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right;
+        int height = measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom;
 
-        if(buffer != null && !buffer.isRecycled()) buffer.recycle();
+        if(text != null && paint != null) {
+            layout = StaticLayout.Builder.obtain(text,
+                    0,
+                    text.length(),
+                    paint,
+                    width).build();
 
-        Bitmap origin = Bitmap.createBitmap(measureWidth, layout.getHeight(), Bitmap.Config.ARGB_8888);
-        bufferPaint = new Paint();
-        layout.draw(new Canvas(buffer));
-        buffer = Bitmap.createBitmap(origin,
-                0, 0,
-                measureWidth, measureHeight);
-        origin.recycle();
+            if (buffer != null && !buffer.isRecycled()) buffer.recycle();
+
+            int updatedHeight = layout.getHeight();
+            Bitmap origin = Bitmap.createBitmap(width, updatedHeight, Bitmap.Config.ARGB_8888);
+            bufferPaint = new Paint();
+            // 텍스트를 캔버스를 통해 비트맵에 그린다.
+            layout.draw(new Canvas(buffer));
+            /*
+            layout.getHeight 가 measureHeight 보다 크다면?
+            상위 컴포넌트의 Height를 업데이트 한다.
+            */
+            if (updatedHeight > height) {
+                updateHeight(updatedHeight - height);
+                width = measureWidth - border.size.left - padding.left
+                        - border.size.right - padding.right;
+                height = measureHeight - border.size.top - padding.top
+                        - border.size.bottom - padding.bottom;
+            }
+            buffer = Bitmap.createBitmap(origin,
+                    0, 0,
+                    width, height);
+            origin.recycle();
+        }
     }
 
     @Override
     public void draw(Canvas canvas) {
-        canvas.drawBitmap(buffer, measureX, measureY, bufferPaint);
+        super.draw(canvas);
+        canvas.drawBitmap(buffer,
+                measureX + border.size.left + padding.left,
+                measureY + border.size.top + padding.top, bufferPaint);
     }
 
-    public PDFText(String text){
-        setData(text, null);
+    public PDFText(PDFComponent parent){
+        super(parent);
     }
-    public PDFText(String text, TextPaint paint){
-        setData(text, paint);
+    public PDFText(PDFComponent parent, String text){
+        super(parent);
+        this.setText(text).setTextPaint(null);
     }
-    private void setData(String text, TextPaint paint){
+    public PDFText(PDFComponent parent, String text, TextPaint paint){
+        super(parent);
+        this.setText(text).setTextPaint(paint);
+    }
+    public PDFText setText(String Text){
         this.text = text;
+        return this;
+    }
+    public PDFText setTextPaint(TextPaint paint){
         if(paint == null){
             this.paint = new TextPaint();
             this.paint.setTextAlign(Paint.Align.LEFT);
@@ -55,5 +86,6 @@ public class PDFText extends PDFComponent{
         }else{
             this.paint = paint;
         }
+        return this;
     }
 }
