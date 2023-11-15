@@ -10,8 +10,7 @@ import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
-import com.hangyeolee.androidpdfwriter.exceptions.LayoutSizeException;
-import com.hangyeolee.androidpdfwriter.utils.Anchor;
+import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.util.function.Function;
@@ -163,8 +162,18 @@ public class PDFText extends PDFComponent{
         this.paint.setColor(color);
         return this;
     }
-    public PDFText setTextAlign(Layout.Alignment align){
-        this.align = align;
+    public PDFText setTextAlign(@TextAlign.TextAlignInt int align){
+        switch (align){
+            case TextAlign.Start:
+                this.align = Layout.Alignment.ALIGN_NORMAL;
+                break;
+            case TextAlign.Center:
+                this.align = Layout.Alignment.ALIGN_CENTER;
+                break;
+            case TextAlign.End:
+                this.align = Layout.Alignment.ALIGN_OPPOSITE;
+                break;
+        }
         return this;
     }
 

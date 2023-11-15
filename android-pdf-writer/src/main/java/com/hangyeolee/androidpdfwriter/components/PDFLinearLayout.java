@@ -7,6 +7,7 @@ import androidx.annotation.IntDef;
 
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
+import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -15,20 +16,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PDFLinearLayout extends PDFLayout{
-    @Retention(RetentionPolicy.SOURCE)
-    @IntDef({Row, Column})
-    public @interface Orientation {}
-    /**
-     * 가로
-     */
-    public static final int Row = 0;
-    /**
-     * 세로
-     */
-    public static final int Column = 1;
-
-    @Orientation
-    int orientation = Column;
+    @Orientation.OrientationInt
+    int orientation = Orientation.Column;
 
     private final ArrayList<Integer> gaps = new ArrayList<>();
 
@@ -51,7 +40,7 @@ public class PDFLinearLayout extends PDFLayout{
         int gap = 0;
         int totalAxis = 0;
         switch (orientation){
-            case Column:
+            case Orientation.Column:
                 for(i = 0; i < child.size(); i++){
                     child.get(i).measure(0,totalAxis);
                     child.get(i).measureAnchor(true);
@@ -59,7 +48,7 @@ public class PDFLinearLayout extends PDFLayout{
                     totalAxis += gap;
                 }
                 break;
-            case Row:
+            case Orientation.Row:
                 int zero_count = 0;
                 int lastWidth = (int) (measureWidth - border.size.left - padding.left
                         - border.size.right - padding.right);
@@ -134,7 +123,7 @@ public class PDFLinearLayout extends PDFLayout{
      * @param orientation 방향
      * @return 자기자신
      */
-    public PDFLinearLayout setOrientation(@Orientation int orientation){
+    public PDFLinearLayout setOrientation(@Orientation.OrientationInt int orientation){
         this.orientation = orientation;
         return this;
     }

@@ -13,7 +13,7 @@ import java.util.function.Function;
 
 public class  PDFImage extends PDFComponent{
     Bitmap origin = null;
-    @Fit.Type
+    @Fit.FitInt
     int fit = Fit.FILL;
 
     @Override
@@ -175,7 +175,7 @@ public class  PDFImage extends PDFComponent{
     public PDFImage(Bitmap bitmap){
         setImage(bitmap);
     }
-    public PDFImage(Bitmap bitmap, @Fit.Type int fit){
+    public PDFImage(Bitmap bitmap, @Fit.FitInt int fit){
         setImage(bitmap).setFit(fit);
     }
     public PDFImage setImage(Bitmap bitmap){
@@ -184,7 +184,7 @@ public class  PDFImage extends PDFComponent{
         height = bitmap.getHeight();
         return this;
     }
-    public PDFImage setFit(@Fit.Type int fit){
+    public PDFImage setFit(@Fit.FitInt int fit){
         this.fit = fit;
         return this;
     }

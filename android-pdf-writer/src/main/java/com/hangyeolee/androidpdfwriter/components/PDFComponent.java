@@ -8,7 +8,6 @@ import android.graphics.Rect;
 
 import androidx.annotation.ColorInt;
 
-import com.hangyeolee.androidpdfwriter.exceptions.LayoutSizeException;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
@@ -274,7 +273,7 @@ public abstract class PDFComponent{
      * @param horizontal 가로 고정점
      * @return 자기자신
      */
-    public PDFComponent setAnchor(@Anchor.Type int vertical, @Anchor.Type int horizontal){
+    public PDFComponent setAnchor(@Anchor.AnchorInt int vertical, @Anchor.AnchorInt int horizontal){
         anchor.horizontal = horizontal;
         anchor.vertical = vertical;
         return  this;
@@ -286,7 +285,7 @@ public abstract class PDFComponent{
      * @param isHorizontal 변경할 축 설정
      * @return 자기자신
      */
-    public PDFComponent setAnchor(@Anchor.Type int axis, boolean isHorizontal){
+    public PDFComponent setAnchor(@Anchor.AnchorInt int axis, boolean isHorizontal){
         if(isHorizontal) {
             anchor.horizontal = axis;
         }else {

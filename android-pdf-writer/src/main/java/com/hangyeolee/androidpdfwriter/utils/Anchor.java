@@ -9,23 +9,23 @@ import java.lang.annotation.RetentionPolicy;
 public class Anchor{
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({Start, Center, End})
-    public @interface Type {}
-    public static final int Start = -1;
-    public static final int Center = 0;
-    public static final int End = 1;
+    public @interface AnchorInt {}
+    public static final int Start = 0;
+    public static final int Center = 1;
+    public static final int End = 2;
 
-    @Type
+    @AnchorInt
     public int horizontal = Start;
-    @Type
+    @AnchorInt
     public int vertical = Start;
 
     public Anchor(){}
-    public Anchor(@Type int vertical,@Type int horizontal){
+    public Anchor(@AnchorInt int vertical, @AnchorInt int horizontal){
         this.vertical = vertical;
         this.horizontal = horizontal;
     }
 
-    public static float getDeltaPixel(@Type int axis,float gap){
+    public static float getDeltaPixel(@AnchorInt int axis, float gap){
         switch (axis){
             case Start:
                 return 0;
@@ -37,7 +37,7 @@ public class Anchor{
         return 0;
     }
 
-    private String getName(@Type int axis){
+    private String getName(@AnchorInt int axis){
         switch (axis){
             case Start:
                 return "Start";
@@ -52,7 +52,7 @@ public class Anchor{
     @NonNull
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(32);
+        StringBuilder sb = new StringBuilder(16);
         sb.append("Anchor("); sb.append(getName(horizontal)); sb.append(", ");
         sb.append(getName(vertical)); sb.append(")");
         return sb.toString();

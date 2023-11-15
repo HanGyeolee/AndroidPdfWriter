@@ -8,7 +8,7 @@ import java.lang.annotation.RetentionPolicy;
 public class Fit {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FILL, CONTAIN, COVER, NONE, SCALE_DOWN})
-    public @interface Type {}
+    public @interface FitInt {}
 
     /**
      * 요소 콘텐츠 박스 크기에 맞춰 대체 콘텐츠의 크기를 조절합니다.<br>

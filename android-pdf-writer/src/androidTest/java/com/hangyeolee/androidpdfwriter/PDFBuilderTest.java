@@ -12,6 +12,8 @@ import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
+import com.hangyeolee.androidpdfwriter.utils.Orientation;
+import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -30,14 +32,14 @@ public class PDFBuilderTest {
         int a4Y = 842;
         builder = new PDFBuilder<>(a4X, a4Y);
         builder.root = PDFLinearLayout.build()
-                .setOrientation(PDFLinearLayout.Column)
+                .setOrientation(Orientation.Column)
                 .setPadding(10,10,10,10)
                 .setBackgroundColor(Color.BLUE)
                 .addChild(PDFH1.build("제목")
                         .setBackgroundColor(Color.WHITE)
-                        .setTextAlign(Layout.Alignment.ALIGN_CENTER))
+                        .setTextAlign(TextAlign.Center))
                 .addChild(PDFLinearLayout.build()
-                        .setOrientation(PDFLinearLayout.Row)
+                        .setOrientation(Orientation.Row)
                         .setMargin(10, 10, 10, 10)
                         .setBackgroundColor(Color.WHITE)
                         .setBorder(border -> border
@@ -49,11 +51,11 @@ public class PDFBuilderTest {
                         .addChild(PDFH3.build("번호"))
                         .addChild(PDFH3.build("이름")
                                 .setBackgroundColor(Color.YELLOW)
-                                .setTextAlign(Layout.Alignment.ALIGN_CENTER))
+                                .setTextAlign(TextAlign.Center))
                         .addChild(PDFH3.build("내용")
                                 .setBackgroundColor(Color.BLACK)
                                 .setTextColor(Color.WHITE)
-                                .setTextAlign(Layout.Alignment.ALIGN_OPPOSITE))
+                                .setTextAlign(TextAlign.Center))
                 );
     }
 
