@@ -26,14 +26,14 @@ public abstract class PDFComponent{
     final Border border = new Border();
     final Anchor anchor = new Anchor();
 
-    Bitmap buffer;
+    Bitmap buffer = null;
     Paint bufferPaint;
 
-    int relativeX = 0;
-    int relativeY = 0;
+    float relativeX = 0;
+    float relativeY = 0;
     // Absolute Position
-    protected int measureX = 0;
-    protected int measureY = 0;
+    protected float measureX = 0;
+    protected float measureY = 0;
     // margin을 뺀 나머지 길이
     protected int measureWidth = -1;
     protected int measureHeight = -1;
@@ -59,7 +59,7 @@ public abstract class PDFComponent{
      * @param x 상대적인 X 위치, Relative X position
      * @param y 상대적인 Y 위치, Relative Y position
      */
-    public void measure(int x, int y){
+    public void measure(float x, float y){
         if(width < 0) {
             width = 0;
         }
@@ -69,7 +69,7 @@ public abstract class PDFComponent{
 
         relativeX = x;
         relativeY = y;
-        int dx, dy;
+        float dx, dy;
         int gapX = 0;
         int gapY = 0;
 
@@ -84,22 +84,22 @@ public abstract class PDFComponent{
         }
         else{
             // Get Max Width and Height from Parent
-            int maxW = parent.measureWidth
+            int maxW = (int) (parent.measureWidth
                     - parent.border.size.left - parent.border.size.right
                     - parent.padding.left - parent.padding.right
-                    - left - right;
-            int maxH = parent.measureHeight
+                    - left - right);
+            int maxH = (int) (parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
-                    - top - bottom;
+                    - top - bottom);
             if(maxW < 0) maxW = 0;
             if(maxH < 0) maxH = 0;
 
             // 설정한 Width 나 Height 가 최대값을 넘지 않으면, 설정한 값으로
-            if(0 <= width + relativeX && width + relativeX < maxW) measureWidth = width;
+            if(0 < width && width + relativeX <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
             else measureWidth = maxW;
-            if(0 <= height + relativeY && height + relativeY < maxH) measureHeight = height;
+            if(0 < height && height + relativeY <= maxH) measureHeight = height;
             else measureHeight = maxH;
 
             gapX = maxW - measureWidth;
@@ -108,8 +108,8 @@ public abstract class PDFComponent{
         dx = Anchor.getDeltaPixel(anchor.horizontal, gapX);
         dy = Anchor.getDeltaPixel(anchor.vertical, gapY);
         if(parent != null){
-            dx += parent.measureX;
-            dy += parent.measureY;
+            dx += parent.measureX + parent.border.size.left + parent.padding.left;
+            dy += parent.measureY + parent.border.size.top + parent.padding.top;
         }
         measureX = relativeX + left + dx;
         measureY = relativeY + top + dy;
@@ -120,33 +120,33 @@ public abstract class PDFComponent{
     protected void measureAnchor(boolean isHorizontal){
         int max;
         int gap = 0;
-        int d;
+        float d;
         if(isHorizontal){
             if(parent != null) {
-                max = parent.measureWidth
+                max = (int) (parent.measureWidth
                         - parent.border.size.left - parent.border.size.right
                         - parent.padding.left - parent.padding.right
-                        - margin.left - margin.right;
+                        - margin.left - margin.right);
                 gap = max - measureWidth;
             }
             // Measure X Anchor and Y Anchor
             d = Anchor.getDeltaPixel(anchor.horizontal, gap);
             if(parent != null)
-                d += parent.measureX;
+                d += parent.measureX + parent.border.size.left + parent.padding.left;
             // Set Absolute Position From Parent
             measureX = relativeX + margin.left + d;
         }else {
             if(parent != null) {
-                max = parent.measureHeight
+                max = (int) (parent.measureHeight
                         - parent.border.size.top - parent.border.size.bottom
                         - parent.padding.top - parent.padding.bottom
-                        - margin.top - margin.bottom;
+                        - margin.top - margin.bottom);
                 gap = max - measureHeight;
             }
             // Measure X Anchor and Y Anchor
             d = Anchor.getDeltaPixel(anchor.vertical, gap);
             if(parent != null)
-                d += parent.measureY;
+                d += parent.measureY + parent.border.size.top + parent.padding.top;
             // Set Absolute Position From Parent
             measureY = relativeY + margin.top + d;
         }
@@ -157,7 +157,7 @@ public abstract class PDFComponent{
      * Update parent components to child components
      * @param heightGap
      */
-    protected void updateHeight(int heightGap){
+    protected void updateHeight(float heightGap){
         if(parent != null){
             parent.updateHeight(heightGap);
         }else {
@@ -172,7 +172,7 @@ public abstract class PDFComponent{
      * @return 전체 너비
      */
     public int getTotalWidth(){
-        return measureHeight + margin.top + margin.bottom;
+        return measureWidth + margin.right + margin.left;
     }
     /**
      * 계산된 전체 높이를 구한다.<br>
@@ -287,14 +287,12 @@ public abstract class PDFComponent{
 
 
     public void draw(Canvas canvas){
-        int pageWidth = canvas.getWidth();
-        int pageHeight = canvas.getHeight();
         Paint background = new Paint();
         background.setColor(backgroundColor);
         background.setStyle(Paint.Style.FILL);
-        int right = pageWidth - measureX - measureWidth;
-        int bottom = pageHeight - measureY - measureHeight;
-        if(right >= 0 && bottom >= 0) {
+        float right = measureX + measureWidth;
+        float bottom = measureY + measureHeight;
+        if(right > measureX && bottom > measureY) {
             canvas.drawRect(measureX, measureY,
                     right, bottom, background);
         }

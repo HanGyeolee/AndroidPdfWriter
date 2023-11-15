@@ -25,12 +25,12 @@ public class Anchor{
         this.horizontal = horizontal;
     }
 
-    public static int getDeltaPixel(@Type int axis,int gap){
+    public static float getDeltaPixel(@Type int axis,float gap){
         switch (axis){
             case Start:
                 return 0;
             case Center:
-                return (gap >> 1);
+                return (gap * 0.5f);
             case End:
                 return gap;
         }

@@ -17,7 +17,7 @@ public class  PDFImage extends PDFComponent{
     int fit = Fit.FILL;
 
     @Override
-    public void measure(int x, int y) {
+    public void measure(float x, float y) {
         super.measure(x, y);
 
         if(buffer != null && !buffer.isRecycled()) buffer.recycle();
@@ -28,8 +28,8 @@ public class  PDFImage extends PDFComponent{
 
         int resizeW = measureWidth;
         int resizeH = measureHeight;
-        int gapX;
-        int gapY;
+        float gapX;
+        float gapY;
         Bitmap scaled;
         if (fit == Fit.SCALE_DOWN){
             fit = Fit.CONTAIN;
@@ -63,7 +63,7 @@ public class  PDFImage extends PDFComponent{
                 scaled = Bitmap.createScaledBitmap(origin,
                         resizeW, resizeH, false);
                 buffer = Bitmap.createBitmap(scaled,
-                        gapX, gapY,
+                        (int)gapX, (int)gapY,
                         measureWidth, measureHeight);
                 scaled.recycle();
                 break;
@@ -83,8 +83,8 @@ public class  PDFImage extends PDFComponent{
                 scaled = Bitmap.createScaledBitmap(origin,
                         resizeW, resizeH, false);
                 buffer = Bitmap.createBitmap(scaled,
-                        gapX, gapY,
-                        measureWidth + gapX, measureHeight + gapY);
+                        (int)gapX, (int)gapY,
+                        measureWidth + (int)gapX, measureHeight + (int)gapY);
                 scaled.recycle();
                 break;
             case Fit.NONE:
@@ -96,7 +96,7 @@ public class  PDFImage extends PDFComponent{
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 buffer = Bitmap.createBitmap(origin,
-                        -gapX, -gapY,
+                        (int)-gapX, (int)-gapY,
                         measureWidth, measureHeight);
                 break;
             case Fit.SCALE_DOWN:

@@ -44,7 +44,7 @@ public class PDFLinearLayout extends PDFLayout{
     }
 
     @Override
-    public void measure(int x, int y) {
+    public void measure(float x, float y) {
         super.measure(x, y);
         int i;
         int gap = 0;
@@ -60,9 +60,11 @@ public class PDFLinearLayout extends PDFLayout{
                 break;
             case Row:
                 int zero_count = 0;
-                int lastWidth = measureWidth;
+                int lastWidth = (int) (measureWidth - border.size.left - padding.left
+                        - border.size.right - padding.right);
                 // 가로 길이 자동 조절
                 for(i = 0; i < child.size(); i++) {
+                    lastWidth -= child.get(i).margin.left + child.get(i).margin.right;
                     if(gaps.get(i) == 0){
                         zero_count += 1;
                     }else{
@@ -82,7 +84,7 @@ public class PDFLinearLayout extends PDFLayout{
                     child.get(i).width = gap;
                     child.get(i).measure(totalAxis,0);
                     child.get(i).measureAnchor(false);
-                    totalAxis += gap;
+                    totalAxis += gap + child.get(i).margin.left + child.get(i).margin.right;
                 }
                 break;
         }
