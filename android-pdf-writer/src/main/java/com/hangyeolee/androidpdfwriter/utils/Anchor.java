@@ -1,30 +1,60 @@
 package com.hangyeolee.androidpdfwriter.utils;
 
+import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 public class Anchor{
-    public byte vertical = -1;
-    public byte horizontal = -1;
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({Start, Center, End})
+    public @interface Type {}
+    public static final int Start = -1;
+    public static final int Center = 0;
+    public static final int End = 1;
+
+    @Type
+    public int horizontal = Start;
+    @Type
+    public int vertical = Start;
 
     public Anchor(){}
-    public Anchor(byte vertical, byte horizontal){
+    public Anchor(@Type int vertical,@Type int horizontal){
         this.vertical = vertical;
         this.horizontal = horizontal;
-
-        if(this.vertical > 1) this.vertical = 1;
-        else if(this.vertical < -1) this.vertical = -1;
-        if(this.horizontal > 1) this.horizontal = 1;
-        else if(this.horizontal < -1) this.horizontal = -1;
     }
 
-    public static int getDeltaPixel(byte axis,int gap){
+    public static int getDeltaPixel(@Type int axis,int gap){
         switch (axis){
-            case -1:
+            case Start:
                 return 0;
-            case 0:
-                return (int)(gap * 0.5);
-            case 1:
+            case Center:
+                return (gap >> 1);
+            case End:
                 return gap;
         }
         return 0;
     }
-}
 
+    private String getName(@Type int axis){
+        switch (axis){
+            case Start:
+                return "Start";
+            case Center:
+                return "Center";
+            case End:
+                return "End";
+        }
+        return "Null";
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(32);
+        sb.append("Anchor("); sb.append(getName(horizontal)); sb.append(", ");
+        sb.append(getName(vertical)); sb.append(")");
+        return sb.toString();
+    }
+}

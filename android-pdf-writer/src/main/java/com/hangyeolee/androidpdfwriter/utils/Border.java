@@ -4,9 +4,12 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.Nullable;
+
 public class Border {
     public Rect size;
-    public Rect color;
+    public ColorRect color;
 
     /**
      * 테두리 굵기 및 색상 지정 <br>
@@ -14,7 +17,7 @@ public class Border {
      */
     public Border(){
         size = new Rect(0,0,0,0);
-        color = new Rect(0,0,0,0);
+        color = new ColorRect(0,0,0,0);
     }
 
     /**
@@ -23,9 +26,9 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public Border(int size, int color){
+    public Border(int size,@ColorInt int color){
         this.size = new Rect(size, size, size, size);
-        this.color = new Rect(color, color, color, color);
+        this.color = new ColorRect(color, color, color, color);
     }
 
     /**
@@ -34,10 +37,11 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public Border(Rect size, Rect color){
+    public Border(Rect size, ColorRect color){
         this.size = new Rect(size);
-        this.color = new Rect(color);
+        this.color = new ColorRect(color);
     }
+
 
     /**
      * 테두리 굵기 및 색상 지정 <br>
@@ -45,31 +49,38 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public Border(Rect size, int color){
+    public Border(Rect size,@ColorInt int color){
         this.size = new Rect(size);
-        this.color = new Rect(color, color, color, color);
+        this.color = new ColorRect(color, color, color, color);
     }
-    public Border setLeft(int size, int color){
+
+    public void copy(@Nullable Border b){
+        if(b != null){
+            size = b.size;
+            color = b.color;
+        }
+    }
+
+    public Border setLeft(int size,@ColorInt int color){
         this.size.left = size;
         this.color.left = color;
         return this;
     }
-    public Border setTop(int size, int color){
+    public Border setTop(int size,@ColorInt int color){
         this.size.top = size;
         this.color.top = color;
         return this;
     }
-    public Border setRight(int size, int color){
+    public Border setRight(int size,@ColorInt int color){
         this.size.right = size;
         this.color.right = color;
         return this;
     }
-    public Border setBottom(int size, int color){
+    public Border setBottom(int size,@ColorInt int color){
         this.size.bottom = size;
         this.color.bottom = color;
         return this;
     }
-
     public void draw(Canvas canvas, int measureX, int measureY, int measureWidth, int measureHeight){
         Paint paint = new Paint();
         if(size.left > 0) {
@@ -94,6 +105,11 @@ public class Border {
         }
     }
 
+    @Override
+    public String toString() {
+        return size.toString() + ", " + color.toString();
+    }
+
     /**
      * 왼쪽 테두리만 나타나도록 설정<br>
      * 테두리 굵기 및 색상 지정 <br>
@@ -102,8 +118,8 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public static Border BorderLeft(int size, int color){
-        return new Border(new Rect(size,0,0, 0), new Rect(color, 0, 0, 0));
+    public static Border BorderLeft(int size,@ColorInt int color){
+        return new Border(new Rect(size,0,0, 0), new ColorRect(color, 0, 0, 0));
     }
     /**
      * 위쪽 테두리만 나타나도록 설정<br>
@@ -113,8 +129,8 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public static Border BorderTop(int size, int color){
-        return new Border(new Rect(0,size,0, 0), new Rect(0, color, 0, 0));
+    public static Border BorderTop(int size,@ColorInt int color){
+        return new Border(new Rect(0,size,0, 0), new ColorRect(0, color, 0, 0));
     }
     /**
      * 오른쪽 테두리만 나타나도록 설정<br>
@@ -124,8 +140,8 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public static Border BorderRight(int size, int color){
-        return new Border(new Rect(0,0,size, 0), new Rect(0, 0, color, 0));
+    public static Border BorderRight(int size,@ColorInt int color){
+        return new Border(new Rect(0,0,size, 0), new ColorRect(0, 0, color, 0));
     }
     /**
      * 아래쪽 테두리만 나타나도록 설정<br>
@@ -135,7 +151,7 @@ public class Border {
      * @param size 테두리 굵기, thickness
      * @param color 테두리 색상, color
      */
-    public static Border BorderBottom(int size, int color){
-        return new Border(new Rect(0,0,0, size), new Rect(0, 0, 0, color));
+    public static Border BorderBottom(int size,@ColorInt int color){
+        return new Border(new Rect(0,0,0, size), new ColorRect(0, 0, 0, color));
     }
 }

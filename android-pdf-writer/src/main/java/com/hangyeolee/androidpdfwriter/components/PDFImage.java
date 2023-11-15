@@ -3,15 +3,17 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.text.TextPaint;
+import android.graphics.Rect;
 
-import androidx.annotation.IntDef;
-
+import com.hangyeolee.androidpdfwriter.utils.Anchor;
+import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
+
+import java.util.function.Function;
 
 public class  PDFImage extends PDFComponent{
     Bitmap origin = null;
-    @Fit.FitType
+    @Fit.Type
     int fit = Fit.FILL;
 
     @Override
@@ -29,7 +31,6 @@ public class  PDFImage extends PDFComponent{
         int gapX;
         int gapY;
         Bitmap scaled;
-        Canvas canvas;
         if (fit == Fit.SCALE_DOWN){
             fit = Fit.CONTAIN;
             if (origin.getWidth() > origin.getHeight()) {
@@ -50,12 +51,15 @@ public class  PDFImage extends PDFComponent{
                 if (origin.getWidth() > origin.getHeight()) {
                     resizeH = (int) (resizeW * aspectRatio);
                     gapX = 0;
-                    gapY = (measureHeight - resizeH) >> 1;
+                    gapY = (measureHeight - resizeH);
                 } else {
                     resizeW = (int) (resizeH / aspectRatio);
-                    gapX = (measureWidth - resizeW) >> 1;
+                    gapX = (measureWidth - resizeW);
                     gapY = 0;
                 }
+                // Measure X Anchor and Y Anchor
+                gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
+                gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 scaled = Bitmap.createScaledBitmap(origin,
                         resizeW, resizeH, false);
                 buffer = Bitmap.createBitmap(scaled,
@@ -66,13 +70,16 @@ public class  PDFImage extends PDFComponent{
             case Fit.COVER:
                 if (origin.getWidth() > origin.getHeight()) {
                     resizeW = (int) (measureHeight * aspectRatio);
-                    gapX = (measureWidth - resizeW) >> 1;
+                    gapX = (measureWidth - resizeW);
                     gapY = 0;
                 } else {
                     resizeH = (int) (measureWidth / aspectRatio);
                     gapX = 0;
-                    gapY = (measureHeight - resizeH) >> 1;
+                    gapY = (measureHeight - resizeH);
                 }
+                // Measure X Anchor and Y Anchor
+                gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
+                gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 scaled = Bitmap.createScaledBitmap(origin,
                         resizeW, resizeH, false);
                 buffer = Bitmap.createBitmap(scaled,
@@ -83,8 +90,11 @@ public class  PDFImage extends PDFComponent{
             case Fit.NONE:
                 resizeH = origin.getHeight();
                 resizeW = origin.getWidth();
-                gapX = (resizeW - measureWidth) >> 1;
-                gapY = (resizeH - measureHeight) >> 1;
+                gapX = (resizeW - measureWidth);
+                gapY = (resizeH - measureHeight);
+                // Measure X Anchor and Y Anchor
+                gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
+                gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 buffer = Bitmap.createBitmap(origin,
                         -gapX, -gapY,
                         measureWidth, measureHeight);
@@ -102,15 +112,70 @@ public class  PDFImage extends PDFComponent{
                 measureY + border.size.top + padding.top, bufferPaint);
     }
 
-    public PDFImage(PDFComponent parent){
-        super(parent);
+    @Override
+    public PDFImage setSize(int width, int height) {
+        super.setSize(width, height);
+        return this;
     }
-    public PDFImage(PDFComponent parent, Bitmap bitmap){
-        super(parent);
+
+    @Override
+    public PDFImage setBackgroundColor(int color) {
+        super.setBackgroundColor(color);
+        return this;
+    }
+
+    @Override
+    public PDFImage setMargin(Rect margin) {
+        super.setMargin(margin);
+        return this;
+    }
+
+    @Override
+    public PDFImage setMargin(int left, int top, int right, int bottom) {
+        super.setMargin(left, top, right, bottom);
+        return this;
+    }
+
+    @Override
+    public PDFImage setPadding(Rect padding) {
+        super.setPadding(padding);
+        return this;
+    }
+
+    @Override
+    public PDFImage setPadding(int left, int top, int right, int bottom) {
+        super.setPadding(left, top, right, bottom);
+        return this;
+    }
+
+    @Override
+    public PDFImage setBorder(Function<Border, Border> action) {
+        super.setBorder(action);
+        return this;
+    }
+
+    @Override
+    public PDFImage setAnchor(int vertical, int horizontal) {
+        super.setAnchor(vertical, horizontal);
+        return this;
+    }
+
+    @Override
+    public PDFImage setAnchor(int axis, boolean isHorizontal) {
+        super.setAnchor(axis, isHorizontal);
+        return this;
+    }
+
+    @Override
+    protected PDFImage setParent(PDFComponent parent) {
+        super.setParent(parent);
+        return this;
+    }
+
+    public PDFImage(Bitmap bitmap){
         setImage(bitmap);
     }
-    public PDFImage(PDFComponent parent, Bitmap bitmap, @Fit.FitType int fit){
-        super(parent);
+    public PDFImage(Bitmap bitmap, @Fit.Type int fit){
         setImage(bitmap).setFit(fit);
     }
     public PDFImage setImage(Bitmap bitmap){
@@ -119,7 +184,7 @@ public class  PDFImage extends PDFComponent{
         height = bitmap.getHeight();
         return this;
     }
-    public PDFImage setFit(@Fit.FitType int fit){
+    public PDFImage setFit(@Fit.Type int fit){
         this.fit = fit;
         return this;
     }
