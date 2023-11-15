@@ -88,4 +88,10 @@ public class PDFText extends PDFComponent{
         }
         return this;
     }
+    public PDFText setTextAlign(Paint.Align align){
+        if(paint == null) setTextPaint(null);
+        this.paint.setTextAlign(align);
+        return this;
+    }
 }
+
