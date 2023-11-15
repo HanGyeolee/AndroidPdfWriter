@@ -5,6 +5,7 @@ import android.graphics.Rect;
 
 import androidx.annotation.IntDef;
 
+import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.lang.annotation.Retention;
@@ -64,6 +65,7 @@ public class PDFLinearLayout extends PDFLayout{
                         - border.size.right - padding.right);
                 // 가로 길이 자동 조절
                 for(i = 0; i < child.size(); i++) {
+                    if(gaps.get(i) > lastWidth) gaps.set(i, 0);
                     lastWidth -= child.get(i).margin.left + child.get(i).margin.right;
                     if(gaps.get(i) == 0){
                         zero_count += 1;
@@ -99,18 +101,39 @@ public class PDFLinearLayout extends PDFLayout{
         }
     }
 
+    /**
+     * 레이아웃에 자식 추가<br>
+     * Add children to layout
+     * @param component 자식 컴포넌트
+     * @return 자기자신
+     */
     @Override
     public PDFLinearLayout addChild(PDFComponent component){
         gaps.add(0);
         super.addChild(component);
         return this;
     }
+
+    /**
+     * 레이아웃에 자식 추가<br>
+     * Add children to layout
+     * @param component 자식 컴포넌트
+     * @param gap 자식 컴포넌트가 차지하는 가로 길이
+     * @return 자기자신
+     */
     public PDFLinearLayout addChild(PDFComponent component, int gap){
+        if(gap < 0) gap = 0;
         gaps.add(gap);
         super.addChild(component);
         return this;
     }
 
+    /**
+     * 레이아웃의 방향 설정<br>
+     * Setting the orientation of the layout
+     * @param orientation 방향
+     * @return 자기자신
+     */
     public PDFLinearLayout setOrientation(@Orientation int orientation){
         this.orientation = orientation;
         return this;

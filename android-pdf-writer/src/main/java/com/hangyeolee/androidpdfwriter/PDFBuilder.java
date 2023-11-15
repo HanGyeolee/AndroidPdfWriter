@@ -27,6 +27,10 @@ public class PDFBuilder<T extends PDFLayout> {
         this.pageHeight = pageHeight;
     }
 
+    /**
+     * PDF 그리기<br>
+     * draw PDF
+     */
     public void draw(){
         if(root != null) {
             root.setSize(pageWidth, pageHeight)
@@ -43,6 +47,12 @@ public class PDFBuilder<T extends PDFLayout> {
         }
     }
 
+    /**
+     * PDF 저장하기<br>
+     * save PDF file
+     * @param context 컨텍스트
+     * @param pathname 저장할 위치
+     */
     public void save(Context context, String pathname) {
         File file = new File(pathname);
         try {

@@ -267,11 +267,25 @@ public abstract class PDFComponent{
         return this;
     }
 
+    /**
+     * 컴포넌트의 고정점 지정 <br>
+     * Anchoring components
+     * @param vertical 세로 고정점
+     * @param horizontal 가로 고정점
+     * @return 자기자신
+     */
     public PDFComponent setAnchor(@Anchor.Type int vertical, @Anchor.Type int horizontal){
         anchor.horizontal = horizontal;
         anchor.vertical = vertical;
         return  this;
     }
+    /**
+     * 컴포넌트의 고정점 지정 <br>
+     * Anchoring components
+     * @param axis 고정점
+     * @param isHorizontal 변경할 축 설정
+     * @return 자기자신
+     */
     public PDFComponent setAnchor(@Anchor.Type int axis, boolean isHorizontal){
         if(isHorizontal) {
             anchor.horizontal = axis;
@@ -280,6 +294,12 @@ public abstract class PDFComponent{
         }
         return  this;
     }
+    /**
+     * 해당 컴포넌트의 부모 추가<br>
+     * Add the parent of that component
+     * @param parent 부모
+     * @return 자기자신
+     */
     protected PDFComponent setParent(PDFComponent parent){
         this.parent = parent;
         return this;
