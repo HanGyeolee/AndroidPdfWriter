@@ -177,11 +177,21 @@ public abstract class PDFComponent{
      * @param heightGap
      */
     protected void updateHeight(float heightGap){
-        if(parent != null){
+        height += heightGap;
+
+        int top = margin.top;
+        int bottom = margin.bottom;
+        if(parent == null){
+            measureHeight = height - top - bottom;
+        }
+        else{
+            int maxH = (int) (parent.measureHeight
+                    - parent.border.size.top - parent.border.size.bottom
+                    - parent.padding.top - parent.padding.bottom
+                    - top - bottom);
+            if(0 < height && height + relativeY <= maxH) measureHeight = height;
+            else measureHeight = (int) (maxH - relativeY);
             parent.updateHeight(heightGap);
-        }else {
-            height += heightGap;
-            measure();
         }
     }
 

@@ -15,6 +15,8 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 
+import java.util.Objects;
+
 public class PDFText extends PDFComponent {
     /*
      * Line spacing multiplier for default line spacing.
@@ -30,6 +32,11 @@ public class PDFText extends PDFComponent {
     Layout.Alignment align = null;
     StaticLayout layout = null;
 
+    String lastText = null;
+    TextPaint lastPaint = null;
+    Layout.Alignment lastAlign = null;
+    int lastWidth = 0;
+
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
@@ -39,20 +46,28 @@ public class PDFText extends PDFComponent {
         int _height = (int) (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
 
-        if(text != null && bufferPaint != null) {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
-                layout = StaticLayout.Builder.obtain(text,
-                                0,
-                                text.length(),
-                                (TextPaint) bufferPaint,
-                                _width)
-                        .setAlignment(align)
-                        .build();
-            }else{
-                layout = new StaticLayout(
-                        text, 0, text.length(), (TextPaint) bufferPaint, _width, align,
-                        DEFAULT_LINESPACING_MULTIPLIER, DEFAULT_LINESPACING_ADDITION,
-                        true,null, _width);
+        if(text != null) {
+            if(layout == null || bufferPaint != lastPaint ||
+                    !Objects.equals(text, lastText) || lastWidth != _width || lastAlign != align) {
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    layout = StaticLayout.Builder.obtain(text,
+                                    0,
+                                    text.length(),
+                                    (TextPaint) bufferPaint,
+                                    _width)
+                            .setAlignment(align)
+                            .build();
+                } else {
+                    layout = new StaticLayout(
+                            text, 0, text.length(), (TextPaint) bufferPaint, _width, align,
+                            DEFAULT_LINESPACING_MULTIPLIER, DEFAULT_LINESPACING_ADDITION,
+                            true, null, _width);
+                }
+
+                lastPaint = (TextPaint) bufferPaint;
+                lastText = text;
+                lastWidth = _width;
+                lastAlign = align;
             }
 
             if (buffer != null && !buffer.isRecycled()) {
@@ -61,25 +76,23 @@ public class PDFText extends PDFComponent {
             }
 
             int updatedHeight = layout.getHeight();
-            Bitmap origin = Bitmap.createBitmap(_width, updatedHeight, Bitmap.Config.ARGB_8888);
-            // 텍스트를 캔버스를 통해 비트맵에 그린다.
-            layout.draw(new Canvas(origin));
-            layout = null;
             /*
             상대 위치+updatedHeight 가 measureHeight 보다 크다면?
             상위 컴포넌트의 Height를 업데이트 한다.
             */
             if (updatedHeight > _height) {
                 updateHeight(updatedHeight - _height);
-                _width = (int) (measureWidth - border.size.left - padding.left
-                        - border.size.right - padding.right);
             }
-            measureHeight = (int) (updatedHeight + border.size.top + padding.top
-                    + border.size.bottom + padding.bottom);
+            measureHeight = (int) (updatedHeight + border.size.top + padding.top + border.size.bottom + padding.bottom);
+
+            Bitmap origin = Bitmap.createBitmap(_width, updatedHeight, Bitmap.Config.ARGB_8888);
+            // 텍스트를 캔버스를 통해 비트맵에 그린다.
+            layout.draw(new Canvas(origin));
             buffer = Bitmap.createBitmap(origin,
                     0, 0,
                     _width, updatedHeight);
             origin.recycle();
+            layout = null;
         }
     }
 
@@ -153,6 +166,7 @@ public class PDFText extends PDFComponent {
         this.setText(text).setTextPaint(paint);
     }
     public PDFText setText(String text){
+        lastText = this.text;
         this.text = text;
         return this;
     }
@@ -162,6 +176,7 @@ public class PDFText extends PDFComponent {
             this.align = Layout.Alignment.ALIGN_NORMAL;
             this.bufferPaint.setTextSize(16);
         }else{
+            lastPaint = (TextPaint) this.bufferPaint;
             this.bufferPaint = paint;
         }
         return this;
@@ -172,10 +187,12 @@ public class PDFText extends PDFComponent {
             this.align = Layout.Alignment.ALIGN_NORMAL;
             this.bufferPaint.setTextSize(16);
         }
+        lastPaint = (TextPaint) this.bufferPaint;
         this.bufferPaint.setColor(color);
         return this;
     }
     public PDFText setTextAlign(@TextAlign.TextAlignInt int align){
+        lastAlign = this.align;
         switch (align){
             case TextAlign.Start:
                 this.align = Layout.Alignment.ALIGN_NORMAL;
