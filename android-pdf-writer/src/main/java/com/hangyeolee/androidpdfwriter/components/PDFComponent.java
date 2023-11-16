@@ -181,8 +181,8 @@ public abstract class PDFComponent{
             parent.updateHeight(heightGap);
         }else {
             height += heightGap;
+            measure();
         }
-        measure();
     }
 
     /**
