@@ -1,9 +1,12 @@
 plugins {
     id 'com.android.library'
+    id 'maven-publish'
+    id 'signing'
 }
 
 android {
-    compileSdk 29
+    //compileSdk 29
+    compileSdkVersion 29
 
     defaultConfig {
         namespace "com.hangyeolee.androidpdfwriter"
@@ -28,6 +31,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
+    publishing {
+        singleVariant('release') {
+            //withSourcesJar()
+            //withJavadocJar()
+        }
+    }
 }
 
 dependencies {
@@ -39,3 +49,25 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.1.0'
     androidTestImplementation 'androidx.test:rules:1.1.0'
 }
+
+ext {
+    PUBLISH_GROUP_ID = 'io.github.hangyeolee'
+    PUBLISH_VERSION = '0.0.1'
+    PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
+    PUBLISH_DESCRIPTION = 'PDF Writer Android Library'
+    PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
+    PUBLISH_LICENSE_NAME = 'Apache License'
+    PUBLISH_LICENSE_URL =
+            'https://github.com/hangyeolee/AndroidPdfWriter/blob/main/LICENSE'
+    PUBLISH_DEVELOPER_ID = 'hangoil65'
+    PUBLISH_DEVELOPER_NAME = 'Han-Gyeol Choi'
+    PUBLISH_DEVELOPER_EMAIL = 'hangoil65@gmail.com'
+    PUBLISH_SCM_CONNECTION =
+            'scm:git:github.com/hangyeolee/AndroidPdfWriter.git'
+    PUBLISH_SCM_DEVELOPER_CONNECTION =
+            'scm:git:ssh://github.com:hangyeolee/AndroidPdfWriter.git'
+    PUBLISH_SCM_URL =
+            'https://github.com/hangyeolee/AndroidPdfWriter/tree/main'
+}
+
+apply from: "${rootDir}/scripts/publish-remote.gradle"
