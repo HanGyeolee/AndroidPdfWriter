@@ -8,6 +8,7 @@ import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
 import java.util.ArrayList;
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 public class PDFLinearLayout extends PDFLayout {
     @Orientation.OrientationInt
@@ -41,7 +42,7 @@ public class PDFLinearLayout extends PDFLayout {
                 for(i = 0; i < child.size(); i++){
                     child.get(i).measure(0,totalAxis);
                     gap = child.get(i).getTotalHeight();
-                    child.get(i).force(lastWidth ,null);
+                    child.get(i).force(lastWidth ,null, null);
                     totalAxis += gap;
                 }
                 break;
@@ -82,7 +83,7 @@ public class PDFLinearLayout extends PDFLayout {
                     child.get(i).width = gap;
                     child.get(i).height = maxHeight;
                     child.get(i).measure(totalAxis,0);
-                    child.get(i).force(gap, maxHeight);
+                    child.get(i).force(gap, maxHeight, null);
                     totalAxis += gap + child.get(i).margin.left + child.get(i).margin.right;
                 }
                 break;
@@ -119,7 +120,7 @@ public class PDFLinearLayout extends PDFLayout {
      */
     public PDFLinearLayout addChild(PDFComponent component, int width){
         if(width < 0) width = 0;
-        gaps.add(width);
+        gaps.add(Math.round(width * Zoomable.getInstance().density));
         super.addChild(component);
         return this;
     }
@@ -136,7 +137,7 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setSize(Integer width, Integer height) {
+    public PDFLinearLayout setSize(Float width, Float height) {
         super.setSize(width, height);
         return this;
     }

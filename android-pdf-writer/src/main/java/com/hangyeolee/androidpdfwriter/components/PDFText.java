@@ -14,6 +14,7 @@ import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Objects;
 
@@ -29,13 +30,15 @@ public class PDFText extends PDFComponent {
     public static final float DEFAULT_LINESPACING_ADDITION = 0.0f;
 
     String text = null;
-    Layout.Alignment align = null;
+    Layout.Alignment align = Layout.Alignment.ALIGN_NORMAL;
     StaticLayout layout = null;
 
     String lastText = null;
     TextPaint lastPaint = null;
     Layout.Alignment lastAlign = null;
     int lastWidth = 0;
+
+    int updatedHeight;
 
     @Override
     public void measure(float x, float y) {
@@ -70,12 +73,7 @@ public class PDFText extends PDFComponent {
                 lastAlign = align;
             }
 
-            if (buffer != null && !buffer.isRecycled()) {
-                buffer.recycle();
-                buffer = null;
-            }
-
-            int updatedHeight = layout.getHeight();
+            updatedHeight = layout.getHeight();
             /*
             상대 위치+updatedHeight 가 measureHeight 보다 크다면?
             상위 컴포넌트의 Height를 업데이트 한다.
@@ -84,29 +82,34 @@ public class PDFText extends PDFComponent {
                 updateHeight(updatedHeight - _height);
             }
             measureHeight = (int) (updatedHeight + border.size.top + padding.top + border.size.bottom + padding.bottom);
-
-            Bitmap origin = Bitmap.createBitmap(_width, updatedHeight, Bitmap.Config.ARGB_8888);
-            // 텍스트를 캔버스를 통해 비트맵에 그린다.
-            layout.draw(new Canvas(origin));
-            buffer = Bitmap.createBitmap(origin,
-                    0, 0,
-                    _width, updatedHeight);
-            origin.recycle();
-            layout = null;
         }
+    }
+
+    @Override
+    protected void createBuffer(){
+        buffer = Bitmap.createBitmap(lastWidth, updatedHeight, Bitmap.Config.ARGB_8888);
+        Canvas tmp = new Canvas(buffer);
+        // 텍스트를 캔버스를 통해 비트맵에 그린다.
+        layout.draw(tmp);
+        layout = null;
     }
 
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
+
+        createBuffer();
+
         canvas.drawBitmap(buffer,
                 measureX + border.size.left + padding.left,
                 measureY + border.size.top + padding.top,
                 bufferPaint);
+
+        deleteBuffer();
     }
 
     @Override
-    public PDFText setSize(Integer width, Integer height) {
+    public PDFText setSize(Float width, Float height) {
         super.setSize(width, height);
         return this;
     }
@@ -174,21 +177,34 @@ public class PDFText extends PDFComponent {
         if(paint == null){
             this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.bufferPaint.setTextSize(16);
+            this.bufferPaint.setTextSize(16 * Zoomable.getInstance().density);
         }else{
             lastPaint = (TextPaint) this.bufferPaint;
             this.bufferPaint = paint;
         }
+        this.bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG|TextPaint.LINEAR_TEXT_FLAG|TextPaint.ANTI_ALIAS_FLAG);
         return this;
     }
     public PDFText setTextColor(@ColorInt int color){
         if(bufferPaint == null){
             this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.bufferPaint.setTextSize(16);
+            this.bufferPaint.setTextSize(16 * Zoomable.getInstance().density);
         }
         lastPaint = (TextPaint) this.bufferPaint;
         this.bufferPaint.setColor(color);
+        this.bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG|TextPaint.LINEAR_TEXT_FLAG|TextPaint.ANTI_ALIAS_FLAG);
+        return this;
+    }
+    public PDFText setFontsize(float fontsize){
+        if(bufferPaint == null){
+            this.bufferPaint = new TextPaint();
+            this.align = Layout.Alignment.ALIGN_NORMAL;
+            this.bufferPaint.setTextSize(16 * Zoomable.getInstance().density);
+        }
+        lastPaint = (TextPaint) this.bufferPaint;
+        this.bufferPaint.setTextSize(fontsize);
+        this.bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG|TextPaint.LINEAR_TEXT_FLAG|TextPaint.ANTI_ALIAS_FLAG);
         return this;
     }
     public PDFText setTextAlign(@TextAlign.TextAlignInt int align){

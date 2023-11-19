@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
@@ -12,14 +13,16 @@ import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 public abstract class PDFComponent{
     PDFComponent parent = null;
 
+    // margin을 뺀 나머지 길이
     int width = 0;
     int height = 0;
     @ColorInt
-    int backgroundColor = Color.TRANSPARENT;
+    int backgroundColor = Color.WHITE;
     final Rect margin = new Rect(0,0,0,0);
     final Rect padding = new Rect(0,0,0,0);
     final Border border = new Border();
@@ -72,14 +75,14 @@ public abstract class PDFComponent{
         int gapX = 0;
         int gapY = 0;
 
-        int left = margin.left;
-        int top = margin.top;
-        int right = margin.right;
-        int bottom = margin.bottom;
+        float left = margin.left;
+        float top = margin.top;
+        float right = margin.right;
+        float bottom = margin.bottom;
         // Measure Width and Height
         if(parent == null){
-            measureWidth = width - left - right;
-            measureHeight = height - top - bottom;
+            measureWidth = width;
+            measureHeight = height;
         }
         else{
             // Get Max Width and Height from Parent
@@ -122,12 +125,15 @@ public abstract class PDFComponent{
      * @param width
      * @param height
      */
-    protected void force(Integer width, Integer height) {
+    protected void force(Integer width, Integer height, Rect forceMargin) {
         int max;
         int gap = 0;
         float d;
         if (width != null) {
-            max = (int) (width - margin.left - margin.right);
+            if(forceMargin == null)
+                max = (int) (width - margin.left - margin.right);
+            else
+                max = width;
             gap = max - measureWidth;
             // Measure X Anchor and Y Anchor
             d = Anchor.getDeltaPixel(anchor.horizontal, gap);
@@ -138,7 +144,10 @@ public abstract class PDFComponent{
             measureX = relativeX + margin.left + d;
         }
         if(height != null) {
-            max = (int) (height - margin.top - margin.bottom);
+            if(forceMargin == null)
+                max = (int) (height - margin.top - margin.bottom);
+            else
+                max = height;
             gap = max - measureHeight;
             // Measure X Anchor and Y Anchor
             d = Anchor.getDeltaPixel(anchor.vertical, gap);
@@ -155,6 +164,7 @@ public abstract class PDFComponent{
         Paint background = new Paint();
         background.setColor(backgroundColor);
         background.setStyle(Paint.Style.FILL);
+        background.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
         float left = relativeX + margin.left;
         float top = relativeY + margin.top;
         if (parent != null) {
@@ -182,16 +192,16 @@ public abstract class PDFComponent{
         int top = margin.top;
         int bottom = margin.bottom;
         if(parent == null){
-            measureHeight = height - top - bottom;
+            measureHeight = height;
         }
         else{
+            parent.updateHeight(heightGap);
             int maxH = (int) (parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - top - bottom);
             if(0 < height && height + relativeY <= maxH) measureHeight = height;
             else measureHeight = (int) (maxH - relativeY);
-            parent.updateHeight(heightGap);
         }
     }
 
@@ -219,11 +229,11 @@ public abstract class PDFComponent{
      * @param height 세로 크기
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setSize(Integer width, Integer height){
+    public PDFComponent setSize(Float width, Float height){
         if(width != null)
-            this.width = width;
+            this.width = Math.round(width * Zoomable.getInstance().density);
         if(height != null)
-            this.height = height;
+            this.height = Math.round(height * Zoomable.getInstance().density);
         return this;
     }
     /**
@@ -244,7 +254,12 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setMargin(Rect margin){
-        this.margin.set(margin);
+        this.margin.set(new Rect(
+                Math.round(margin.left * Zoomable.getInstance().density),
+                Math.round(margin.top * Zoomable.getInstance().density),
+                Math.round(margin.right * Zoomable.getInstance().density),
+                Math.round(margin.bottom * Zoomable.getInstance().density))
+        );
         return this;
     }
 
@@ -258,7 +273,12 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setMargin(int left, int top, int right, int bottom){
-        this.margin.set(left, top, right, bottom);
+        this.margin.set(
+                Math.round(left * Zoomable.getInstance().density),
+                Math.round(top * Zoomable.getInstance().density),
+                Math.round(right * Zoomable.getInstance().density),
+                Math.round(bottom * Zoomable.getInstance().density)
+        );
         return this;
     }
 
@@ -269,7 +289,12 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setPadding(Rect padding){
-        this.padding.set(padding);
+        this.padding.set(new Rect(
+                Math.round(padding.left * Zoomable.getInstance().density),
+                Math.round(padding.top * Zoomable.getInstance().density),
+                Math.round(padding.right * Zoomable.getInstance().density),
+                Math.round(padding.bottom * Zoomable.getInstance().density))
+        );
         return this;
     }
 
@@ -283,7 +308,12 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setPadding(int left, int top, int right, int bottom){
-        this.padding.set(left, top, right, bottom);
+        this.padding.set(
+                Math.round(left * Zoomable.getInstance().density),
+                Math.round(top * Zoomable.getInstance().density),
+                Math.round(right * Zoomable.getInstance().density),
+                Math.round(bottom * Zoomable.getInstance().density)
+        );
         return this;
     }
 
@@ -323,10 +353,17 @@ public abstract class PDFComponent{
         return this;
     }
 
+    protected void createBuffer(){}
+    protected void deleteBuffer(){
+        if(buffer != null && !buffer.isRecycled()) {
+            buffer.recycle();
+            buffer = null;
+        }
+    }
+
     @Override
     protected void finalize() throws Throwable {
-        if(buffer != null && !buffer.isRecycled())
-            buffer.recycle();
+        deleteBuffer();
         super.finalize();
     }
 }
