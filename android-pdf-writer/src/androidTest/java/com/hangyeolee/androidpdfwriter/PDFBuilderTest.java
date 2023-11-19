@@ -2,8 +2,7 @@ package com.hangyeolee.androidpdfwriter;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.Paint;
-import android.text.Layout;
+import android.os.Environment;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -11,7 +10,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
-import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
@@ -63,6 +61,6 @@ public class PDFBuilderTest {
     public void testSave() {
         builder.draw();
         System.out.println(builder.root.getTotalHeight());
-        builder.save(context, "Download/result.pdf");
+        builder.save(context,  "result.pdf");
     }
 }

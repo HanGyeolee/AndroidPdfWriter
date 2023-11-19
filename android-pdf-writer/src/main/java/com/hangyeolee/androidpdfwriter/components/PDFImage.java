@@ -3,7 +3,9 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.Rect;
+import android.text.TextPaint;
 
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -28,8 +30,17 @@ public class  PDFImage extends PDFComponent{
         measureX = relativeX + margin.left + dx;
         measureY = relativeY + margin.top + dy;
 
-        if(buffer != null && !buffer.isRecycled()) buffer.recycle();
+        /*
+        height 가 measureHeight 보다 크다면?
+        상위 컴포넌트의 Height를 업데이트 한다.
+        */
+        if (height > measureHeight) {
+            updateHeight(height - measureHeight);
+        }
+    }
 
+    @Override
+    protected void createBuffer(){
         float aspectRatio = 1;
         if(this.origin.getWidth() > 0)
             aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
@@ -49,21 +60,18 @@ public class  PDFImage extends PDFComponent{
                 fit = Fit.NONE;
             }
         }
-        /*
-        height 가 measureHeight 보다 크다면?
-        상위 컴포넌트의 Height를 업데이트 한다.
-        */
-        if (height > measureHeight) {
-            updateHeight(height - measureHeight);
-        }
         buffer = Bitmap.createBitmap(measureWidth, measureHeight, Bitmap.Config.ARGB_8888);
         Canvas transparentCanvas = new Canvas(buffer);
-        transparentCanvas.drawColor(Color.TRANSPARENT);
+        transparentCanvas.drawColor(Color.WHITE);
+
+        Canvas canvas;
+        Rect src,dst;
 
         switch (fit) {
             case Fit.FILL:
-                buffer = Bitmap.createScaledBitmap(origin,
-                        measureWidth, measureHeight, false);
+                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
+                dst = new Rect(0, 0, measureWidth, measureHeight);
+                transparentCanvas.drawBitmap(origin, src, dst, bufferPaint);
                 break;
             case Fit.CONTAIN:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
@@ -78,10 +86,17 @@ public class  PDFImage extends PDFComponent{
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
-                scaled = Bitmap.createScaledBitmap(origin,
-                        resizeW, resizeH, false);
+
+                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
+                dst = new Rect(0, 0, resizeW, resizeH);
+
+                scaled = Bitmap.createBitmap( resizeW, resizeH, Bitmap.Config.ARGB_8888);
+
+                canvas = new Canvas(scaled);
+                canvas.drawBitmap(origin, src, dst, bufferPaint);
+
                 transparentCanvas.drawBitmap(scaled,
-                        (int)gapX, (int)gapY, null);
+                        (int)gapX, (int)gapY, bufferPaint);
                 scaled.recycle();
                 break;
             case Fit.COVER:
@@ -97,10 +112,16 @@ public class  PDFImage extends PDFComponent{
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
-                scaled = Bitmap.createScaledBitmap(origin,
-                        resizeW, resizeH, false);
+
+                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
+                dst = new Rect(0, 0, resizeW, resizeH);
+
+                scaled = Bitmap.createBitmap(resizeW, resizeH, Bitmap.Config.ARGB_8888);
+                canvas = new Canvas(scaled);
+                canvas.drawBitmap(origin, src, dst, bufferPaint);
+
                 transparentCanvas.drawBitmap(scaled,
-                        (int)gapX, (int)gapY, null);
+                        (int)gapX, (int)gapY, bufferPaint);
                 scaled.recycle();
                 break;
             case Fit.NONE:
@@ -110,7 +131,7 @@ public class  PDFImage extends PDFComponent{
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 transparentCanvas.drawBitmap(origin,
-                        (int)-gapX, (int)-gapY, null);
+                        (int)-gapX, (int)-gapY, bufferPaint);
                 break;
             case Fit.SCALE_DOWN:
                 break;
@@ -120,13 +141,18 @@ public class  PDFImage extends PDFComponent{
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
+
+        createBuffer();
+
         canvas.drawBitmap(buffer,
                 measureX + border.size.left + padding.left,
                 measureY + border.size.top + padding.top, bufferPaint);
+
+        deleteBuffer();
     }
 
     @Override
-    public PDFImage setSize(Integer width, Integer height) {
+    public PDFImage setSize(Float width, Float height) {
         super.setSize(width, height);
         return this;
     }
@@ -179,9 +205,13 @@ public class  PDFImage extends PDFComponent{
     }
 
     public PDFImage(Bitmap bitmap){
+        bufferPaint = new Paint();
+        bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
         setImage(bitmap);
     }
     public PDFImage(Bitmap bitmap, @Fit.FitInt int fit){
+        bufferPaint = new Paint();
+        bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
         setImage(bitmap).setFit(fit);
     }
 

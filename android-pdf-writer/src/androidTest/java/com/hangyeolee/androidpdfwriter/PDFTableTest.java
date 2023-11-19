@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.os.Environment;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -14,6 +15,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.components.PDFTableLayout;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
+import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
@@ -39,10 +41,10 @@ public class PDFTableTest {
         InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(com.hangyeolee.androidpdfwriter.test.R.drawable.test);
         Bitmap b = BitmapFactory.decodeStream(stream);
 
-        int a4X = 595;
-        int a4Y = 842;
+        float a4X = 595.3f;
+        float a4Y = 841.9f;
         builder = new PDFBuilder<>(a4X, a4Y);
-        builder.setPagePadding(30, 30);
+        builder.setDPI(DPI.M3).setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()
                     .setOrientation(Orientation.Column)
@@ -80,7 +82,7 @@ public class PDFTableTest {
                                     .setBackgroundColor(Color.RED)
                                     .setAnchor(Anchor.Start, null)
                                     .setFit(Fit.FILL)
-                                    .setSize(null, 200))
+                                    .setSize(null, 200.0f))
                             .addChild(2, 4, PDFH3.build("이미지랑 비교")
                                     .setTextColor(Color.BLACK)
                                     .setTextAlign(TextAlign.Center))
@@ -88,7 +90,7 @@ public class PDFTableTest {
                                     .setBackgroundColor(Color.RED)
                                     .setAnchor(Anchor.Start, null)
                                     .setFit(Fit.FILL)
-                                    .setSize(null, 200))
+                                    .setSize(null, 200.0f))
                             .addChild(0, 11, PDFH3.build("030"))
                             .addChild(1, 11, PDFH3.build("김철수")
                                     .setBackgroundColor(Color.YELLOW)
@@ -106,6 +108,6 @@ public class PDFTableTest {
     public void testTableSave() {
         builder.draw();
         System.out.println(builder.root.getTotalHeight());
-        builder.save(context, "Download/result.pdf");
+        builder.save(context, "result.pdf");
     }
 }

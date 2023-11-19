@@ -8,6 +8,7 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.util.ArrayList;
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 public class PDFTableLayout extends PDFLayout{
     int rows, columns;
@@ -25,7 +26,7 @@ public class PDFTableLayout extends PDFLayout{
         child = new ArrayList<>(length);
         gaps = new int[rows];
         for(int i = 0; i < length; i++){
-            child.add(new PDFEmpty());
+            child.add(PDFEmpty.build().setParent(this));
         }
     }
 
@@ -82,10 +83,10 @@ public class PDFTableLayout extends PDFLayout{
                 child.get(index).width = gapWidth;
                 child.get(index).height = maxHeight;
                 child.get(index).measure(totalWidth, totalHeight);
-                child.get(index).force(gapWidth, maxHeight);
+                child.get(index).force(gapWidth, maxHeight, childMargin);
                 totalWidth += gapWidth + childMargin.left + childMargin.right;
             }
-            totalHeight += maxHeight;
+            totalHeight += maxHeight + childMargin.top + childMargin.bottom;
         }
     }
 
@@ -107,7 +108,7 @@ public class PDFTableLayout extends PDFLayout{
     public PDFTableLayout setChildWidth(int xIndex, int width){
         if(width < 0) width = 0;
         if(xIndex < gaps.length)
-            gaps[xIndex] = width;
+            gaps[xIndex] = Math.round(width * Zoomable.getInstance().density);
         return this;
     }
 
@@ -136,7 +137,7 @@ public class PDFTableLayout extends PDFLayout{
     }
 
     @Override
-    public PDFTableLayout setSize(Integer width, Integer height) {
+    public PDFTableLayout setSize(Float width, Float height) {
         super.setSize(width, height);
         return this;
     }

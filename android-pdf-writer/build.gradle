@@ -4,21 +4,43 @@ plugins {
     id 'signing'
 }
 
+ext {
+    PUBLISH_GROUP_ID = 'io.github.hangyeolee'
+    PUBLISH_VERSION = '0.0.2'
+    PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
+    PUBLISH_DESCRIPTION = 'PDF Writer Android Library'
+    PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
+    PUBLISH_LICENSE_NAME = 'Apache License'
+    PUBLISH_LICENSE_URL =
+            'https://github.com/hangyeolee/AndroidPdfWriter/blob/main/LICENSE'
+    PUBLISH_DEVELOPER_ID = 'hangoil65'
+    PUBLISH_DEVELOPER_NAME = 'Han-Gyeol Choi'
+    PUBLISH_DEVELOPER_EMAIL = 'hangoil65@gmail.com'
+    PUBLISH_SCM_CONNECTION =
+            'scm:git:github.com/hangyeolee/AndroidPdfWriter.git'
+    PUBLISH_SCM_DEVELOPER_CONNECTION =
+            'scm:git:ssh://github.com:hangyeolee/AndroidPdfWriter.git'
+    PUBLISH_SCM_URL =
+            'https://github.com/hangyeolee/AndroidPdfWriter/tree/main'
+}
+
 android {
-    //compileSdk 29
-    compileSdkVersion 29
+    compileSdk 29
+    //compileSdkVersion 29
 
     defaultConfig {
         namespace "com.hangyeolee.androidpdfwriter"
-        minSdk 19
+        minSdkVersion 14
         targetSdk 32
-        versionCode 1
-        versionName '0.0.1'
+        versionCode 2
+        versionName PUBLISH_VERSION
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aarMetadata{
             minCompileSdk = 29
         }
+
+        buildConfigField "String", "PUBLISH_VERSION", "\""+PUBLISH_VERSION+"\""
     }
 
     buildTypes {
@@ -43,31 +65,11 @@ android {
 dependencies {
     implementation 'androidx.annotation:annotation:1.0.0'
     implementation 'org.jetbrains:annotations:15.0'
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'junit:junit:1.0.0'
 
     androidTestImplementation "androidx.test.ext:junit:1.1.5"
     androidTestImplementation 'androidx.test:runner:1.1.0'
     androidTestImplementation 'androidx.test:rules:1.1.0'
-}
-
-ext {
-    PUBLISH_GROUP_ID = 'io.github.hangyeolee'
-    PUBLISH_VERSION = '0.0.1'
-    PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
-    PUBLISH_DESCRIPTION = 'PDF Writer Android Library'
-    PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
-    PUBLISH_LICENSE_NAME = 'Apache License'
-    PUBLISH_LICENSE_URL =
-            'https://github.com/hangyeolee/AndroidPdfWriter/blob/main/LICENSE'
-    PUBLISH_DEVELOPER_ID = 'hangoil65'
-    PUBLISH_DEVELOPER_NAME = 'Han-Gyeol Choi'
-    PUBLISH_DEVELOPER_EMAIL = 'hangoil65@gmail.com'
-    PUBLISH_SCM_CONNECTION =
-            'scm:git:github.com/hangyeolee/AndroidPdfWriter.git'
-    PUBLISH_SCM_DEVELOPER_CONNECTION =
-            'scm:git:ssh://github.com:hangyeolee/AndroidPdfWriter.git'
-    PUBLISH_SCM_URL =
-            'https://github.com/hangyeolee/AndroidPdfWriter/tree/main'
 }
 
 apply from: "${rootDir}/scripts/publish-remote.gradle"
