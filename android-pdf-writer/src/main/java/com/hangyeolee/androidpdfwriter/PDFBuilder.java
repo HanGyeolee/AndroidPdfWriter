@@ -14,6 +14,7 @@ import android.provider.MediaStore;
 import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.utils.DPI;
+import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.File;
@@ -24,20 +25,25 @@ import java.io.OutputStream;
 public class PDFBuilder<T extends PDFLayout> {
     int quality = 60;
     BinaryPage page;
-    float pageWidth, pageHeight;
+    Paper pageSize;
     RectF contentRect;
     public T root = null;
 
-    public PDFBuilder(float pageWidth, float pageHeight){
-        this.pageWidth = pageWidth;
-        this.pageHeight = pageHeight;
-        contentRect = new RectF(0, 0, pageWidth, pageHeight);
+    public PDFBuilder(Paper pageSize){
+        this.pageSize = pageSize;
+        contentRect = new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight());
+        setDPI(DPI.M5);
+    }
+    public PDFBuilder(float width, float height){
+        this.pageSize = Paper.A0;
+        this.pageSize.setCustom(width, height);
+        contentRect = new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight());
         setDPI(DPI.M5);
     }
 
     public PDFBuilder<T> setPagePadding(float vertical, float horizontal){
         this.contentRect.set(horizontal, vertical,
-                this.pageWidth - horizontal, this.pageHeight - vertical);
+                this.pageSize.getWidth() - horizontal, this.pageSize.getHeight() - vertical);
         return this;
     }
 

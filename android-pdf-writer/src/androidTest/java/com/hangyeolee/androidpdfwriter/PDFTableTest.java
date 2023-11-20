@@ -15,6 +15,7 @@ import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
+import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
@@ -38,9 +39,7 @@ public class PDFTableTest {
         InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(com.hangyeolee.androidpdfwriter.test.R.drawable.test);
         Bitmap b = BitmapFactory.decodeStream(stream);
 
-        float a4X = 595.3f;
-        float a4Y = 841.9f;
-        builder = new PDFBuilder<>(a4X, a4Y);
+        builder = new PDFBuilder<>(Paper.A4);
         builder.setDPI(DPI.Standard).setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()

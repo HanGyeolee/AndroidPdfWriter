@@ -11,6 +11,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
+import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
@@ -26,9 +27,7 @@ public class PDFBuilderTest {
     public void setUp(){
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        int a4X = 595;
-        int a4Y = 842;
-        builder = new PDFBuilder<>(a4X, a4Y);
+        builder = new PDFBuilder<>(Paper.A4);
         builder.root = PDFLinearLayout.build()
                 .setOrientation(Orientation.Column)
                 .setPadding(10,10,10,10)
