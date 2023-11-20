@@ -135,6 +135,30 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
+    public PDFText setMargin(int all) {
+        super.setMargin(all);
+        return this;
+    }
+
+    @Override
+    public PDFText setMargin(int horizontal, int vertical) {
+        super.setMargin(horizontal, vertical);
+        return this;
+    }
+
+    @Override
+    public PDFText setPadding(int all) {
+        super.setPadding(all);
+        return this;
+    }
+
+    @Override
+    public PDFText setPadding(int horizontal, int vertical) {
+        super.setPadding(horizontal, vertical);
+        return this;
+    }
+
+    @Override
     public PDFText setPadding(Rect padding) {
         super.setPadding(padding);
         return this;
@@ -179,7 +203,7 @@ public class PDFText extends PDFComponent {
         if(paint == null){
             this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.bufferPaint.setTextSize(16 * Zoomable.getInstance().density);
+            this.bufferPaint.setTextSize(16f * Zoomable.getInstance().density);
         }else{
             lastPaint = (TextPaint) this.bufferPaint;
             this.bufferPaint = paint;
@@ -188,25 +212,13 @@ public class PDFText extends PDFComponent {
         return this;
     }
     public PDFText setTextColor(@ColorInt int color){
-        if(bufferPaint == null){
-            this.bufferPaint = new TextPaint();
-            this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.bufferPaint.setTextSize(16 * Zoomable.getInstance().density);
-        }
-        lastPaint = (TextPaint) this.bufferPaint;
+        setTextPaint((TextPaint) bufferPaint);
         this.bufferPaint.setColor(color);
-        this.bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG|TextPaint.LINEAR_TEXT_FLAG|TextPaint.ANTI_ALIAS_FLAG);
         return this;
     }
     public PDFText setFontsize(float fontsize){
-        if(bufferPaint == null){
-            this.bufferPaint = new TextPaint();
-            this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.bufferPaint.setTextSize(16 * Zoomable.getInstance().density);
-        }
-        lastPaint = (TextPaint) this.bufferPaint;
+        setTextPaint((TextPaint) bufferPaint);
         this.bufferPaint.setTextSize(fontsize);
-        this.bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG|TextPaint.LINEAR_TEXT_FLAG|TextPaint.ANTI_ALIAS_FLAG);
         return this;
     }
     public PDFText setTextAlign(@TextAlign.TextAlignInt int align){

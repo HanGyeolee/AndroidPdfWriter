@@ -277,13 +277,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setMargin(int all){
-        this.margin.set(
-                Math.round(all * Zoomable.getInstance().density),
-                Math.round(all * Zoomable.getInstance().density),
-                Math.round(all * Zoomable.getInstance().density),
-                Math.round(all * Zoomable.getInstance().density)
-        );
-        return this;
+        return setMargin(all, all, all, all);
     }
 
     /**
@@ -294,13 +288,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setMargin(int horizontal, int vertical){
-        this.margin.set(
-                Math.round(horizontal * Zoomable.getInstance().density),
-                Math.round(vertical * Zoomable.getInstance().density),
-                Math.round(horizontal * Zoomable.getInstance().density),
-                Math.round(vertical * Zoomable.getInstance().density)
-        );
-        return this;
+        return setMargin(horizontal, vertical, horizontal, vertical);
     }
 
     /**

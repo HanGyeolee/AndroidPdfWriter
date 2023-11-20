@@ -162,6 +162,30 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
+    public PDFLinearLayout setMargin(int all) {
+        super.setMargin(all);
+        return this;
+    }
+
+    @Override
+    public PDFLinearLayout setMargin(int horizontal, int vertical) {
+        super.setMargin(horizontal, vertical);
+        return this;
+    }
+
+    @Override
+    public PDFLinearLayout setPadding(int all) {
+        super.setPadding(all);
+        return this;
+    }
+
+    @Override
+    public PDFLinearLayout setPadding(int horizontal, int vertical) {
+        super.setPadding(horizontal, vertical);
+        return this;
+    }
+
+    @Override
     public PDFLinearLayout setPadding(Rect padding) {
         super.setPadding(padding);
         return this;

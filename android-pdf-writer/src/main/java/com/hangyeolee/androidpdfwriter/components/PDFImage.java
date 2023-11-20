@@ -184,6 +184,30 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
+    public PDFImage setMargin(int all) {
+        super.setMargin(all);
+        return this;
+    }
+
+    @Override
+    public PDFImage setMargin(int horizontal, int vertical) {
+        super.setMargin(horizontal, vertical);
+        return this;
+    }
+
+    @Override
+    public PDFImage setPadding(int all) {
+        super.setPadding(all);
+        return this;
+    }
+
+    @Override
+    public PDFImage setPadding(int horizontal, int vertical) {
+        super.setPadding(horizontal, vertical);
+        return this;
+    }
+
+    @Override
     public PDFImage setPadding(Rect padding) {
         super.setPadding(padding);
         return this;

@@ -195,6 +195,35 @@ public class PDFGridLayout extends PDFLayout{
         return this;
     }
 
+
+    public PDFGridLayout setChildMargin(Rect margin) {
+        this.childMargin.set(new Rect(
+                Math.round(margin.left * Zoomable.getInstance().density),
+                Math.round(margin.top * Zoomable.getInstance().density),
+                Math.round(margin.right * Zoomable.getInstance().density),
+                Math.round(margin.bottom * Zoomable.getInstance().density))
+        );
+        return this;
+    }
+
+    public PDFGridLayout setChildMargin(int left, int top, int right, int bottom) {
+        this.childMargin.set(
+                Math.round(left * Zoomable.getInstance().density),
+                Math.round(top * Zoomable.getInstance().density),
+                Math.round(right * Zoomable.getInstance().density),
+                Math.round(bottom * Zoomable.getInstance().density)
+        );
+        return this;
+    }
+
+    public PDFGridLayout setChildMargin(int all) {
+        return setChildMargin(all, all, all, all);
+    }
+
+    public PDFGridLayout setChildMargin(int horizontal, int vertical) {
+        return setChildMargin(horizontal, vertical, horizontal, vertical);
+    }
+
     @Override
     @Deprecated
     public PDFGridLayout addChild(PDFComponent component) throws TableCellHaveNotIndexException {
@@ -251,14 +280,33 @@ public class PDFGridLayout extends PDFLayout{
         return this;
     }
 
-    public PDFGridLayout setChildMargin(Rect margin) {
-        this.childMargin.set(margin);
+    @Override
+    public PDFGridLayout setMargin(int left, int top, int right, int bottom) {
+        super.setMargin(left, top, right, bottom);
         return this;
     }
 
     @Override
-    public PDFGridLayout setMargin(int left, int top, int right, int bottom) {
-        super.setMargin(left, top, right, bottom);
+    public PDFGridLayout setMargin(int all) {
+        super.setMargin(all);
+        return this;
+    }
+
+    @Override
+    public PDFGridLayout setMargin(int horizontal, int vertical) {
+        super.setMargin(horizontal, vertical);
+        return this;
+    }
+
+    @Override
+    public PDFGridLayout setPadding(int all) {
+        super.setPadding(all);
+        return this;
+    }
+
+    @Override
+    public PDFGridLayout setPadding(int horizontal, int vertical) {
+        super.setPadding(horizontal, vertical);
         return this;
     }
 
