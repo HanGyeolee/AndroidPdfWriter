@@ -42,7 +42,6 @@ public class PDFBuilder<T extends PDFLayout> {
 
     public PDFBuilder<T> setDPI(int dpi){
         Zoomable.getInstance().density = (dpi / 72.0f);
-        System.out.println(Zoomable.getInstance().density);
         return this;
     }
 

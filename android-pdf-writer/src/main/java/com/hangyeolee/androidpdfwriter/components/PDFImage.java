@@ -30,12 +30,16 @@ public class  PDFImage extends PDFComponent{
         measureX = relativeX + margin.left + dx;
         measureY = relativeY + margin.top + dy;
 
+        int _height = (int) (measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom);
         /*
         height 가 measureHeight 보다 크다면?
         상위 컴포넌트의 Height를 업데이트 한다.
         */
-        if (height > measureHeight) {
-            updateHeight(height - measureHeight);
+        while (height > _height) {
+            updateHeight(height - _height);
+            _height = (int) (measureHeight - border.size.top - padding.top
+                    - border.size.bottom - padding.bottom);
         }
     }
 
@@ -45,24 +49,29 @@ public class  PDFImage extends PDFComponent{
         if(this.origin.getWidth() > 0)
             aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
 
-        int resizeW = measureWidth;
-        int resizeH = measureHeight;
+        int _width = (int) (measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right);
+        int _height = (int) (measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom);
+
+        int resizeW = _width;
+        int resizeH = _height;
         float gapX;
         float gapY;
         Bitmap scaled;
         if (fit == Fit.SCALE_DOWN){
             fit = Fit.CONTAIN;
             if (this.origin.getWidth() > this.origin.getHeight()) {
-                if(resizeW > this.origin.getWidth()){
+                if(_width > this.origin.getWidth()){
                     fit = Fit.NONE;
                 }
-            } else if(resizeH > this.origin.getHeight()){
+            } else if(_height > this.origin.getHeight()){
                 fit = Fit.NONE;
             }
         }
-        buffer = Bitmap.createBitmap(measureWidth, measureHeight, Bitmap.Config.ARGB_8888);
+        buffer = Bitmap.createBitmap(_width, _height, Bitmap.Config.ARGB_8888);
         Canvas transparentCanvas = new Canvas(buffer);
-        transparentCanvas.drawColor(Color.WHITE);
+        transparentCanvas.drawColor(Color.TRANSPARENT);
 
         Canvas canvas;
         Rect src,dst;
@@ -70,17 +79,17 @@ public class  PDFImage extends PDFComponent{
         switch (fit) {
             case Fit.FILL:
                 src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
-                dst = new Rect(0, 0, measureWidth, measureHeight);
+                dst = new Rect(0, 0, _width, _height);
                 transparentCanvas.drawBitmap(origin, src, dst, bufferPaint);
                 break;
-            case Fit.CONTAIN:
+            case Fit.COVER:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
-                    resizeH = (int) (resizeW * aspectRatio);
+                    resizeH = (int) (_width * aspectRatio);
                     gapX = 0;
-                    gapY = (measureHeight - resizeH);
+                    gapY = (_height - resizeH);
                 } else {
-                    resizeW = (int) (resizeH / aspectRatio);
-                    gapX = (measureWidth - resizeW);
+                    resizeW = (int) (_height / aspectRatio);
+                    gapX = (_width - resizeW);
                     gapY = 0;
                 }
                 // Measure X Anchor and Y Anchor
@@ -99,15 +108,15 @@ public class  PDFImage extends PDFComponent{
                         (int)gapX, (int)gapY, bufferPaint);
                 scaled.recycle();
                 break;
-            case Fit.COVER:
+            case Fit.CONTAIN:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
-                    resizeW = (int) (measureHeight / aspectRatio);
-                    gapX = (measureWidth - resizeW);
+                    resizeW = (int) (_height / aspectRatio);
+                    gapX = (_width - resizeW);
                     gapY = 0;
                 } else {
-                    resizeH = (int) (measureWidth * aspectRatio);
+                    resizeH = (int) (_width * aspectRatio);
                     gapX = 0;
-                    gapY = (measureHeight - resizeH);
+                    gapY = (_height - resizeH);
                 }
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
@@ -125,8 +134,8 @@ public class  PDFImage extends PDFComponent{
                 scaled.recycle();
                 break;
             case Fit.NONE:
-                gapX = (this.origin.getWidth() - measureWidth);
-                gapY = (this.origin.getHeight() - measureHeight);
+                gapX = (this.origin.getWidth() - _width);
+                gapY = (this.origin.getHeight() - _height);
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
@@ -193,8 +202,8 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
-    public PDFImage setAnchor(Integer vertical, Integer horizontal) {
-        super.setAnchor(vertical, horizontal);
+    public PDFImage setAnchor(Integer horizontal, Integer vertical) {
+        super.setAnchor(horizontal, vertical);
         return this;
     }
 

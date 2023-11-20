@@ -24,7 +24,7 @@ public class PDFLinearLayout extends PDFLayout {
         super();
         child = new ArrayList<>(length);
         for(int i = 0; i < length; i++){
-            child.add(null);
+            child.add(PDFEmpty.build().setParent(this));
         }
     }
 
@@ -40,9 +40,10 @@ public class PDFLinearLayout extends PDFLayout {
         switch (orientation){
             case Orientation.Column:
                 for(i = 0; i < child.size(); i++){
+                    child.get(i).width = lastWidth - child.get(i).margin.left - child.get(i).margin.right;
                     child.get(i).measure(0,totalAxis);
                     gap = child.get(i).getTotalHeight();
-                    child.get(i).force(lastWidth ,null, null);
+                    child.get(i).force(lastWidth ,gap, null);
                     totalAxis += gap;
                 }
                 break;
@@ -179,8 +180,8 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setAnchor(Integer vertical, Integer horizontal) {
-        super.setAnchor(vertical, horizontal);
+    public PDFLinearLayout setAnchor(Integer horizontal, Integer vertical) {
+        super.setAnchor(horizontal, vertical);
         return this;
     }
     @Override

@@ -4,16 +4,13 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.os.Environment;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
-import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
-import com.hangyeolee.androidpdfwriter.components.PDFTableLayout;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
@@ -44,15 +41,19 @@ public class PDFTableTest {
         float a4X = 595.3f;
         float a4Y = 841.9f;
         builder = new PDFBuilder<>(a4X, a4Y);
-        builder.setDPI(DPI.M3).setPagePadding(30, 30);
+        builder.setDPI(DPI.Standard).setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()
                     .setOrientation(Orientation.Column)
+                    .setMargin(20, 20, 20, 20)
                     .setPadding(10, 10, 10, 10)
                     .setBackgroundColor(Color.BLUE)
+                    .addChild(PDFImage.build(b)
+                            .setSize(null, 200f).setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("제목")
-                            .setBackgroundColor(Color.WHITE)
+                            .setBackgroundColor(Color.RED)
                             .setTextAlign(TextAlign.Center))
+                    /*
                     .addChild(PDFTableLayout.build(3, 12)
                             .setMargin(10, 10, 10, 10)
                             .setBackgroundColor(Color.WHITE)
@@ -100,7 +101,9 @@ public class PDFTableTest {
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
                                     .setTextAlign(TextAlign.Center))
-                    );
+                    )
+            //*/
+            ;
         }
     }
 

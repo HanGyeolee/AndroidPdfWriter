@@ -43,11 +43,8 @@ public class PDFText extends PDFComponent {
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-
         int _width = (int) (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
-        int _height = (int) (measureHeight - border.size.top - padding.top
-                - border.size.bottom - padding.bottom);
 
         if(text != null) {
             if(layout == null || bufferPaint != lastPaint ||
@@ -74,14 +71,19 @@ public class PDFText extends PDFComponent {
             }
 
             updatedHeight = layout.getHeight();
+            height = (int) (updatedHeight + border.size.top + padding.top
+                                + border.size.bottom + padding.bottom);
+            int _height = (int) (measureHeight - border.size.top - padding.top
+                    - border.size.bottom - padding.bottom);
             /*
-            상대 위치+updatedHeight 가 measureHeight 보다 크다면?
+            updatedHeight 가 measureHeight 보다 크다면?
             상위 컴포넌트의 Height를 업데이트 한다.
             */
-            if (updatedHeight > _height) {
+            while (updatedHeight > _height) {
                 updateHeight(updatedHeight - _height);
+                _height = (int) (measureHeight - border.size.top - padding.top
+                        - border.size.bottom - padding.bottom);
             }
-            measureHeight = (int) (updatedHeight + border.size.top + padding.top + border.size.bottom + padding.bottom);
         }
     }
 
@@ -151,8 +153,8 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
-    public PDFText setAnchor(Integer vertical, Integer horizontal) {
-        super.setAnchor(vertical, horizontal);
+    public PDFText setAnchor(Integer horizontal, Integer vertical) {
+        super.setAnchor(horizontal, vertical);
         return this;
     }
 

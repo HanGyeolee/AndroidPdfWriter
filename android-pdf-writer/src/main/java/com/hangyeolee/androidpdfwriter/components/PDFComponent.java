@@ -75,14 +75,14 @@ public abstract class PDFComponent{
         int gapX = 0;
         int gapY = 0;
 
-        float left = margin.left;
-        float top = margin.top;
-        float right = margin.right;
-        float bottom = margin.bottom;
+        int left = margin.left;
+        int top = margin.top;
+        int right = margin.right;
+        int bottom = margin.bottom;
         // Measure Width and Height
         if(parent == null){
-            measureWidth = width;
-            measureHeight = height;
+            measureWidth = (width - left - right);
+            measureHeight = (height - top - bottom);
         }
         else{
             // Get Max Width and Height from Parent
@@ -131,7 +131,7 @@ public abstract class PDFComponent{
         float d;
         if (width != null) {
             if(forceMargin == null)
-                max = (int) (width - margin.left - margin.right);
+                max = (width - margin.left - margin.right);
             else
                 max = width;
             gap = max - measureWidth;
@@ -145,7 +145,7 @@ public abstract class PDFComponent{
         }
         if(height != null) {
             if(forceMargin == null)
-                max = (int) (height - margin.top - margin.bottom);
+                max = (height - margin.top - margin.bottom);
             else
                 max = height;
             gap = max - measureHeight;
@@ -187,16 +187,19 @@ public abstract class PDFComponent{
      * @param heightGap
      */
     protected void updateHeight(float heightGap){
-        height += heightGap;
-
         int top = margin.top;
         int bottom = margin.bottom;
         if(parent == null){
-            measureHeight = height;
+            height += heightGap;
+            measureHeight = (height - top - bottom);
         }
         else{
             parent.updateHeight(heightGap);
             int maxH = (int) (parent.measureHeight
+                    - parent.border.size.top - parent.border.size.bottom
+                    - parent.padding.top - parent.padding.bottom
+                    - top - bottom);
+            maxH = (int) (parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - top - bottom);
@@ -230,10 +233,14 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setSize(Float width, Float height){
-        if(width != null)
+        if(width != null){
+            if(width < 0) width = 0f;
             this.width = Math.round(width * Zoomable.getInstance().density);
-        if(height != null)
+        }
+        if(height != null){
+            if(height < 0) height = 0f;
             this.height = Math.round(height * Zoomable.getInstance().density);
+        }
         return this;
     }
     /**
@@ -259,6 +266,39 @@ public abstract class PDFComponent{
                 Math.round(margin.top * Zoomable.getInstance().density),
                 Math.round(margin.right * Zoomable.getInstance().density),
                 Math.round(margin.bottom * Zoomable.getInstance().density))
+        );
+        return this;
+    }
+
+    /**
+     * 컴포넌트 밖의 여백 설정<br>
+     * Setting margins outside of components
+     * @param all 여백
+     * @return 컴포넌트 자기자신
+     */
+    public PDFComponent setMargin(int all){
+        this.margin.set(
+                Math.round(all * Zoomable.getInstance().density),
+                Math.round(all * Zoomable.getInstance().density),
+                Math.round(all * Zoomable.getInstance().density),
+                Math.round(all * Zoomable.getInstance().density)
+        );
+        return this;
+    }
+
+    /**
+     * 컴포넌트 밖의 여백 설정<br>
+     * Setting margins outside of components
+     * @param horizontal 가로 여백
+     * @param vertical 세로 여백
+     * @return 컴포넌트 자기자신
+     */
+    public PDFComponent setMargin(int horizontal, int vertical){
+        this.margin.set(
+                Math.round(horizontal * Zoomable.getInstance().density),
+                Math.round(vertical * Zoomable.getInstance().density),
+                Math.round(horizontal * Zoomable.getInstance().density),
+                Math.round(vertical * Zoomable.getInstance().density)
         );
         return this;
     }
@@ -301,6 +341,39 @@ public abstract class PDFComponent{
     /**
      * 컴포넌트 내의 내용(content)과 테두리(border) 사이의 간격 설정<br>
      * Setting the interval between content and border within a component
+     * @param all 패딩
+     * @return 컴포넌트 자기자신
+     */
+    public PDFComponent setPadding(int all){
+        this.padding.set(
+                Math.round(all * Zoomable.getInstance().density),
+                Math.round(all * Zoomable.getInstance().density),
+                Math.round(all * Zoomable.getInstance().density),
+                Math.round(all * Zoomable.getInstance().density)
+        );
+        return this;
+    }
+
+    /**
+     * 컴포넌트 내의 내용(content)과 테두리(border) 사이의 간격 설정<br>
+     * Setting the interval between content and border within a component
+     * @param horizontal 가로 패딩
+     * @param vertical 세로 패딩
+     * @return 컴포넌트 자기자신
+     */
+    public PDFComponent setPadding(int horizontal, int vertical){
+        this.padding.set(
+                Math.round(horizontal * Zoomable.getInstance().density),
+                Math.round(vertical * Zoomable.getInstance().density),
+                Math.round(horizontal * Zoomable.getInstance().density),
+                Math.round(vertical * Zoomable.getInstance().density)
+        );
+        return this;
+    }
+
+    /**
+     * 컴포넌트 내의 내용(content)과 테두리(border) 사이의 간격 설정<br>
+     * Setting the interval between content and border within a component
      * @param left 왼쪽 패딩
      * @param top 위쪽 패딩
      * @param right 오른쪽 패딩
@@ -334,7 +407,7 @@ public abstract class PDFComponent{
      * @param horizontal 가로 고정점
      * @return 자기자신
      */
-    public PDFComponent setAnchor(@Anchor.AnchorInt Integer vertical, @Anchor.AnchorInt Integer horizontal){
+    public PDFComponent setAnchor(@Anchor.AnchorInt Integer horizontal, @Anchor.AnchorInt Integer vertical){
         if(vertical != null)
             anchor.vertical = vertical;
         if(horizontal != null)
