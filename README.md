@@ -34,16 +34,11 @@ dependencies {
 ``` Java
 // Generics specify the format of the root layout.
 // The parameters of the PDF Builder are horizontal and vertical lengths based on 72 dpi.
-// A4 paper width:595.3f length:841.9f
+// A4 paper width:595.3px length:841.9px
 PDFBuilder<PDFLinearLayout> builder = new PDFBuilder<>(595.3f, 841.9f);
 
-/*
-// set PDF page dpi with D2, Standard, M2, M3, ... etc
-builder.setDPI(DPI.M3);
 // set PDF page padding, vertical and horizontal
 builder.setPagePadding(30, 30);
-//*/
-builder.setDPI(DPI.M3).setPagePadding(30, 30);
 ```
 
 #### this is test pdf page:
@@ -55,7 +50,7 @@ builder.root = PDFLinearLayout.build()
         .addChild(PDFH1.build("제목")
                 .setBackgroundColor(Color.WHITE)
                 .setTextAlign(TextAlign.Center))
-        .addChild(PDFTableLayout.build(3, 6)
+        .addChild(PDFGridLayout.build(3, 6)
                 .setMargin(10, 10, 10, 10)
                 .setBackgroundColor(Color.WHITE)
                 .setBorder(border -> border
@@ -89,7 +84,7 @@ builder.root = PDFLinearLayout.build()
                         .setTextColor(Color.BLACK)
                         .setTextAlign(TextAlign.Center))
                 .addChild(0, 5, PDFH3.build(
-                "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다.")
+                "아주아주아주 긴 내용입니다. 이 내용에 따라서 Grid 레이아웃의 세로 높이는 동일하게 늘어납니다.")
                         .setBackgroundColor(Color.BLACK)
                         .setTextColor(Color.WHITE)
                         .setTextAlign(TextAlign.Center))
@@ -109,11 +104,19 @@ builder.save(context, "result.pdf");
 ![PDF File looks like this image](./android-pdf-writer/src/androidTest/res/drawable/pdftabletest_resultimage.png)
 
 ## Description
-The library draws the screen set by the user in Bitmap, compresses it in JPEG format, and outputs it as a PDF file. One image is entered per page.
-
-DPI is the resolution of the image to be created in pdf. The higher the resolution, the higher the capacity of the image will be. Regardless of the device dpi, the resolution is increased based solely on the dpi of the pdf.
+The library draws the screen set by the user in Bitmap, compresses it in JPEG format, and outputs it as a PDF file. One image is entered per page. Can change compress quality. Default quality is `60`.
 ``` Java
-builder.setDPI(DPI.M3);
+builder.setQuality(60);
+```
+
+DPI is the resolution of the image to be created in pdf. The higher the resolution, the higher the capacity of the image will be. Regardless of the device dpi, the resolution is increased based solely on the dpi of the pdf. Default Dpi is `DPI.M5`, as 360dpi
+``` Java
+builder.setDPI(DPI.M5);
+```
+
+The larger the padding of the page that is not related to PDFComponents, the smaller the maximum width and height of the components. Default Padding is `(0, 0)`
+``` Java
+builder.setPagePadding(30, 30);
 ```
 
 ## License
