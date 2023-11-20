@@ -2,7 +2,7 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import java.nio.charset.StandardCharsets;
 
-public class XRef {
+class XRef {
     byte[] pos;
     byte[] gen;
     byte fn;

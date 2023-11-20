@@ -22,8 +22,9 @@ public class BinaryPage {
     int pageWidth, pageHeight;
     RectF contentRect;
 
-    public BinaryPage(int pageCount){
+    public BinaryPage(int pageCount, int quality){
         this.pageCount = pageCount;
+        BinarySingleton.getInstance().quality = quality;
     }
 
     public void setContentRect(RectF contentRect){

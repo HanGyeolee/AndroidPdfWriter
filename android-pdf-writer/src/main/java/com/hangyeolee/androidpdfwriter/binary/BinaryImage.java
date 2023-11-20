@@ -22,7 +22,7 @@ class BinaryImage {
     protected BinaryImage(int n, Bitmap bitmap, int widthPage, int heightPage){
         currentNumber = objNumber = n;
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress( Bitmap.CompressFormat.JPEG, 100, stream);
+        bitmap.compress( Bitmap.CompressFormat.JPEG, BinarySingleton.getInstance().quality, stream);
         this.stream = stream.toByteArray();
 
         this.width = bitmap.getWidth();

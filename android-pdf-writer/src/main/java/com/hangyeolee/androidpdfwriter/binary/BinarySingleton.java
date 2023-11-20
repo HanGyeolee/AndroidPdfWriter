@@ -3,7 +3,7 @@ package com.hangyeolee.androidpdfwriter.binary;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
-public class BinarySingleton {
+class BinarySingleton {
     public static BinarySingleton instance = null;
     public static final Charset US_ASCII = Charset.forName("US-ASCII");
 
@@ -14,6 +14,7 @@ public class BinarySingleton {
     }
 
 
+    public int quality;
     public long byteLength = 0;
     public final ArrayList<XRef> XRefs;
 

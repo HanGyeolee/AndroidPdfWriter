@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class PDFBuilder<T extends PDFLayout> {
+    int quality = 60;
     BinaryPage page;
     float pageWidth, pageHeight;
     RectF contentRect;
@@ -31,12 +32,17 @@ public class PDFBuilder<T extends PDFLayout> {
         this.pageWidth = pageWidth;
         this.pageHeight = pageHeight;
         contentRect = new RectF(0, 0, pageWidth, pageHeight);
-        setDPI(DPI.Standard);
+        setDPI(DPI.M5);
     }
 
     public PDFBuilder<T> setPagePadding(float vertical, float horizontal){
         this.contentRect.set(horizontal, vertical,
                 this.pageWidth - horizontal, this.pageHeight - vertical);
+        return this;
+    }
+
+    public PDFBuilder<T> setQuality(int quality){
+        this.quality = quality;
         return this;
     }
 
@@ -65,7 +71,7 @@ public class PDFBuilder<T extends PDFLayout> {
             longCanvas.drawColor(Color.WHITE);
             root.draw(longCanvas);
 
-            page = new BinaryPage(pageCount);
+            page = new BinaryPage(pageCount, quality);
             page.setContentRect(contentRect);
             Canvas canvas = new Canvas();
             // 비트맵을 쪼개서 페이지로 표현
