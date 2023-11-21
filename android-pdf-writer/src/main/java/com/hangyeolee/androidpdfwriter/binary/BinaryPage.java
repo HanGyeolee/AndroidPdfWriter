@@ -8,10 +8,7 @@ import com.hangyeolee.androidpdfwriter.BuildConfig;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Properties;
 
 public class BinaryPage {
     int currentNumber = 1;

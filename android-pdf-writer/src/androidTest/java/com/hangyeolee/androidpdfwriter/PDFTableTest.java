@@ -16,6 +16,7 @@ import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
+import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
@@ -110,6 +111,6 @@ public class PDFTableTest {
     public void testTableSave() {
         builder.draw();
         System.out.println(builder.root.getTotalHeight());
-        builder.save(context, "result.pdf");
+        builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
     }
 }

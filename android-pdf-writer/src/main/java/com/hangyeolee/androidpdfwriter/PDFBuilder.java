@@ -2,6 +2,7 @@ package com.hangyeolee.androidpdfwriter;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,12 +16,15 @@ import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
+import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.Provider;
+import java.util.Locale;
 
 public class PDFBuilder<T extends PDFLayout> {
     int quality = 60;
@@ -99,25 +103,41 @@ public class PDFBuilder<T extends PDFLayout> {
      * @param context 컨텍스트
      * @param filename 저장할 위치
      */
-    public void save(Context context, String filename) {
-        File file;
-        try {
-            file = new File("Download/"+filename);
-            OutputStream fos;
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-                String path = file.getPath().replace("/"+filename,"");
-                ContentValues values = new ContentValues();
-                values.put("title", filename);
-                values.put("_display_name", filename);
-                values.put("mime_type", "application/pdf");
-                values.put("bucket_id", filename);
-                values.put("datetaken", System.currentTimeMillis());
-                values.put("relative_path", path);
+    public void save(Context context,@StandardDirectory.DirectoryString String directory, String filename) {
 
-                Uri uri = context.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+        try {
+            OutputStream fos;
+            Uri uri;
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Files.FileColumns.TITLE, filename);
+                values.put(MediaStore.Files.FileColumns.DISPLAY_NAME, filename);
+                values.put(MediaStore.Files.FileColumns.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.Files.FileColumns.BUCKET_ID, filename);
+                values.put(MediaStore.Files.FileColumns.DATE_TAKEN, System.currentTimeMillis());
+                values.put(MediaStore.Files.FileColumns.RELATIVE_PATH, directory);
+;
+                uri = context.getContentResolver().insert(
+                        MediaStore.Files.getContentUri("external")
+                        ,values);
                 fos = context.getContentResolver().openOutputStream(uri, "w");
             } else {
-                file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), filename);
+
+                File dir;
+                File file;
+
+                if(!StandardDirectory.isStandardDirectory(directory)){
+                    dir = new File(directory);
+                    dir.mkdirs();
+                }else{
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                        dir = context.getExternalFilesDir(directory);
+                    } else {
+                        dir = Environment.getExternalStoragePublicDirectory(directory);
+                    }
+                }
+
+                file = new File(dir, filename);
                 fos = new FileOutputStream(file, false);
             }
 

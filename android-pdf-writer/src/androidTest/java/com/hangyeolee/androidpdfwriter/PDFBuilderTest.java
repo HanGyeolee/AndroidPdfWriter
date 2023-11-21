@@ -12,6 +12,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
+import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
@@ -60,6 +61,6 @@ public class PDFBuilderTest {
     public void testSave() {
         builder.draw();
         System.out.println(builder.root.getTotalHeight());
-        builder.save(context,  "result.pdf");
+        builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "result.pdf");
     }
 }
