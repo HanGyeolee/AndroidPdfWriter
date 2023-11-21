@@ -29,7 +29,7 @@ import java.util.Locale;
 public class PDFBuilder<T extends PDFLayout> {
     int quality = 60;
     BinaryPage page;
-    Paper pageSize;
+    Paper pageSize = Paper.A4;
     public T root = null;
 
     public PDFBuilder(Paper pageSize){
@@ -40,7 +40,6 @@ public class PDFBuilder<T extends PDFLayout> {
         setDPI(DPI.M5);
     }
     public PDFBuilder(float width, float height){
-        this.pageSize = Paper.A0;
         this.pageSize.setCustom(width, height);
         Zoomable.getInstance().setContentRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
