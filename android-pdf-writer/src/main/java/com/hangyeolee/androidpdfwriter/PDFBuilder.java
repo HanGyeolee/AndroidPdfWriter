@@ -30,23 +30,26 @@ public class PDFBuilder<T extends PDFLayout> {
     int quality = 60;
     BinaryPage page;
     Paper pageSize;
-    RectF contentRect;
     public T root = null;
 
     public PDFBuilder(Paper pageSize){
         this.pageSize = pageSize;
-        contentRect = new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight());
+        Zoomable.getInstance().setContentRect(
+                new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
+        );
         setDPI(DPI.M5);
     }
     public PDFBuilder(float width, float height){
         this.pageSize = Paper.A0;
         this.pageSize.setCustom(width, height);
-        contentRect = new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight());
+        Zoomable.getInstance().setContentRect(
+                new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
+        );
         setDPI(DPI.M5);
     }
 
     public PDFBuilder<T> setPagePadding(float vertical, float horizontal){
-        this.contentRect.set(horizontal, vertical,
+        Zoomable.getInstance().getContentRect().set(horizontal, vertical,
                 this.pageSize.getWidth() - horizontal, this.pageSize.getHeight() - vertical);
         return this;
     }
@@ -67,10 +70,10 @@ public class PDFBuilder<T extends PDFLayout> {
      */
     public PDFBuilder<T> draw(){
         if(root != null) {
-            root.setSize(contentRect.width(),0.0f).measure();
+            root.setSize(Zoomable.getInstance().getContentRect().width(),0.0f).measure();
 
-            int contentWidth = Math.round(contentRect.width() * Zoomable.getInstance().density);
-            int contentHeight = Math.round(contentRect.height() * Zoomable.getInstance().density);
+            int contentWidth = Math.round(Zoomable.getInstance().getZoomWidth());
+            int contentHeight = Math.round(Zoomable.getInstance().getZoomHeight());
 
             // 필요한 페이지 개수
             int pageCount = (int) Math.ceil(root.getTotalHeight() / (float)contentHeight);
@@ -82,7 +85,7 @@ public class PDFBuilder<T extends PDFLayout> {
             root.draw(longCanvas);
 
             page = new BinaryPage(pageCount, quality);
-            page.setContentRect(contentRect);
+            page.setContentRect(Zoomable.getInstance().getContentRect());
             Canvas canvas = new Canvas();
             // 비트맵을 쪼개서 페이지로 표현
             for (int i = 0; i < pageCount; i++) {

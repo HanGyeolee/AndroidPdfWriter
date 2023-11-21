@@ -43,7 +43,7 @@ public class PDFText extends PDFComponent {
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-        int _width = (int) (measureWidth - border.size.left - padding.left
+        int _width = Math.round (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
 
         if(text != null) {
@@ -57,7 +57,8 @@ public class PDFText extends PDFComponent {
                                     _width)
                             .setAlignment(align)
                             .build();
-                } else {
+                }
+                else {
                     layout = new StaticLayout(
                             text, 0, text.length(), (TextPaint) bufferPaint, _width, align,
                             DEFAULT_LINESPACING_MULTIPLIER, DEFAULT_LINESPACING_ADDITION,
@@ -71,9 +72,9 @@ public class PDFText extends PDFComponent {
             }
 
             updatedHeight = layout.getHeight();
-            height = (int) (updatedHeight + border.size.top + padding.top
-                                + border.size.bottom + padding.bottom);
-            int _height = (int) (measureHeight - border.size.top - padding.top
+            height = Math.round (updatedHeight + border.size.top + padding.top
+                    + border.size.bottom + padding.bottom);
+            int _height = Math.round (measureHeight - border.size.top - padding.top
                     - border.size.bottom - padding.bottom);
             /*
             updatedHeight 가 measureHeight 보다 크다면?
@@ -81,7 +82,7 @@ public class PDFText extends PDFComponent {
             */
             while (updatedHeight > _height) {
                 updateHeight(updatedHeight - _height);
-                _height = (int) (measureHeight - border.size.top - padding.top
+                _height = Math.round (measureHeight - border.size.top - padding.top
                         - border.size.bottom - padding.bottom);
             }
         }

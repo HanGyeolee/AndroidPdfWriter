@@ -35,7 +35,7 @@ public class PDFLinearLayout extends PDFLayout {
         int i;
         int gap = 0;
         int totalAxis = 0;
-        int lastWidth = (int) (measureWidth - border.size.left - padding.left
+        int lastWidth = Math.round (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
         switch (orientation){
             case Orientation.Column:
@@ -82,7 +82,6 @@ public class PDFLinearLayout extends PDFLayout {
                 for(i = 0; i < child.size(); i++){
                     gap = gaps.get(i);
                     child.get(i).width = gap;
-                    child.get(i).height = maxHeight;
                     child.get(i).measure(totalAxis,0);
                     child.get(i).force(gap, maxHeight, null);
                     totalAxis += gap + child.get(i).margin.left + child.get(i).margin.right;

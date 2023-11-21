@@ -39,12 +39,12 @@ public class PDFGridLayout extends PDFLayout{
         super.measure(x, y);
 
         int i, j;
-        int totalHeight = 0;
+        float totalHeight = 0;
         int gapWidth = 0;
         int index;
 
         int zero_count = 0;
-        int lastWidth = (int) (measureWidth - border.size.left - padding.left
+        int lastWidth = Math.round (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
         // 가로 길이 자동 조절
         for(i = 0; i < gaps.length ; i++) {
@@ -66,72 +66,123 @@ public class PDFGridLayout extends PDFLayout{
         }
 
         int[] maxHeights = new int[columns];
-        int rowSpanCount;
         int columnSpanCount;
+        // Cell 당 높이 계산
         for(i = 0; i < columns; i++){
             int totalWidth = 0;
             for(j = 0; j < rows; j++){
                 index = i*rows + j;
+                gapWidth = gaps[j];
                 if(index == span.get(index)) {
-                    rowSpanCount = 1;
                     columnSpanCount = 1;
+                    // 가로 span
                     for(int xx = j+1; xx < rows; xx++){
                         if(index == span.get(i*rows + xx)){
-                            rowSpanCount++;
+                            gapWidth += gaps[xx] + childMargin.left + childMargin.right;
                         }else break;
                     }
-                    gapWidth = gaps[j];
-                    for(int xx = j+1; xx < j+rowSpanCount; xx++){
-                        gapWidth += gaps[xx] + childMargin.left + childMargin.right;
-                    }
+                    // 세로 span 개수
                     for(int yy = i+1; yy < columns; yy++){
                         if(index == span.get((yy)*rows + j)){
                             columnSpanCount++;
                         }else break;
                     }
+
                     child.get(index).width = gapWidth;
                     // 자식 컴포넌트의 Margin 무시
                     child.get(i).margin.set(childMargin);
-                    child.get(index).measure(totalWidth, totalHeight);
-                    if (columnSpanCount == 1 && maxHeights[i] < child.get(index).measureHeight) {
-                        maxHeights[i] = child.get(index).measureHeight;
+                    if(columnSpanCount == 1) {
+                        child.get(index).measure(totalWidth, totalHeight);
+                        if (maxHeights[i] < child.get(index).measureHeight) {
+                            maxHeights[i] = child.get(index).measureHeight;
+                        }
                     }
                     totalWidth += gapWidth + childMargin.left + childMargin.right;
+                }else{
+                    index = span.get(index);
+                    int origin_x = index % rows;
+                    if(origin_x == j) {
+                        int origin_y = index / rows;
+                        // 가로 span
+                        for(int xx = j+1; xx < rows; xx++){
+                            if(index == span.get(origin_y*rows + xx)){
+                                gapWidth += gaps[xx] + childMargin.left + childMargin.right;
+                            }else break;
+                        }
+                        totalWidth += gapWidth + childMargin.left + childMargin.right;
+                    }
                 }
             }
             totalHeight += maxHeights[i] + childMargin.top + childMargin.bottom;
-            measureHeight = totalHeight;
+            measureHeight = Math.round(totalHeight);
         }
+
         totalHeight = 0;
+        int maxHeight;
+        int maxSpanHeight = 0;
+        float lastTotalHeight = 0;
+        boolean repeatIfor = false;
         for(i = 0; i < columns; i++) {
             int totalWidth = 0;
+            maxSpanHeight = 0;
+            // 세로 Span 존재 탐지
             for(j = 0; j < rows; j++){
                 index = i*rows + j;
+                maxHeight = maxHeights[i];
+                for(int yy = i+1; yy < columns; yy++){
+                    if(index == span.get((yy)*rows + j)){
+                        maxHeight += maxHeights[yy] + childMargin.top + childMargin.bottom;
+                    }else break;
+                }
+                if(maxHeight > maxSpanHeight) maxSpanHeight = maxHeight;
+            }
+
+            // 페이지 넘기는 Grid Cell 이 있는 경우 다음 페이지로
+            float zoomHeight = Zoomable.getInstance().getZoomHeight();
+            float lastHeight = totalHeight + measureY + border.size.top + padding.top;
+            while(lastHeight > zoomHeight){
+                lastHeight -= zoomHeight;
+            }
+            lastTotalHeight = totalHeight;
+            if(lastHeight < zoomHeight && zoomHeight < lastHeight + maxSpanHeight + childMargin.top + childMargin.bottom){
+                float gap = zoomHeight - lastHeight;
+                if(i == 0) {
+                    margin.top += Math.round(gap);
+                    updateHeight(gap);
+                    int d = 0;
+                    if (parent != null)
+                        d += parent.measureY + parent.border.size.top + parent.padding.top;
+                    measureY = relativeY + margin.top + d;
+                }
+                else
+                    totalHeight += gap;
+            }
+
+            for(j = 0; j < rows; j++){
+                index = i*rows + j;
+                gapWidth = gaps[j];
                 if(index == span.get(index)) {
-                    rowSpanCount = 1;
                     columnSpanCount = 1;
-                    int maxHeight = maxHeights[i];
+                    //Span 계산
+                    maxHeight = maxHeights[i];
                     for(int xx = j+1; xx < rows; xx++){
                         if(index == span.get(i*rows + xx)){
-                            rowSpanCount++;
+                            gapWidth += gaps[xx] + childMargin.left + childMargin.right;
                         }else break;
-                    }
-                    gapWidth = gaps[j];
-                    for(int xx = j+1; xx < j+rowSpanCount; xx++){
-                        gapWidth += gaps[xx] + childMargin.left + childMargin.right;
                     }
                     for(int yy = i+1; yy < columns; yy++){
                         if(index == span.get((yy)*rows + j)){
                             columnSpanCount++;
+                            maxHeight += maxHeights[yy] + childMargin.top + childMargin.bottom;
                         }else break;
                     }
-                    for(int yy = i+1; yy < i+columnSpanCount; yy++){
-                        maxHeight += maxHeights[yy] + childMargin.top + childMargin.bottom;
-                    }
+
                     child.get(index).width = gapWidth;
-                    child.get(index).height = maxHeight;
+
+                    //measure
                     child.get(index).measure(totalWidth, totalHeight);
 
+                    //Span 이후 span 된 컴포넌트의 높이가 주어진 높이보다 클 경우
                     if(child.get(index).height > maxHeight){
                         int gapHeight = child.get(index).height - maxHeight;
 
@@ -141,18 +192,38 @@ public class PDFGridLayout extends PDFLayout{
                             gapHeight -= gapHeight / zero_count;
                             zero_count -= 1;
                         }
-                        j = -1;
-                        totalWidth = 0;
-                        continue;
+                        repeatIfor = true;
+                        break;
                     }
 
                     child.get(index).force(gapWidth, maxHeight, childMargin);
                     totalWidth += gapWidth + childMargin.left + childMargin.right;
+                }else{
+                    index = span.get(index);
+                    int origin_x = index % rows;
+                    if(origin_x == j) {
+                        int origin_y = index / rows;
+                        // 가로 span
+                        for(int xx = j+1; xx < rows; xx++){
+                            if(index == span.get(origin_y*rows + xx)){
+                                gapWidth += gaps[xx] + childMargin.left + childMargin.right;
+                            }else break;
+                        }
+                        totalWidth += gapWidth + childMargin.left + childMargin.right;
+                    }
                 }
             }
+
+            if(repeatIfor){
+                i--;
+                totalHeight = lastTotalHeight;
+                repeatIfor = false;
+                continue;
+            }
+
             totalHeight += maxHeights[i] + childMargin.top + childMargin.bottom;
         }
-        measureHeight = (int) (totalHeight + border.size.top + border.size.bottom + padding.top + padding.bottom);
+        measureHeight = Math.round(totalHeight + border.size.top + border.size.bottom + padding.top + padding.bottom);
     }
 
     @Override
@@ -160,7 +231,10 @@ public class PDFGridLayout extends PDFLayout{
         super.draw(canvas);
 
         for(int i = 0; i < child.size(); i++) {
-            child.get(i).draw(canvas);
+            // Span에 의해 늘어난 만큼 관련 없는 부분은 draw 하지 않는 다.
+            if(i == span.get(i)) {
+                child.get(i).draw(canvas);
+            }
         }
     }
 
@@ -190,7 +264,7 @@ public class PDFGridLayout extends PDFLayout{
             }
         }
         else {
-            throw new ArrayIndexOutOfBoundsException();
+            throw new ArrayIndexOutOfBoundsException("Span Size is Out of Bounds");
         }
         return this;
     }
@@ -253,7 +327,7 @@ public class PDFGridLayout extends PDFLayout{
             throws ArrayIndexOutOfBoundsException{
         int index = y*rows + x;
         component.setParent(this);
-        if(index < child.size() && (columnSpan-1)*rows + rowSpan-1 < child.size()) {
+        if(index < child.size() && (y+columnSpan-1)*rows + x+rowSpan-1 < child.size()) {
             child.set(index, component);
         }
         else {

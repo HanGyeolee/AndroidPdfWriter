@@ -1,5 +1,7 @@
 package com.hangyeolee.androidpdfwriter.utils;
 
+import android.graphics.RectF;
+
 public class Zoomable {
     private static Zoomable instance = null;
 
@@ -19,4 +21,20 @@ public class Zoomable {
      * creating the effect of increasing dpi regardless of device.
      */
     public float density = 1.0f;
+
+    private RectF contentRect = null;
+
+    public void setContentRect(RectF contentRect){
+        this.contentRect = contentRect;
+    }
+
+    public RectF getContentRect() {
+        return contentRect;
+    }
+    public float getZoomWidth() {
+        return contentRect.width() * density;
+    }
+    public float getZoomHeight() {
+        return contentRect.height() * density;
+    }
 }

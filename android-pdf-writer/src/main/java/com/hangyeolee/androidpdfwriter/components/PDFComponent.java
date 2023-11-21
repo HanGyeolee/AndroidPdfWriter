@@ -22,7 +22,7 @@ public abstract class PDFComponent{
     int width = 0;
     int height = 0;
     @ColorInt
-    int backgroundColor = Color.WHITE;
+    int backgroundColor = Color.TRANSPARENT;
     final Rect margin = new Rect(0,0,0,0);
     final Rect padding = new Rect(0,0,0,0);
     final Border border = new Border();
@@ -86,11 +86,11 @@ public abstract class PDFComponent{
         }
         else{
             // Get Max Width and Height from Parent
-            int maxW = (int) (parent.measureWidth
+            int maxW = Math.round (parent.measureWidth
                     - parent.border.size.left - parent.border.size.right
                     - parent.padding.left - parent.padding.right
                     - left - right);
-            int maxH = (int) (parent.measureHeight
+            int maxH = Math.round (parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - top - bottom);
@@ -100,9 +100,9 @@ public abstract class PDFComponent{
             // 설정한 Width 나 Height 가 최대값을 넘지 않으면, 설정한 값으로
             if(0 < width && width + relativeX <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
-            else measureWidth = (int) (maxW - relativeX);
+            else measureWidth = Math.round (maxW - relativeX);
             if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight = (int) (maxH - relativeY);
+            else measureHeight = Math.round (maxH - relativeY);
 
             gapX = maxW - measureWidth;
             gapY = maxH - measureHeight;
@@ -195,16 +195,12 @@ public abstract class PDFComponent{
         }
         else{
             parent.updateHeight(heightGap);
-            int maxH = (int) (parent.measureHeight
-                    - parent.border.size.top - parent.border.size.bottom
-                    - parent.padding.top - parent.padding.bottom
-                    - top - bottom);
-            maxH = (int) (parent.measureHeight
+            int maxH = Math.round (parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - top - bottom);
             if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight = (int) (maxH - relativeY);
+            else measureHeight = Math.round (maxH - relativeY);
         }
     }
 

@@ -21,16 +21,8 @@ public class  PDFImage extends PDFComponent{
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-        int dx = 0, dy = 0;
-        // 이미지에서는 gap을 직접 연산함으로 상단 super.measure()에서 연산된 measureX,Y 를 다시 잡아준다.
-        if(parent != null){
-            dx += parent.measureX + parent.border.size.left + parent.padding.left;
-            dy += parent.measureY + parent.border.size.top + parent.padding.top;
-        }
-        measureX = relativeX + margin.left + dx;
-        measureY = relativeY + margin.top + dy;
 
-        int _height = (int) (measureHeight - border.size.top - padding.top
+        int _height = Math.round (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
         /*
         height 가 measureHeight 보다 크다면?
@@ -38,7 +30,7 @@ public class  PDFImage extends PDFComponent{
         */
         while (height > _height) {
             updateHeight(height - _height);
-            _height = (int) (measureHeight - border.size.top - padding.top
+            _height = Math.round (measureHeight - border.size.top - padding.top
                     - border.size.bottom - padding.bottom);
         }
     }
@@ -49,9 +41,9 @@ public class  PDFImage extends PDFComponent{
         if(this.origin.getWidth() > 0)
             aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
 
-        int _width = (int) (measureWidth - border.size.left - padding.left
+        int _width = Math.round (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
-        int _height = (int) (measureHeight - border.size.top - padding.top
+        int _height = Math.round (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
 
         int resizeW = _width;
@@ -84,11 +76,11 @@ public class  PDFImage extends PDFComponent{
                 break;
             case Fit.COVER:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
-                    resizeH = (int) (_width * aspectRatio);
+                    resizeH = Math.round (_width * aspectRatio);
                     gapX = 0;
                     gapY = (_height - resizeH);
                 } else {
-                    resizeW = (int) (_height / aspectRatio);
+                    resizeW = Math.round (_height / aspectRatio);
                     gapX = (_width - resizeW);
                     gapY = 0;
                 }
@@ -105,16 +97,16 @@ public class  PDFImage extends PDFComponent{
                 canvas.drawBitmap(origin, src, dst, bufferPaint);
 
                 transparentCanvas.drawBitmap(scaled,
-                        (int)gapX, (int)gapY, bufferPaint);
+                        Math.round(gapX), Math.round(gapY), bufferPaint);
                 scaled.recycle();
                 break;
             case Fit.CONTAIN:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
-                    resizeW = (int) (_height / aspectRatio);
+                    resizeW = Math.round (_height / aspectRatio);
                     gapX = (_width - resizeW);
                     gapY = 0;
                 } else {
-                    resizeH = (int) (_width * aspectRatio);
+                    resizeH = Math.round (_width * aspectRatio);
                     gapX = 0;
                     gapY = (_height - resizeH);
                 }
@@ -130,7 +122,7 @@ public class  PDFImage extends PDFComponent{
                 canvas.drawBitmap(origin, src, dst, bufferPaint);
 
                 transparentCanvas.drawBitmap(scaled,
-                        (int)gapX, (int)gapY, bufferPaint);
+                        Math.round(gapX), Math.round(gapY), bufferPaint);
                 scaled.recycle();
                 break;
             case Fit.NONE:
@@ -140,11 +132,20 @@ public class  PDFImage extends PDFComponent{
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 transparentCanvas.drawBitmap(origin,
-                        (int)-gapX, (int)-gapY, bufferPaint);
+                        Math.round(-gapX), Math.round(-gapY), bufferPaint);
                 break;
             case Fit.SCALE_DOWN:
                 break;
         }
+
+        int dx = 0, dy = 0;
+        // 이미지에서는 gap을 직접 연산함으로 상단 super.measure()에서 연산된 measureX,Y 를 다시 잡아준다.
+        if(parent != null){
+            dx += parent.measureX + parent.border.size.left + parent.padding.left;
+            dy += parent.measureY + parent.border.size.top + parent.padding.top;
+        }
+        measureX = relativeX + margin.left + dx;
+        measureY = relativeY + margin.top + dy;
     }
 
     @Override
@@ -160,6 +161,15 @@ public class  PDFImage extends PDFComponent{
         deleteBuffer();
     }
 
+    /**
+     * GridLayout 안에 있는 이미지의 크기는 같은 열에 이미지 하나만 있는 경우에 적용된다.<br>
+     * 같은 열에 더 큰 크기의 컴포넌트가 존재한다면, 해당 컴포넌트의 크기에 따라 Fir 된다.<br>
+     * The size of the image in GridLayout is applied when there is only one image in the same column.<br>
+     * If a larger component exists in the same column, it will be fired according to the size of that component.
+     * @param width 가로 크기
+     * @param height 세로 크기
+     * @return 자기 자신
+     */
     @Override
     public PDFImage setSize(Float width, Float height) {
         super.setSize(width, height);
