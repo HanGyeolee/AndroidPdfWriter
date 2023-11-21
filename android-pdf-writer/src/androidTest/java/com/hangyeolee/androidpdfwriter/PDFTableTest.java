@@ -54,7 +54,6 @@ public class PDFTableTest {
                     .addChild(PDFH1.build("제목")
                             .setBackgroundColor(Color.RED)
                             .setTextAlign(TextAlign.Center))
-                    ///*
                     .addChild(PDFGridLayout.build(3, 5)
                             .setMargin(10, 10, 10, 10)
                             .setBackgroundColor(Color.WHITE)
@@ -130,7 +129,6 @@ public class PDFTableTest {
                                     .setBackgroundColor(Color.RED)
                                     .setTextColor(Color.WHITE)
                                     .setTextAlign(TextAlign.Center)))
-            //*/
             ;
         }
     }
