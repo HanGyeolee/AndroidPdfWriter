@@ -1,28 +1,28 @@
 # AndroidPdfWriter
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.hangyeolee/androidpdfwriter/badge.svg?style=flat)](https://maven-badges.herokuapp.com/maven-central/io.github.hangyeolee/androidpdfwriter) [![API](https://img.shields.io/badge/API-14%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=14)
 
-A easy to create PDF file library for Android.
-- [한국어 README.md](./README-ko.md)
+안드로이드를 위한 손쉬운 PDF 라이브러리
+- [English README.md](./README.md)
 
-## Table of Contents
-1. [Setup](#setup)
-   1. [Gradle Setup](#gradle-setup)
-   2. [Maven Setup](#maven-setup)
-2. [Quick Start](#quick-start)
-3. [Example Image](#example-image)
-4. [Description](#description)
-5. [License](#license)
+## 목차
+1. [설정](#설정)
+   1. [Gradle 설정](#gradle-설정)
+   2. [Maven 설정](#maven-설정)
+2. [간단한 사용법](#간단한-사용법)
+3. [예시 이미지](#예시-이미지)
+4. [설명](#설명)
+5. [라이선스](#라이선스)
 
 
-## Setup
-### Gradle Setup
+## 설정
+### Gradle 설정
 ``` gradle
 dependencies {
   implementation 'io.github.hangyeolee:androidpdfwriter:1.0.0'
 }
 ```
 
-### Maven Setup
+### Maven 설정
 ``` xml
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
@@ -31,18 +31,18 @@ dependencies {
 </dependency>
 ```
 
-## Quick Start
+## 간단한 사용법
 ``` Java
-// Generics specify the format of the root layout.
-// The parameters of the PDF Builder are horizontal and vertical lengths based on 72 dpi.
-// A4 paper width:595.3px height:841.9px
+// 제네릭 형식은 최상단 레이아웃의 형식을 지정합니다.
+// PDF Builder의 파라미터는 72dpi를 기준으로 가로 길이와 세로 길이입니다.
+// A4 용지의 가로:595.3px 세로:841.9px
 PDFBuilder<PDFLinearLayout> builder = new PDFBuilder<>(Paper.A4);
 
-// set PDF page padding, vertical and horizontal
+// PDF 페이지의 내용이 들어가지 않는 여백입니다. 가로, 세로 순서로 넣으시면 됩니다.
 builder.setPagePadding(30, 30);
 ```
 
-#### this is test pdf page:
+#### 테스트용 PDF 페이지를 만드는 코드입니다:
 ``` Java
 builder.root = PDFLinearLayout.build()
     .setOrientation(Orientation.Column)
@@ -124,35 +124,35 @@ builder.root = PDFLinearLayout.build()
         );
 ```
 
-#### When you want to save a created file:
+#### 작성된 PDF를 파일로 저장하고 싶을 때:
 ``` Java
 builder.draw();
-// Saved in the Download folder.
+// 다운로드 폴더에 저장될 것 입니다.
 builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
 ```
 
-## Example Image
-#### PDF File looks like below:
+## 예시 이미지
+#### 저장된 PDF 파일은 하단과 같습니다.:
 
-![PDF File looks like this image](./android-pdf-writer/src/androidTest/res/drawable/pdftabletest_resultimage.png)
+![저장된 PDF 파일 예시](./android-pdf-writer/src/androidTest/res/drawable/pdftabletest_resultimage.png)
 
-## Description
-The library draws the screen set by the user in Bitmap, compresses it in JPEG format, and outputs it as a PDF file. One image is entered per page. Can change compress quality. Default quality is `60`.
+## 설명
+이 라이브러리는 사용자가 설정한 화면을 비트맵으로 그려 JPEG 형식으로 압축한 후, PDF 파일로 출력합니다. 페이지 당 1장의 이미지만 포함합니다. JPEG 압축 품질을 변경할 수 있으며, 품질 기본 설정값은 `60` 입니다.
 ``` Java
 builder.setQuality(60);
 ```
 
-DPI is the resolution of the image to be created in pdf. The higher the resolution, the higher the capacity of the image will be. Regardless of the device dpi, the resolution is increased based solely on the dpi of the pdf. Default Dpi is `DPI.M5`, as 360dpi.
+DPI는 pdf로 생성할 이미지의 해상도입니다. 해상도가 높을수록 이미지의 용량이 증가할 것 입니다. 디바이스 dpi와 상관없이 오직 pdf의 72dpi를 기준으로 해상도가 증가합니다. DPI 기본 설정값은 `DPI.M5`로 360dpi 입니다.
 ``` Java
 builder.setDPI(DPI.M5);
 ```
 
-The larger the padding of the page that is not related to PDFComponents, the smaller the maximum width and height of the components. Default Padding is `(0, 0)`. In case of printing, it is recommended to add about `(30, 30)` padding.
+PDF 페이지의 여백이 클수록 PDFComponents의 최대 너비 및 높이가 작아집니다. 여백 기본 설정값은 `(0,0)` 입니다. 프린트할 경우를 대비해 대략 `(30, 30)` 정도의 여백을 추가하는 것을 추천합니다.
 ``` Java
 builder.setPagePadding(30, 30);
 ```
 
-## License
+## 라이선스
 Copyright 2023 HanGyeol Choi
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
