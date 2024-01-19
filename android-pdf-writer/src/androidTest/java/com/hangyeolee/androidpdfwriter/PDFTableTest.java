@@ -49,7 +49,7 @@ public class PDFTableTest {
                     .setOrientation(Orientation.Column)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
-                            .setSize(null, 200f)
+                            .setSize(null, 1200f)
                             .setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("제목")
                             .setBackgroundColor(Color.RED)

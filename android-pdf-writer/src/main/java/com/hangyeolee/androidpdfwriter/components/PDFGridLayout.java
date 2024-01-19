@@ -3,6 +3,8 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 
+import androidx.annotation.IntRange;
+
 import com.hangyeolee.androidpdfwriter.exceptions.TableCellHaveNotIndexException;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
@@ -251,7 +253,7 @@ public class PDFGridLayout extends PDFLayout{
         return this;
     }
 
-    public PDFGridLayout setChildSpan(int x, int y, int rowSpan, int columnSpan)
+    public PDFGridLayout setChildSpan(int x, int y, @IntRange(from = 1) int rowSpan, @IntRange(from = 1) int columnSpan)
             throws ArrayIndexOutOfBoundsException{
         int index = y*rows + x;
         if(index < child.size() && (y+columnSpan-1)*rows + x+rowSpan-1 < child.size()) {
@@ -323,7 +325,7 @@ public class PDFGridLayout extends PDFLayout{
      * @param y y위치, 0부터
      * @return 자기자신
      */
-    public PDFGridLayout addChild(int x, int y, int rowSpan, int columnSpan, PDFComponent component)
+    public PDFGridLayout addChild(int x, int y, @IntRange(from = 1) int rowSpan, @IntRange(from = 1) int columnSpan, PDFComponent component)
             throws ArrayIndexOutOfBoundsException{
         int index = y*rows + x;
         component.setParent(this);

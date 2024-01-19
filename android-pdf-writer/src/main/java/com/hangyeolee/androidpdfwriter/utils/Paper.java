@@ -31,7 +31,9 @@ public enum Paper{
     Letter(612f, 792f),
     // 8.5  X14inch
     Legal(612f, 1008f);
-    //*2.8346472
+
+    //mm2px *2.8346472
+    //inch2px *72.0
 
     private float width;
     private float height;

@@ -2,6 +2,7 @@ package com.hangyeolee.androidpdfwriter;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Environment;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -10,6 +11,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
+import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
@@ -29,6 +31,9 @@ public class PDFBuilderTest {
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
         builder = new PDFBuilder<>(Paper.A4);
+        builder.setQuality(100)
+                .setDPI(DPI.Standard)
+                .setDPI(1.0f);
         builder.root = PDFLinearLayout.build()
                 .setOrientation(Orientation.Column)
                 .setPadding(10,10,10,10)
@@ -61,6 +66,6 @@ public class PDFBuilderTest {
     public void testSave() {
         builder.draw();
         System.out.println(builder.root.getTotalHeight());
-        builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "result.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "result.pdf");
     }
 }
