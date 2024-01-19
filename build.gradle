@@ -14,3 +14,5 @@ task clean(type: Delete) {
 //*/
 
 // 라이브러리 배포 시 ./gradlew android-pdf-writer:publishReleasePublicationToSonatypeRepository
+// 레포지토리 업로드 홈페이지 https://s01.oss.sonatype.org/
+// Staging Repositories 에 접속하여 레포지토리 confirm
