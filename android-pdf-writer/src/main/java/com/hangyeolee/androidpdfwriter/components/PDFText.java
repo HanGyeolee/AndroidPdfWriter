@@ -219,7 +219,7 @@ public class PDFText extends PDFComponent {
     }
     public PDFText setFontsize(float fontsize){
         setTextPaint((TextPaint) bufferPaint);
-        this.bufferPaint.setTextSize(fontsize);
+        this.bufferPaint.setTextSize(fontsize * Zoomable.getInstance().density);
         return this;
     }
     public PDFText setTextAlign(@TextAlign.TextAlignInt int align){
