@@ -18,7 +18,7 @@ A easy to create PDF file library for Android.
 ### Gradle Setup
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.0.0'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.0.2'
 }
 ```
 
@@ -27,7 +27,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
