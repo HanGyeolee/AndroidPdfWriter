@@ -3,6 +3,7 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Rect;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.text.Layout;
 import android.text.StaticLayout;
@@ -14,6 +15,7 @@ import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.FontType;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Objects;
@@ -39,6 +41,7 @@ public class PDFText extends PDFComponent {
     int lastWidth = 0;
 
     int updatedHeight;
+    Typeface plaintype = null;
 
     @Override
     public void measure(float x, float y) {
@@ -217,6 +220,20 @@ public class PDFText extends PDFComponent {
         this.bufferPaint.setColor(color);
         return this;
     }
+    public PDFText setFontFamily(Typeface plaintype){
+        return this.setFontFamily(plaintype, FontType.NORMAL);
+    }
+    public PDFText setFontFamily(Typeface plaintype, @FontType.Style int style){
+        this.plaintype = plaintype;
+        return setFontStyle(style);
+    }
+    public PDFText setFontStyle(@FontType.Style int style){
+        if(this.plaintype == null) throw new NullPointerException("Please, call setFont first.");
+        setTextPaint((TextPaint) bufferPaint);
+        this.bufferPaint.setTypeface(Typeface.create(plaintype, style));
+        return this;
+    }
+
     public PDFText setFontsize(float fontsize){
         setTextPaint((TextPaint) bufferPaint);
         this.bufferPaint.setTextSize(fontsize * Zoomable.getInstance().density);
