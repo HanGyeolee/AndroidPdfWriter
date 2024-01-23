@@ -1,5 +1,6 @@
 package com.hangyeolee.androidpdfwriter;
 
+import android.Manifest;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
@@ -7,6 +8,7 @@ import android.os.Environment;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
 
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
@@ -18,6 +20,7 @@ import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -25,6 +28,9 @@ import org.junit.runner.RunWith;
 public class PDFBuilderTest {
     Context context;
     PDFBuilder<PDFLinearLayout> builder;
+
+    @Rule
+    public GrantPermissionRule permissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE);
 
     @Before
     public void setUp(){

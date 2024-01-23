@@ -114,7 +114,7 @@ public class PDFBuilder<T extends PDFLayout> {
      * @param ratio 0.1f ~ 100.0f, default = 5.0f
      */
     public PDFBuilder<T> setDPI(@FloatRange(from = 0.1f, to = 100.0f) float ratio){
-        Zoomable.getInstance().density = 72.0f * ratio;
+        Zoomable.getInstance().density = ratio;
         return this;
     }
 
@@ -177,7 +177,7 @@ public class PDFBuilder<T extends PDFLayout> {
 
                 uri = context.getContentResolver().insert(
                         MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
-                        ,values);
+                        , values);
                 if(uri == null) throw new NullPointerException("Can not Create PDF file at " + relativePath);
                 fos = context.getContentResolver().openOutputStream(uri, "w");
             } else {
@@ -187,13 +187,10 @@ public class PDFBuilder<T extends PDFLayout> {
 
                 if(!StandardDirectory.isStandardDirectory(relativePath)){
                     dir = new File(relativePath);
-                    dir.mkdirs();
+                    if(!dir.mkdirs())
+                        throw new NullPointerException("Can not Make Directory : " + relativePath);
                 }else{
-                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                        dir = context.getExternalFilesDir(relativePath);
-                    } else {
-                        dir = Environment.getExternalStoragePublicDirectory(relativePath);
-                    }
+                    dir = Environment.getExternalStoragePublicDirectory(relativePath);
                 }
 
                 file = new File(dir, filename);
