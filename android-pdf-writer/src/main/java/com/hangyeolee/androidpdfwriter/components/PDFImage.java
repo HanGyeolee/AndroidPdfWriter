@@ -30,20 +30,33 @@ public class  PDFImage extends PDFComponent{
                 - border.size.right - padding.right);
         int _height = Math.round (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
-
-        fitting(_width, _height);
-
-        /*
-        height 가 measureHeight 보다 크다면?
-        상위 컴포넌트의 Height를 업데이트 한다.
-        */
-        while (resizeH > _height) {
-            updateHeight(resizeH - _height);
-            _height = Math.round (measureHeight - border.size.top - padding.top
-                    - border.size.bottom - padding.bottom);
+        if(height > 0){
+            /*
+            height 가 measureHeight 보다 크다면?
+            상위 컴포넌트의 Height를 업데이트 한다.
+            */
+            while (height > _height) {
+                updateHeight(height - _height);
+                _height = Math.round (measureHeight - border.size.top - padding.top
+                        - border.size.bottom - padding.bottom);
+            }
         }
 
         fitting(_width, _height);
+
+        if(height < 1) {
+            /*
+            resizeH 가 measureHeight 보다 크다면?
+            상위 컴포넌트의 Height를 업데이트 한다.
+            */
+            while (resizeH > _height) {
+                updateHeight(resizeH - _height);
+                _height = Math.round(measureHeight - border.size.top - padding.top
+                        - border.size.bottom - padding.bottom);
+            }
+
+            fitting(_width, _height);
+        }
     }
 
     private void fitting(int _width, int _height){
@@ -185,16 +198,28 @@ public class  PDFImage extends PDFComponent{
 
     /**
      * GridLayout 안에 있는 이미지의 크기는 같은 열에 이미지 하나만 있는 경우에 적용된다.<br>
-     * 같은 열에 더 큰 크기의 컴포넌트가 존재한다면, 해당 컴포넌트의 크기에 따라 Fir 된다.<br>
+     * 같은 열에 더 큰 크기의 컴포넌트가 존재한다면, 해당 컴포넌트의 크기에 따라 Fit 된다.<br>
      * The size of the image in GridLayout is applied when there is only one image in the same column.<br>
-     * If a larger component exists in the same column, it will be fired according to the size of that component.
+     * If a larger component exists in the same column, it will fit according to the size of that component.
+     * @see PDFImage#setSize(Float)
      * @param width 가로 크기
      * @param height 세로 크기
      * @return 자기 자신
      */
     @Override
+    @Deprecated
     public PDFImage setSize(Float width, Float height) {
         super.setSize(width, height);
+        return this;
+    }
+    /**
+     * Layout 안에 있는 이미지의 가로 길이는 부모의 가로 길이로 무조건 적용된다.<br>
+     * The width of the image in the layout is unconditionally applied as the horizontal length of the parent.
+     * @param height 세로 크기
+     * @return 자기 자신
+     */
+    public PDFImage setSize(Float height) {
+        super.setSize(null, height);
         return this;
     }
     @Override
@@ -290,8 +315,6 @@ public class  PDFImage extends PDFComponent{
      */
     private PDFImage setImage(Bitmap bitmap){
         this.origin = bitmap;
-        width = this.origin.getWidth();
-        height = this.origin.getHeight();
         anchor.vertical = Anchor.Center;
         anchor.horizontal = Anchor.Center;
         return this;

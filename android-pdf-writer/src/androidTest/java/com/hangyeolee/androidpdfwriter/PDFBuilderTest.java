@@ -76,7 +76,8 @@ public class PDFBuilderTest {
                                 .setTextAlign(TextAlign.Center))
                 )
                 .addChild(PDFImage.build(b)
-                        .setFit(Fit.CONTAIN));
+                        .setFit(Fit.CONTAIN)
+                        .setSize(200.0f));
     }
 
     @Test
