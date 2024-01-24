@@ -2,6 +2,8 @@ package com.hangyeolee.androidpdfwriter;
 
 import android.Manifest;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Environment;
@@ -12,8 +14,10 @@ import androidx.test.rule.GrantPermissionRule;
 
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
+import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.utils.DPI;
+import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
@@ -23,6 +27,8 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.io.InputStream;
 
 @RunWith(AndroidJUnit4.class)
 public class PDFBuilderTest {
@@ -35,6 +41,9 @@ public class PDFBuilderTest {
     @Before
     public void setUp(){
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(
+                com.hangyeolee.androidpdfwriter.test.R.drawable.sample_image);
+        Bitmap b = BitmapFactory.decodeStream(stream);
 
         builder = new PDFBuilder<>(Paper.A4);
         builder.setQuality(100)
@@ -65,13 +74,14 @@ public class PDFBuilderTest {
                                 .setBackgroundColor(Color.BLACK)
                                 .setTextColor(Color.WHITE)
                                 .setTextAlign(TextAlign.Center))
-                );
+                )
+                .addChild(PDFImage.build(b)
+                        .setFit(Fit.CONTAIN));
     }
 
     @Test
     public void testSave() {
         builder.draw();
-        System.out.println(builder.root.getTotalHeight());
         Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "result.pdf");
     }
 }
