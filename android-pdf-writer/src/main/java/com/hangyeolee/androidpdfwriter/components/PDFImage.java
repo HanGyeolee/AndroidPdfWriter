@@ -18,61 +18,65 @@ public class  PDFImage extends PDFComponent{
     @Fit.FitInt
     int fit = Fit.NONE;
 
+    int resizeW;
+    int resizeH;
+    float gapX;
+    float gapY;
+
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-
-        int _height = Math.round (measureHeight - border.size.top - padding.top
-                - border.size.bottom - padding.bottom);
-        /*
-        height 가 measureHeight 보다 크다면?
-        상위 컴포넌트의 Height를 업데이트 한다.
-        */
-        while (height > _height) {
-            updateHeight(height - _height);
-            _height = Math.round (measureHeight - border.size.top - padding.top
-                    - border.size.bottom - padding.bottom);
-        }
-    }
-
-    @Override
-    protected void createBuffer(){
-        float aspectRatio = 1;
-        if(this.origin.getWidth() > 0)
-            aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
-
         int _width = Math.round (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
         int _height = Math.round (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
 
-        int resizeW = _width;
-        int resizeH = _height;
-        float gapX;
-        float gapY;
-        Bitmap scaled;
+        fitting(_width, _height);
+
+        /*
+        height 가 measureHeight 보다 크다면?
+        상위 컴포넌트의 Height를 업데이트 한다.
+        */
+        while (resizeH > _height) {
+            updateHeight(resizeH - _height);
+            _height = Math.round (measureHeight - border.size.top - padding.top
+                    - border.size.bottom - padding.bottom);
+        }
+
+        fitting(_width, _height);
+    }
+
+    private void fitting(int _width, int _height){
+        float aspectRatio = 1;
+        if(this.origin.getWidth() > 0)
+            aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
+
+        resizeW = _width;
+        resizeH = _height;
+
+        if(resizeW < 1 && resizeH > 0){
+            resizeW = this.origin.getWidth() * resizeH/this.origin.getHeight();
+        } else if(resizeH < 1 && resizeW > 0){
+            resizeH = this.origin.getHeight() * resizeW/this.origin.getWidth();
+        } else if(resizeW < 1){
+            resizeW = this.origin.getWidth();
+            resizeH = this.origin.getHeight();
+        }
+
         if (fit == Fit.SCALE_DOWN){
             fit = Fit.CONTAIN;
             if (this.origin.getWidth() > this.origin.getHeight()) {
-                if(_width > this.origin.getWidth()){
+                if(resizeW > this.origin.getWidth()){
                     fit = Fit.NONE;
                 }
-            } else if(_height > this.origin.getHeight()){
+            } else if(resizeH > this.origin.getHeight()){
                 fit = Fit.NONE;
             }
         }
-        buffer = Bitmap.createBitmap(_width, _height, Bitmap.Config.ARGB_8888);
-        Canvas transparentCanvas = new Canvas(buffer);
-        transparentCanvas.drawColor(Color.TRANSPARENT);
-
-        Canvas canvas;
-        Rect src,dst;
 
         switch (fit) {
             case Fit.FILL:
-                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
-                dst = new Rect(0, 0, _width, _height);
-                transparentCanvas.drawBitmap(origin, src, dst, bufferPaint);
+            case Fit.SCALE_DOWN:
                 break;
             case Fit.COVER:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
@@ -87,18 +91,6 @@ public class  PDFImage extends PDFComponent{
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
-
-                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
-                dst = new Rect(0, 0, resizeW, resizeH);
-
-                scaled = Bitmap.createBitmap( resizeW, resizeH, Bitmap.Config.ARGB_8888);
-
-                canvas = new Canvas(scaled);
-                canvas.drawBitmap(origin, src, dst, bufferPaint);
-
-                transparentCanvas.drawBitmap(scaled,
-                        Math.round(gapX), Math.round(gapY), bufferPaint);
-                scaled.recycle();
                 break;
             case Fit.CONTAIN:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
@@ -113,17 +105,6 @@ public class  PDFImage extends PDFComponent{
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
-
-                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
-                dst = new Rect(0, 0, resizeW, resizeH);
-
-                scaled = Bitmap.createBitmap(resizeW, resizeH, Bitmap.Config.ARGB_8888);
-                canvas = new Canvas(scaled);
-                canvas.drawBitmap(origin, src, dst, bufferPaint);
-
-                transparentCanvas.drawBitmap(scaled,
-                        Math.round(gapX), Math.round(gapY), bufferPaint);
-                scaled.recycle();
                 break;
             case Fit.NONE:
                 gapX = (this.origin.getWidth() - _width);
@@ -131,6 +112,47 @@ public class  PDFImage extends PDFComponent{
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
+                break;
+        }
+    }
+
+    @Override
+    protected void createBuffer(){
+        int _width = Math.round (measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right);
+        int _height = Math.round (measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom);
+
+        Bitmap scaled;
+        buffer = Bitmap.createBitmap(_width, _height, Bitmap.Config.ARGB_8888);
+        Canvas transparentCanvas = new Canvas(buffer);
+        transparentCanvas.drawColor(Color.TRANSPARENT);
+
+        Canvas canvas;
+        Rect src,dst;
+
+        switch (fit) {
+            case Fit.FILL:
+                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
+                dst = new Rect(0, 0, resizeW, resizeH);
+                transparentCanvas.drawBitmap(origin, src, dst, bufferPaint);
+                break;
+            case Fit.COVER:
+            case Fit.CONTAIN:
+                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
+                dst = new Rect(0, 0, resizeW, resizeH);
+
+                scaled = Bitmap.createBitmap( resizeW, resizeH, Bitmap.Config.ARGB_8888);
+
+                canvas = new Canvas(scaled);
+                canvas.drawBitmap(origin, src, dst, bufferPaint);
+
+                transparentCanvas.drawBitmap(scaled,
+                        Math.round(gapX), Math.round(gapY), bufferPaint);
+                scaled.recycle();
+                break;
+
+            case Fit.NONE:
                 transparentCanvas.drawBitmap(origin,
                         Math.round(-gapX), Math.round(-gapY), bufferPaint);
                 break;
