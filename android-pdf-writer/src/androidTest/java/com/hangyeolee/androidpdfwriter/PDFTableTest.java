@@ -1,5 +1,6 @@
 package com.hangyeolee.androidpdfwriter;
 
+import android.Manifest;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -7,6 +8,7 @@ import android.graphics.Color;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.rule.GrantPermissionRule;
 
 import com.hangyeolee.androidpdfwriter.components.PDFGridLayout;
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
@@ -22,6 +24,7 @@ import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,6 +35,8 @@ public class PDFTableTest {
     Context context;
     PDFBuilder<PDFLinearLayout> builder;
 
+    @Rule
+    public GrantPermissionRule permissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE);
     /**
      * The first page of the pdf file that is output by executing the code below is as follows:
      * com.hangyeolee.androidpdfwriter.test.R.drawable.pdftabletest_resultimage
