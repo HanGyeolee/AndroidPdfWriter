@@ -7,6 +7,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.TextPaint;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
@@ -14,6 +15,8 @@ import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 
 public class  PDFImage extends PDFComponent{
+    private String imageResourceId;  // 등록된 이미지의 리소스 ID
+
     Bitmap origin = null;
     @Fit.FitInt
     int fit = Fit.NONE;
@@ -130,39 +133,50 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
-    protected void createBuffer(){
+    protected void createPDFObject(BinaryPage page, StringBuilder content) {
+        // 등록된 이미지 리소스 ID 사용
+        if (imageResourceId != null) {
+            // 현재 컴포넌트의 위치와 크기에 맞게 이미지 그리기
+            float x = measureX + border.size.left + padding.left;
+            float y = measureY + border.size.top + padding.top;
+            content.append("q\n")  // 그래픽스 상태 저장
+                    .append(getMeasureWidth()).append(" 0 0 ")
+                    .append(getMeasureHeight()).append(" ")
+                    .append(x).append(" ")
+                    .append(y).append(" cm\n")  // 변환 행렬 설정
+                    .append("/").append(imageResourceId).append(" Do\n")  // 이미지 그리기
+                    .append("Q\n");  // 그래픽스 상태 복원
+        }
+    }
+
+    @Override
+    public void registerResources(BinaryPage page) {
+        if (origin != null) {
+            imageResourceId = page.registerImage(origin);
+        }
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        super.draw(canvas);
+
         int _width = Math.round (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
         int _height = Math.round (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
-
-        Bitmap scaled;
-        buffer = Bitmap.createBitmap(_width, _height, Bitmap.Config.ARGB_8888);
-        Canvas transparentCanvas = new Canvas(buffer);
-        transparentCanvas.drawColor(Color.TRANSPARENT);
-
-        Canvas canvas;
         Rect src,dst;
 
         switch (fit) {
             case Fit.FILL:
                 src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
                 dst = new Rect(0, 0, resizeW, resizeH);
-                transparentCanvas.drawBitmap(origin, src, dst, bufferPaint);
                 break;
             case Fit.COVER:
             case Fit.CONTAIN:
                 src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
                 dst = new Rect(0, 0, resizeW, resizeH);
-
-                scaled = Bitmap.createBitmap( resizeW, resizeH, Bitmap.Config.ARGB_8888);
-
-                canvas = new Canvas(scaled);
-                canvas.drawBitmap(origin, src, dst, bufferPaint);
-
                 transparentCanvas.drawBitmap(scaled,
                         Math.round(gapX), Math.round(gapY), bufferPaint);
-                scaled.recycle();
                 break;
 
             case Fit.NONE:
@@ -181,19 +195,7 @@ public class  PDFImage extends PDFComponent{
         }
         measureX = relativeX + margin.left + dx;
         measureY = relativeY + margin.top + dy;
-    }
 
-    @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
-
-        createBuffer();
-
-        canvas.drawBitmap(buffer,
-                measureX + border.size.left + padding.left,
-                measureY + border.size.top + padding.top, bufferPaint);
-
-        deleteBuffer();
     }
 
     /**

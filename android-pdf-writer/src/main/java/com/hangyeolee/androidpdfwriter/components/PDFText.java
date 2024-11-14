@@ -2,7 +2,9 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.text.Layout;
@@ -11,6 +13,8 @@ import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
+import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
@@ -18,9 +22,18 @@ import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FontType;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
+import java.io.BufferedOutputStream;
 import java.util.Objects;
 
 public class PDFText extends PDFComponent {
+    private String fontResourceId;  // 등록된 폰트의 리소스 ID
+    private float ascent;
+    private float descent;
+    private float capHeight;
+    private float stemV;
+    private RectF fontBBox;
+    private float[] charWidths;  // 문자별 폭 저장
+
     /*
      * Line spacing multiplier for default line spacing.
      */
@@ -50,6 +63,34 @@ public class PDFText extends PDFComponent {
                 - border.size.right - padding.right);
 
         if(text != null) {
+            // Paint 메트릭 계산
+            Paint.FontMetrics metrics = bufferPaint.getFontMetrics();
+
+            // 폰트 메트릭 정보 저장
+            ascent = -metrics.ascent;
+            descent = metrics.descent;
+            // capHeight는 대문자 'H'의 높이로 추정
+            capHeight = bufferPaint.measureText("H");
+
+            // stemV는 대문자 'I'의 폭으로 추정
+            stemV = bufferPaint.measureText("I");
+
+            // FontBBox 계산
+            float maxWidth = 0;
+            charWidths = new float[text.length()];
+            for (int i = 0; i < text.length(); i++) {
+                float charWidth = bufferPaint.measureText(text, i, i + 1);
+                charWidths[i] = charWidth;
+                maxWidth = Math.max(maxWidth, charWidth);
+            }
+
+            fontBBox = new RectF(
+                    0,                  // left
+                    metrics.bottom,     // bottom
+                    maxWidth,           // right
+                    -metrics.top        // top
+            );
+
             if(layout == null || bufferPaint != lastPaint ||
                     !Objects.equals(text, lastText) || lastWidth != _width || lastAlign != align) {
                 if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -92,26 +133,35 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
-    protected void createBuffer(){
-        buffer = Bitmap.createBitmap(lastWidth, updatedHeight, Bitmap.Config.ARGB_8888);
-        Canvas tmp = new Canvas(buffer);
-        // 텍스트를 캔버스를 통해 비트맵에 그린다.
-        layout.draw(tmp);
-        layout = null;
+    protected void createPDFObject(BinaryPage page, StringBuilder content) {
+        // 등록된 폰트 리소스 ID 사용
+        content.append("/").append(fontResourceId).append(" ").append(this.bufferPaint.getTextSize()).append(" Tf\n");
+    }
+
+    @Override
+    public void registerResources(BinaryPage page, BufferedOutputStream bufos) {
+        // 폰트 리소스 등록
+        if (bufferPaint != null && bufferPaint.getTypeface() != null) {
+            FontMetrics fontMetrics = new FontMetrics(
+                    ascent,
+                    descent,
+                    capHeight,
+                    stemV,
+                    fontBBox,
+                    charWidths
+            );
+            fontResourceId = page.registerFont(bufferPaint.getTypeface(), fontMetrics, bufos);
+        }
     }
 
     @Override
     public void draw(Canvas canvas) {
         super.draw(canvas);
 
-        createBuffer();
-
         canvas.drawBitmap(buffer,
                 measureX + border.size.left + padding.left,
                 measureY + border.size.top + padding.top,
                 bufferPaint);
-
-        deleteBuffer();
     }
 
     @Override

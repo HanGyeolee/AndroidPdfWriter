@@ -9,11 +9,14 @@ import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+
+import java.io.BufferedOutputStream;
 
 public abstract class PDFComponent{
     PDFComponent parent = null;
@@ -28,7 +31,6 @@ public abstract class PDFComponent{
     final Border border = new Border();
     final Anchor anchor = new Anchor();
 
-    Bitmap buffer = null;
     Paint bufferPaint = null;
 
     float relativeX = 0;
@@ -159,7 +161,12 @@ public abstract class PDFComponent{
         }
     }
 
-    public void draw(Canvas canvas){
+    /**
+     * 컴포넌트의 리소스를 등록하고 PDF 오브젝트를 생성
+     * @param page BinaryPage 인스턴스
+     * @param content PDF 컨텐츠 생성을 위한 StringBuilder
+     */
+    public void draw(BinaryPage page, StringBuilder content){
         //---------------배경 그리기-------------//
         Paint background = new Paint();
         background.setColor(backgroundColor);
@@ -410,17 +417,14 @@ public abstract class PDFComponent{
         return this;
     }
 
-    protected void createBuffer(){}
-    protected void deleteBuffer(){
-        if(buffer != null && !buffer.isRecycled()) {
-            buffer.recycle();
-            buffer = null;
-        }
-    }
+    /**
+     * 컴포넌트에서 사용하는 리소스를 등록
+     * @param page BinaryPage 인스턴스
+     */
+    public abstract void registerResources(BinaryPage page, BufferedOutputStream bufos);
 
     @Override
     protected void finalize() throws Throwable {
-        deleteBuffer();
         super.finalize();
     }
 }

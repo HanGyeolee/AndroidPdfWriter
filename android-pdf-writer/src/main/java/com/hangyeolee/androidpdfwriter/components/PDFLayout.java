@@ -7,6 +7,8 @@ public abstract class PDFLayout extends PDFComponent{
 
     public PDFLayout(){super();}
 
+    public ArrayList<PDFComponent> getChild(){return child;}
+
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
