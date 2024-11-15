@@ -46,13 +46,16 @@ public class PDFTableTest {
         Bitmap b = BitmapFactory.decodeStream(stream);
 
         builder = new PDFBuilder(Paper.A4);
+        builder.setPagePadding(30, 30)
+                .setQuality(100)
+                .setPagePadding(30.0f, 30.0f, 30.0f, 30.0f)
+                .setQuality(100);
         {
             builder.root = PDFLinearLayout.build()
                     .setOrientation(Orientation.Column)
-                    .setPadding(30, 30)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
-                            .setSize(null, 1200f)
+                            .setSize(1200f)
                             .setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("제목")
                             .setBackgroundColor(Color.RED)
@@ -85,7 +88,7 @@ public class PDFTableTest {
                             .addChild(1, 4, PDFImage.build(b)
                                     .setBackgroundColor(Color.RED)
                                     .setFit(Fit.FILL)
-                                    .setSize(null, 50.0f))
+                                    .setSize(50.0f))
                             .addChild(2, 4, PDFH3.build(
                                     "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다." +
                                     "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다.")

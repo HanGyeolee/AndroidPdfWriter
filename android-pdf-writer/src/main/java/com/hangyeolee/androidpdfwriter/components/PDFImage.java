@@ -191,6 +191,7 @@ public class  PDFImage extends PDFResourceComponent{
      * 같은 열에 더 큰 크기의 컴포넌트가 존재한다면, 해당 컴포넌트의 크기에 따라 Fit 된다.<br>
      * The size of the image in GridLayout is applied when there is only one image in the same column.<br>
      * If a larger component exists in the same column, it will fit according to the size of that component.
+     * @deprecated 이 메소드는 더 이상 사용되지 않습니다.<br/>This method is no longer used.
      * @see PDFImage#setSize(Float)
      * @param width 가로 크기
      * @param height 세로 크기

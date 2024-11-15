@@ -49,17 +49,30 @@ public class PDFBuilder {
         );
     }
 
-    @Deprecated
+    /**
+     * PDF 페이지 패딩, 세로 및 가로 설정
+     * set PDF page padding, vertical and horizontal
+     * @param vertical 세로 패딩
+     * @param horizontal 가로 패딩
+     * @return 자기 자신
+     */
     public PDFBuilder setPagePadding(
             @FloatRange(from = 0.0f) float vertical,
             @FloatRange(from = 0.0f) float horizontal){
         if(vertical < 0) vertical = 0;
         if(horizontal < 0) horizontal = 0;
-        root.setPadding(horizontal, vertical);
+        Zoomable.getInstance().getContentRect().set(horizontal, vertical,
+                this.pageSize.getWidth() - horizontal, this.pageSize.getHeight() - vertical);
         return this;
     }
 
-    @Deprecated
+    /**
+     * @param left 왼쪽 패딩
+     * @param top 위쪽 패딩
+     * @param right 오른쪽 패딩
+     * @param bottom 아래쪽 패딩
+     * @return 자기 자신
+     */
     public PDFBuilder setPagePadding(@Nullable Float left,@Nullable Float top,@Nullable Float right,@Nullable Float bottom){
         float n_left = 0;
         float n_top = 0;
@@ -71,7 +84,8 @@ public class PDFBuilder {
         if(right != null && right > 0.0f) n_right = right;
         if(bottom != null && bottom > 0.0f) n_bottom = bottom;
 
-        root.setPadding(n_left, n_top, n_right, n_bottom);
+        Zoomable.getInstance().getContentRect().set(n_left, n_top,
+                this.pageSize.getWidth() - n_right, this.pageSize.getHeight() - n_bottom);
         return this;
     }
 
@@ -95,8 +109,11 @@ public class PDFBuilder {
      */
     public PDFBuilder draw(){
         if(root != null) {
-            root.setSize(Zoomable.getInstance().getContentRect().width(), 0.0f).measure();
-            page = new BinarySerializer(root);
+            root.setSize(Zoomable.getInstance().getContentRect().width(), 0.0f).measure(
+                    Zoomable.getInstance().getContentRect().left,
+                    Zoomable.getInstance().getContentRect().top
+            );
+            page = new BinarySerializer(root, pageSize);
             page.setQuality(quality);
             page.draw();
         }
@@ -149,7 +166,7 @@ public class PDFBuilder {
             }
 
             if(fos != null) {
-                page.saveTo(fos);
+                page.save(fos);
                 fos.flush();
                 fos.close();
             }

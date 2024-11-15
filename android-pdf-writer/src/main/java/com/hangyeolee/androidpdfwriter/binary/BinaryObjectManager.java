@@ -123,7 +123,7 @@ class BinaryObjectManager {
     public void addXRef(int value, byte b){
         XRefs.add(new XRef(byteLength,value, b));
     }
-    public void addXRef(byte b){
+    private void addXRef(byte b){
         XRefs.add(new XRef(byteLength, b));
     }
     public void writeXref(BufferedOutputStream bufos) throws IOException {

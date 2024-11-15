@@ -86,7 +86,7 @@ public class Border {
     }
 
     public void draw(BinarySerializer page, StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
-        int pageHeight = page.getPageHeight();
+        float pageHeight = page.getPageHeight();
         // 그래픽스 상태 저장
         content.append("q\n"); // Save graphics state
 

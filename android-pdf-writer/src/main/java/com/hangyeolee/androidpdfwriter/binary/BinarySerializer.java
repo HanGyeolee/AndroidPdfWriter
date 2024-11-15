@@ -1,10 +1,12 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
+import android.graphics.RectF;
 import android.graphics.Typeface;
 
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
+import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.BufferedOutputStream;
@@ -21,6 +23,7 @@ public class BinarySerializer {
     private int nextFontNumber = 1;
 
     private int quality;
+    private RectF mediaBox;
 
     // 페이지의 루트 컴포넌트
     private final PDFLayout rootComponent;
@@ -33,8 +36,9 @@ public class BinarySerializer {
      * BinaryPage 생성자
      * @param root 페이지의 루트 컴포넌트
      */
-    public BinarySerializer(PDFLayout root){
+    public BinarySerializer(PDFLayout root, Paper paper){
         this.rootComponent = root;
+        mediaBox = new RectF(0, paper.getHeight(), paper.getWidth(), 0);
         this.manager = new BinaryObjectManager();
     }
 
@@ -57,14 +61,12 @@ public class BinarySerializer {
         pages.finalizeContents(manager);
     }
 
-    public void saveTo(OutputStream fos){
+    public void save(OutputStream fos){
         try {
             BufferedOutputStream bufos = new BufferedOutputStream(fos);
 
-            // 1. PDF 헤더 작성
             writePDFHeader(bufos);
             manager.writeAllObjects(bufos);
-
             manager.writeXref(bufos);
             manager.wrtieTrailer(bufos);
 
@@ -78,7 +80,7 @@ public class BinarySerializer {
         // 페이지 생성 및 리소스 설정
         currentPage = manager.createObject(BinaryPage::new);
         currentPage.setResources(resources);
-        currentPage.setMediaBox(Zoomable.getInstance().getContentRect());
+        currentPage.setMediaBox(mediaBox);
         pages.addPage(currentPage);
 
         return currentPage.getContents();
@@ -176,7 +178,7 @@ public class BinarySerializer {
         this.quality = quality;
     }
 
-    public int getPageHeight(){
+    public float getPageHeight(){
         return (Zoomable.getInstance().getContentRect().height());
     }
 }
