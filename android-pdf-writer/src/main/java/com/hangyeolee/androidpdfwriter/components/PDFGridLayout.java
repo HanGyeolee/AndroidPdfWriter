@@ -1,11 +1,11 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Canvas;
 import android.graphics.Rect;
 
 import androidx.annotation.IntRange;
 
 import com.hangyeolee.androidpdfwriter.exceptions.TableCellHaveNotIndexException;
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.util.ArrayList;
@@ -229,13 +229,13 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
+    public void draw(BinarySerializer page, StringBuilder content) {
+        super.draw(page, content);
 
         for(int i = 0; i < child.size(); i++) {
             // Span에 의해 늘어난 만큼 관련 없는 부분은 draw 하지 않는 다.
             if(i == span.get(i)) {
-                child.get(i).draw(canvas);
+                child.get(i).draw(page, content);
             }
         }
     }

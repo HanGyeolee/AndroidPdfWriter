@@ -2,10 +2,6 @@ package com.hangyeolee.androidpdfwriter;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
@@ -16,7 +12,7 @@ import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.Nullable;
 
-import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
@@ -27,12 +23,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.security.Provider;
-import java.util.Locale;
 
 public class PDFBuilder<T extends PDFLayout> {
     int quality = 60;
-    BinaryPage page;
+    BinarySerializer page;
     Paper pageSize = Paper.A4;
     public T root = null;
 
@@ -41,7 +35,6 @@ public class PDFBuilder<T extends PDFLayout> {
         Zoomable.getInstance().setContentRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
         );
-        setDPI(DPI.M5);
     }
     public PDFBuilder(
             @FloatRange(from = 1.0f) float width,
@@ -52,7 +45,6 @@ public class PDFBuilder<T extends PDFLayout> {
         Zoomable.getInstance().setContentRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
         );
-        setDPI(DPI.M5);
     }
 
     public PDFBuilder<T> setPagePadding(
@@ -97,28 +89,6 @@ public class PDFBuilder<T extends PDFLayout> {
     }
 
     /**
-     * DPI는 pdf로 생성할 이미지의 해상도입니다. 해상도가 높을수록 이미지의 용량이 증가할 것 입니다.<br>
-     * 디바이스 dpi와 상관없이 오직 pdf의 72dpi를 기준으로 해상도가 증가합니다. DPI 기본 설정값은 DPI.M5로 360dpi 입니다.<br>
-     * DPI is the resolution of the image to be created in pdf. The higher the resolution, the higher the capacity of the image will be. <br>
-     * Regardless of the device dpi, the resolution is increased based solely on the dpi of the pdf. Default Dpi is DPI.M5, as 360dpi.
-     * @param dpi 7 ~ , default = 360
-     */
-    public PDFBuilder<T> setDPI(@DPI.DPIInt @IntRange(from = 7) int dpi){
-        Zoomable.getInstance().density = (dpi / 72.0f);
-        return this;
-    }
-
-    /**
-     * int형의 DPI값을 입력하는 대신, 72DPI에 대한 비율로 설정하고 싶을 때 호출합니다.<br>
-     * Call when you want to set the DPI value as a ratio to 72 DPI, rather than putting the int-type DPI value in.
-     * @param ratio 0.1f ~ 100.0f, default = 5.0f
-     */
-    public PDFBuilder<T> setDPI(@FloatRange(from = 0.1f, to = 100.0f) float ratio){
-        Zoomable.getInstance().density = ratio;
-        return this;
-    }
-
-    /**
      * PDF 그리기<br>
      * draw PDF
      */
@@ -126,30 +96,13 @@ public class PDFBuilder<T extends PDFLayout> {
         if(root != null) {
             root.setSize(Zoomable.getInstance().getContentRect().width(),0.0f).measure();
 
-            int contentWidth = Math.round(Zoomable.getInstance().getZoomWidth());
-            int contentHeight = Math.round(Zoomable.getInstance().getZoomHeight());
+            int contentHeight = Math.round(Zoomable.getInstance().getContentRect().height());
 
             // 필요한 페이지 개수
             int pageCount = (int) Math.ceil(root.getTotalHeight() / (float)contentHeight);
 
-            // 하나의 비트맵으로 그려내기
-            Bitmap longBitmap = Bitmap.createBitmap(contentWidth, contentHeight * pageCount, Bitmap.Config.ARGB_8888);
-            Canvas longCanvas = new Canvas(longBitmap);
-            longCanvas.drawColor(Color.WHITE);
-            root.draw(longCanvas);
-
-            page = new BinaryPage(pageCount, quality);
+            page = new BinarySerializer(root, pageCount);
             page.setContentRect(Zoomable.getInstance().getContentRect());
-            Canvas canvas = new Canvas();
-            // 비트맵을 쪼개서 페이지로 표현
-            for (int i = 0; i < pageCount; i++) {
-                Bitmap pageBitmap = Bitmap.createBitmap(contentWidth, contentHeight, Bitmap.Config.ARGB_8888);
-                canvas.setBitmap(pageBitmap);
-                canvas.drawBitmap(longBitmap, 0, -(contentHeight * i), null);
-                page.addBitmap(pageBitmap);
-            }
-
-            longBitmap.recycle();
         }
         return this;
     }
@@ -199,9 +152,11 @@ public class PDFBuilder<T extends PDFLayout> {
                 fos = new FileOutputStream(file, false);
             }
 
-            page.saveTo(fos);
-            fos.flush();
-            fos.close();
+            if(fos != null) {
+                page.saveTo(fos);
+                fos.flush();
+                fos.close();
+            }
         } catch(IOException ignored){}
 
         return uri;

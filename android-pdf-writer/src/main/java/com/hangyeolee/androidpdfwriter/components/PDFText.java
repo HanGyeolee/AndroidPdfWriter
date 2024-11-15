@@ -1,7 +1,6 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -13,7 +12,9 @@ import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
-import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
+import com.hangyeolee.androidpdfwriter.pdf.PDFTextsState;
 import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -22,11 +23,12 @@ import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FontType;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
-import java.io.BufferedOutputStream;
+import java.util.Locale;
 import java.util.Objects;
 
-public class PDFText extends PDFComponent {
-    private String fontResourceId;  // 등록된 폰트의 리소스 ID
+public class PDFText extends PDFResourceComponent {
+    private int flags;
+    private int italicAngle;
     private float ascent;
     private float descent;
     private float capHeight;
@@ -66,6 +68,8 @@ public class PDFText extends PDFComponent {
             // Paint 메트릭 계산
             Paint.FontMetrics metrics = bufferPaint.getFontMetrics();
 
+            flags = getFontFlags(bufferPaint.getTypeface());
+            italicAngle = bufferPaint.getTypeface().isItalic() ? -12 : 0;
             // 폰트 메트릭 정보 저장
             ascent = -metrics.ascent;
             descent = metrics.descent;
@@ -133,16 +137,12 @@ public class PDFText extends PDFComponent {
     }
 
     @Override
-    protected void createPDFObject(BinaryPage page, StringBuilder content) {
-        // 등록된 폰트 리소스 ID 사용
-        content.append("/").append(fontResourceId).append(" ").append(this.bufferPaint.getTextSize()).append(" Tf\n");
-    }
-
-    @Override
-    public void registerResources(BinaryPage page, BufferedOutputStream bufos) {
+    public void registerResources(BinarySerializer page) {
         // 폰트 리소스 등록
         if (bufferPaint != null && bufferPaint.getTypeface() != null) {
             FontMetrics fontMetrics = new FontMetrics(
+                    flags,
+                    italicAngle,
                     ascent,
                     descent,
                     capHeight,
@@ -150,18 +150,111 @@ public class PDFText extends PDFComponent {
                     fontBBox,
                     charWidths
             );
-            fontResourceId = page.registerFont(bufferPaint.getTypeface(), fontMetrics, bufos);
+            resourceId = page.registerFont(bufferPaint.getTypeface(), fontMetrics);
         }
     }
 
-    @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
+    /**
+     * 폰트 플래그 계산
+     */
+    private int getFontFlags(Typeface typeface) {
+        int flags = 0;
 
-        canvas.drawBitmap(buffer,
-                measureX + border.size.left + padding.left,
-                measureY + border.size.top + padding.top,
-                bufferPaint);
+        // Symbolic 폰트 플래그
+        flags |= 1 << 2;
+
+        // 기타 플래그들
+        if (typeface.isBold()) {
+            flags |= 1 << 18; // ForceBold
+        }
+        if (typeface.isItalic()) {
+            flags |= 1 << 6; // Italic
+        }
+
+        return flags;
+    }
+
+    @Override
+    public void draw(BinarySerializer page, StringBuilder content) {
+        super.draw(page, content);
+
+        if (text == null || layout == null) return;
+
+        // 그래픽스 상태 저장
+        PDFGraphicsState.save(content);
+        // 텍스트 객체 시작
+        PDFTextsState.save(content);
+
+        // 폰트 및 크기 설정
+        content.append("/").append(resourceId).append(" ")
+                .append(String.format(Locale.getDefault(),"%.2f", bufferPaint.getTextSize())).append(" Tf\n");
+
+        // 텍스트 색상 설정
+        float red = Color.red(bufferPaint.getColor()) / 255f;
+        float green = Color.green(bufferPaint.getColor()) / 255f;
+        float blue = Color.blue(bufferPaint.getColor()) / 255f;
+        content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f rg\n", red, green, blue));
+
+        // 베이스라인 위치 계산
+        float x = measureX + border.size.left + padding.left;
+        float y = page.getPageHeight() - (measureY + border.size.top + padding.top + bufferPaint.getFontMetrics().ascent);
+
+        // 텍스트 위치로 이동
+        content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\n", x, y));
+
+        // 여러 줄의 텍스트 처리
+        for (int i = 0; i < layout.getLineCount(); i++) {
+            // 현재 줄의 시작과 끝 인덱스
+            int lineStart = layout.getLineStart(i);
+            int lineEnd = layout.getLineEnd(i);
+            String lineText = text.substring(lineStart, lineEnd).trim();
+
+            if (lineText.isEmpty()) continue;
+
+            // 줄 정렬 처리
+            float lineWidth = layout.getLineWidth(i);
+            float alignmentOffset = 0;
+
+            switch (align) {
+                case ALIGN_CENTER:
+                    alignmentOffset = (measureWidth - border.size.left - border.size.right
+                            - padding.left - padding.right - lineWidth) / 2;
+                    break;
+                case ALIGN_OPPOSITE:
+                    alignmentOffset = measureWidth - border.size.left - border.size.right
+                            - padding.left - padding.right - lineWidth;
+                    break;
+            }
+
+            // 첫 줄이 아닌 경우 새로운 줄로 이동
+            if (i > 0) {
+                float lineHeight = layout.getLineBottom(i) - layout.getLineTop(i);
+                content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\n", alignmentOffset, -lineHeight));
+            } else if (alignmentOffset > 0) {
+                content.append(String.format(Locale.getDefault(),"%.2f 0 Td\n", alignmentOffset));
+            }
+
+            // 텍스트 이스케이프 처리
+            String escapedText = escapePDFString(lineText);
+            content.append("(").append(escapedText).append(") Tj\n");
+        }
+
+        // 텍스트 객체 종료
+        PDFTextsState.restore(content);
+        // 그래픽스 상태 복원
+        PDFGraphicsState.restore(content);
+    }
+
+    /**
+     * PDF 문자열 이스케이프 처리
+     */
+    private String escapePDFString(String text) {
+        return text.replace("\\", "\\\\")
+                .replace("(", "\\(")
+                .replace(")", "\\)")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
     }
 
     @Override

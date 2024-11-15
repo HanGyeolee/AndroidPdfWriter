@@ -1,13 +1,15 @@
 package com.hangyeolee.androidpdfwriter.utils;
 
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.RectF;
-import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
+
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
+
+import java.util.Locale;
 
 public class Border {
     public RectF size;
@@ -96,39 +98,99 @@ public class Border {
         return this;
     }
 
-    public void draw(Canvas canvas, float measureX, float measureY, int measureWidth, int measureHeight){
-        Paint paint = new Paint();
-        paint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
+    public void draw(BinarySerializer page, StringBuilder content, float measureX, float measureY, int measureWidth, int measureHeight){
+        int pageHeight = page.getPageHeight();
+        // 그래픽스 상태 저장
+        PDFGraphicsState.save(content);
+
         float gap;
+        // 왼쪽 테두리
         if(size.left > 0) {
-            gap = size.left*0.5f;
-            paint.setStrokeWidth(size.left);
-            paint.setColor(color.left);
-            canvas.drawLine(measureX+gap, measureY,
-                    measureX+gap, measureY+measureHeight, paint);
+            gap = size.left * 0.5f;
+            setColorInPDF(content, color.left);
+            setLineWidthInPDF(content, size.left);
+            // 시작점 이동
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
+                    measureX + gap,
+                    pageHeight - measureY));  // y좌표 변환
+            // 선 그리기
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
+                    measureX + gap,
+                    pageHeight - (measureY + measureHeight)));
+            content.append("S\n");  // 선 그리기 실행
         }
+
+        // 위쪽 테두리
         if(size.top > 0) {
-            gap = size.top*0.5f;
-            paint.setStrokeWidth(size.top);
-            paint.setColor(color.top);
-            canvas.drawLine(measureX, measureY+gap,
-                    measureX+measureWidth, measureY+gap, paint);
+            gap = size.top * 0.5f;
+            setColorInPDF(content, color.top);
+            setLineWidthInPDF(content, size.top);
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
+                    measureX,
+                    pageHeight - (measureY + gap)));
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
+                    measureX + measureWidth,
+                    pageHeight - (measureY + gap)));
+            content.append("S\n");
         }
+
+        // 오른쪽 테두리
         if(size.right > 0) {
-            gap = size.right*0.5f;
-            paint.setStrokeWidth(size.right);
-            paint.setColor(color.right);
-            canvas.drawLine(measureX+measureWidth-gap, measureY,
-                    measureX+measureWidth-gap, measureY+measureHeight, paint);
+            gap = size.right * 0.5f;
+            setColorInPDF(content, color.right);
+            setLineWidthInPDF(content, size.right);
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
+                    measureX + measureWidth - gap,
+                    pageHeight - measureY));
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
+                    measureX + measureWidth - gap,
+                    pageHeight - (measureY + measureHeight)));
+            content.append("S\n");
         }
+
+        // 아래쪽 테두리
         if(size.bottom > 0) {
-            gap = size.bottom*0.5f;
-            paint.setStrokeWidth(size.bottom);
-            paint.setColor(color.bottom);
-            canvas.drawLine(measureX, measureY+measureHeight-gap,
-                    measureX+measureWidth, measureY+measureHeight-gap, paint);
+            gap = size.bottom * 0.5f;
+            setColorInPDF(content, color.bottom);
+            setLineWidthInPDF(content, size.bottom);
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
+                    measureX,
+                    pageHeight - (measureY + measureHeight - gap)));
+            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
+                    measureX + measureWidth,
+                    pageHeight - (measureY + measureHeight - gap)));
+            content.append("S\n");
+        }
+
+        // 그래픽스 상태 복원
+        PDFGraphicsState.restore(content);
+    }
+
+    /**
+     * PDF 컨텐츠 스트림에 색상 설정
+     */
+    private void setColorInPDF(StringBuilder content, @ColorInt int color) {
+        float red = Color.red(color) / 255f;
+        float green = Color.green(color) / 255f;
+        float blue = Color.blue(color) / 255f;
+        float alpha = Color.alpha(color) / 255f;
+
+        if (alpha == 1.0f) {
+            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\n", red, green, blue));
+        } else {
+            // 알파값이 있는 경우 ExtGState 사용
+            content.append(String.format(Locale.getDefault(),"/GS%.2f gs\n", alpha)); // 알파값에 해당하는 ExtGState 사용
+            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\n", red, green, blue));
         }
     }
+
+    /**
+     * PDF 컨텐츠 스트림에 선 두께 설정
+     */
+    private void setLineWidthInPDF(StringBuilder content, float width) {
+        content.append(String.format(Locale.getDefault(),"%.2f w\n", width));
+    }
+
 
     @Override
     public String toString() {

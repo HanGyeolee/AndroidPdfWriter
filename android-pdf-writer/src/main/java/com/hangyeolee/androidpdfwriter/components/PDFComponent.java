@@ -1,22 +1,20 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
-import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
-import java.io.BufferedOutputStream;
+import java.util.Locale;
 
 public abstract class PDFComponent{
     PDFComponent parent = null;
@@ -162,30 +160,84 @@ public abstract class PDFComponent{
     }
 
     /**
+     * PDF 컨텐츠 스트림에 색상 설정
+     */
+    protected void setColorInPDF(StringBuilder content, int color) {
+        float red = Color.red(color) / 255f;
+        float green = Color.green(color) / 255f;
+        float blue = Color.blue(color) / 255f;
+        float alpha = Color.alpha(color) / 255f;
+
+        // RGB 색상 설정
+        if (alpha == 1.0f) {
+            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f RG\n", red, green, blue)); // 선 색상
+            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f rg\n", red, green, blue)); // 채움 색상
+        } else {
+            // 투명도가 있는 경우 ExtGState 사용
+            // Note: ExtGState는 리소스로 등록되어야 함
+            content.append("/GS1 gs\n"); // 알파값이 설정된 그래픽스 상태 사용
+            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f RG\n", red, green, blue));
+            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f rg\n", red, green, blue));
+        }
+    }
+
+    /**
+     * PDF 컨텐츠 스트림에 사각형 그리기
+     */
+    protected void drawRectInPDF(StringBuilder content, float x, float y, float width, float height,
+                                 boolean fill, boolean stroke) {
+        content.append(String.format(Locale.getDefault(), "%.2f %.2f %.2f %.2f re\n",
+                x, y + height, // PDF 좌표계로 변환
+                width, height));
+
+        if (fill && stroke) {
+            content.append("B\n"); // 채우기 및 테두리
+        } else if (fill) {
+            content.append("f\n"); // 채우기만
+        } else if (stroke) {
+            content.append("S\n"); // 테두리만
+        }
+    }
+
+    /**
      * 컴포넌트의 리소스를 등록하고 PDF 오브젝트를 생성
      * @param page BinaryPage 인스턴스
      * @param content PDF 컨텐츠 생성을 위한 StringBuilder
      */
-    public void draw(BinaryPage page, StringBuilder content){
-        //---------------배경 그리기-------------//
-        Paint background = new Paint();
-        background.setColor(backgroundColor);
-        background.setStyle(Paint.Style.FILL);
-        background.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
+    public void draw(BinarySerializer page, StringBuilder content){
+        float componentHeight = getTotalHeight();
+
+        // 현재 컴포넌트가 페이지 높이를 넘어가는지 확인
+        if (page.shouldCreateNewPage(measureY + componentHeight)) {
+            // 새 페이지 생성 및 컨텐츠 스트림 얻기
+            content = page.newPage();
+        }
+
         float left = relativeX + margin.left;
         float top = relativeY + margin.top;
+
         if (parent != null) {
             left += parent.measureX + parent.border.size.left + parent.padding.left;
             top += parent.measureY + parent.border.size.top + parent.padding.top;
         }
-        if(measureWidth > 0 && measureHeight > 0) {
-            canvas.drawRect(left, top,
-                    left + measureWidth, top + measureHeight,
-                    background);
+
+        // 그래픽스 상태 저장
+        PDFGraphicsState.save(content);
+
+        // 배경 그리기
+        if (backgroundColor != Color.TRANSPARENT && measureWidth > 0 && measureHeight > 0) {
+            setColorInPDF(content, backgroundColor);
+            drawRectInPDF(content, left, top, measureWidth, measureHeight, true, false);
         }
 
         //--------------테두리 그리기-------------//
-        border.draw(canvas, left, top, measureWidth, measureHeight);
+        border.draw(page, content, left, top, measureWidth, measureHeight);
+
+        // 그래픽스 상태 복원
+        PDFGraphicsState.restore(content);
+
+        // Y 위치 업데이트
+        page.updateYPosition(componentHeight);
     }
 
     /**
@@ -219,6 +271,7 @@ public abstract class PDFComponent{
     public int getTotalWidth(){
         return measureWidth + margin.right + margin.left;
     }
+
     /**
      * 계산된 전체 높이를 구한다.<br>
      * Get the calculated total height.
@@ -416,12 +469,6 @@ public abstract class PDFComponent{
         this.parent = parent;
         return this;
     }
-
-    /**
-     * 컴포넌트에서 사용하는 리소스를 등록
-     * @param page BinaryPage 인스턴스
-     */
-    public abstract void registerResources(BinaryPage page, BufferedOutputStream bufos);
 
     @Override
     protected void finalize() throws Throwable {

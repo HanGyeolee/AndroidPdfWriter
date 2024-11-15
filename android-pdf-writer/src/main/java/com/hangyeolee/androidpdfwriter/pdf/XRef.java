@@ -1,6 +1,4 @@
-package com.hangyeolee.androidpdfwriter.binary;
-
-import java.nio.charset.StandardCharsets;
+package com.hangyeolee.androidpdfwriter.pdf;
 
 class XRef {
     byte[] pos;
@@ -18,7 +16,7 @@ class XRef {
 
     private byte[] Pos2Ten(long pos){
         byte[] result = new byte[10];
-        byte[] tmp = String.valueOf(pos).getBytes(BinarySingleton.US_ASCII);
+        byte[] tmp = String.valueOf(pos).getBytes(BinaryObjectManager.US_ASCII);
 
         int i = result.length - 1;
         int j = tmp.length - 1;
@@ -35,7 +33,7 @@ class XRef {
     }
     private byte[] Gen2Fiv(int gen){
         byte[] result = new byte[5];
-        byte[] tmp = String.valueOf(gen).getBytes(BinarySingleton.US_ASCII);
+        byte[] tmp = String.valueOf(gen).getBytes(BinaryObjectManager.US_ASCII);
 
         int i = result.length - 1;
         int j = tmp.length - 1;

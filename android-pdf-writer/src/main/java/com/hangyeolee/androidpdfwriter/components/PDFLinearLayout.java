@@ -1,8 +1,8 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Canvas;
 import android.graphics.Rect;
 
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
@@ -92,11 +92,11 @@ public class PDFLinearLayout extends PDFLayout {
 
 
     @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
+    public void draw(BinarySerializer page, StringBuilder content) {
+        super.draw(page, content);
 
         for(int i = 0; i < child.size(); i++) {
-            child.get(i).draw(canvas);
+            child.get(i).draw(page, content);
         }
     }
 

@@ -1,28 +1,27 @@
 package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.TextPaint;
 
-import com.hangyeolee.androidpdfwriter.binary.BinaryPage;
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 
-public class  PDFImage extends PDFComponent{
-    private String imageResourceId;  // 등록된 이미지의 리소스 ID
+import java.util.Locale;
 
+public class  PDFImage extends PDFResourceComponent{
     Bitmap origin = null;
     @Fit.FitInt
     int fit = Fit.NONE;
 
-    int resizeW;
-    int resizeH;
+    float resizeW;
+    float resizeH;
     float gapX;
     float gapY;
 
@@ -133,69 +132,58 @@ public class  PDFImage extends PDFComponent{
     }
 
     @Override
-    protected void createPDFObject(BinaryPage page, StringBuilder content) {
-        // 등록된 이미지 리소스 ID 사용
-        if (imageResourceId != null) {
-            // 현재 컴포넌트의 위치와 크기에 맞게 이미지 그리기
-            float x = measureX + border.size.left + padding.left;
-            float y = measureY + border.size.top + padding.top;
-            content.append("q\n")  // 그래픽스 상태 저장
-                    .append(getMeasureWidth()).append(" 0 0 ")
-                    .append(getMeasureHeight()).append(" ")
-                    .append(x).append(" ")
-                    .append(y).append(" cm\n")  // 변환 행렬 설정
-                    .append("/").append(imageResourceId).append(" Do\n")  // 이미지 그리기
-                    .append("Q\n");  // 그래픽스 상태 복원
-        }
-    }
-
-    @Override
-    public void registerResources(BinaryPage page) {
+    public void registerResources(BinarySerializer page) {
         if (origin != null) {
-            imageResourceId = page.registerImage(origin);
+            resourceId = page.registerImage(origin);
         }
     }
 
     @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
+    public void draw(BinarySerializer page, StringBuilder content) {
+        super.draw(page, content);
 
-        int _width = Math.round (measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right);
-        int _height = Math.round (measureHeight - border.size.top - padding.top
-                - border.size.bottom - padding.bottom);
-        Rect src,dst;
+        float _width = measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right;
+        float _height = measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom;
+
+        // 이미지가 그려질 실제 위치 계산
+        float x = measureX + border.size.left + padding.left + gapX;
+        float y = page.getPageHeight() - (measureY + border.size.top + padding.top + gapY + resizeH);
+
+        // 그래픽스 상태 저장 (이미지 변환을 위해 필요)
+        PDFGraphicsState.save(content);
 
         switch (fit) {
             case Fit.FILL:
-                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
-                dst = new Rect(0, 0, resizeW, resizeH);
+                // 지정된 크기에 맞게 늘리기
+                content.append(String.format(Locale.getDefault(),"%.2f 0 0 %.2f %.2f %.2f cm\n",
+                        _width, _height, x, y));
+                content.append("/").append(resourceId).append(" Do\n");
                 break;
+
             case Fit.COVER:
             case Fit.CONTAIN:
-                src = new Rect(0, 0, origin.getWidth(), origin.getHeight());
-                dst = new Rect(0, 0, resizeW, resizeH);
-                transparentCanvas.drawBitmap(scaled,
-                        Math.round(gapX), Math.round(gapY), bufferPaint);
+                // 비율 유지하며 크기 조정
+                content.append(String.format(Locale.getDefault(),"%.2f 0 0 %.2f %.2f %.2f cm\n",
+                        resizeW, resizeH, x, y));
+                content.append("/").append(resourceId).append(" Do\n");
                 break;
 
             case Fit.NONE:
-                transparentCanvas.drawBitmap(origin,
-                        Math.round(-gapX), Math.round(-gapY), bufferPaint);
+                // 원본 크기 유지
+                float originalWidth = origin.getWidth();
+                float originalHeight = origin.getHeight();
+                content.append(String.format(Locale.getDefault(),"%.2f 0 0 %.2f %.2f %.2f cm\n",
+                        originalWidth, originalHeight, x, y));
+                content.append("/").append(resourceId).append(" Do\n");
                 break;
+
             case Fit.SCALE_DOWN:
                 break;
         }
 
-        int dx = 0, dy = 0;
-        // 이미지에서는 gap을 직접 연산함으로 상단 super.measure()에서 연산된 measureX,Y 를 다시 잡아준다.
-        if(parent != null){
-            dx += parent.measureX + parent.border.size.left + parent.padding.left;
-            dy += parent.measureY + parent.border.size.top + parent.padding.top;
-        }
-        measureX = relativeX + margin.left + dx;
-        measureY = relativeY + margin.top + dy;
-
+        PDFGraphicsState.restore(content);
     }
 
     /**

@@ -1,10 +1,6 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Canvas;
-import android.graphics.Rect;
-
-import com.hangyeolee.androidpdfwriter.listener.Action;
-import com.hangyeolee.androidpdfwriter.utils.Border;
+import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
 
 public class PDFEmpty extends PDFComponent{
     public static PDFEmpty build(){return new PDFEmpty();}
@@ -15,7 +11,7 @@ public class PDFEmpty extends PDFComponent{
     }
 
     @Override
-    public void draw(Canvas canvas) {
+    public void draw(BinarySerializer page, StringBuilder content) {
         // draw nothing
     }
 }
