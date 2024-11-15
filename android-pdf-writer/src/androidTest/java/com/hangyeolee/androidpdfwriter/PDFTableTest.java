@@ -15,8 +15,6 @@ import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
-import com.hangyeolee.androidpdfwriter.utils.Anchor;
-import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
@@ -33,7 +31,7 @@ import java.io.InputStream;
 @RunWith(AndroidJUnit4.class)
 public class PDFTableTest {
     Context context;
-    PDFBuilder<PDFLinearLayout> builder;
+    PDFBuilder builder;
 
     @Rule
     public GrantPermissionRule permissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -47,7 +45,7 @@ public class PDFTableTest {
         InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(com.hangyeolee.androidpdfwriter.test.R.drawable.test);
         Bitmap b = BitmapFactory.decodeStream(stream);
 
-        builder = new PDFBuilder<>(Paper.A4);
+        builder = new PDFBuilder(Paper.A4);
         builder.setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()

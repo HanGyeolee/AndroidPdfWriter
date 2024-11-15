@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
 

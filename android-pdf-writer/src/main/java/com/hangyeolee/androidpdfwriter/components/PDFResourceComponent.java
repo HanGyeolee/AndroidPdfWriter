@@ -1,14 +1,14 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 
 public abstract class PDFResourceComponent extends PDFComponent {
     protected String resourceId;  // 등록된 리소스 ID
 
     @Override
-    public void draw(BinarySerializer page, StringBuilder content) {
+    public StringBuilder draw(BinarySerializer page) {
         registerResources(page);
-        super.draw(page, content);
+        return super.draw(page);
     }
 
     /**

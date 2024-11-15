@@ -12,10 +12,10 @@ import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
 import androidx.annotation.Nullable;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
-import com.hangyeolee.androidpdfwriter.utils.DPI;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
+import com.hangyeolee.androidpdfwriter.utils.PaperUnit;
 import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
@@ -24,11 +24,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class PDFBuilder<T extends PDFLayout> {
+public class PDFBuilder {
     int quality = 60;
     BinarySerializer page;
     Paper pageSize = Paper.A4;
-    public T root = null;
+    public PDFLayout root = null;
 
     public PDFBuilder(Paper pageSize){
         this.pageSize = pageSize;
@@ -38,16 +38,17 @@ public class PDFBuilder<T extends PDFLayout> {
     }
     public PDFBuilder(
             @FloatRange(from = 1.0f) float width,
-            @FloatRange(from = 1.0f) float height){
+            @FloatRange(from = 1.0f) float height,
+            PaperUnit unit){
         if(width < 1) width = 1;
         if(height < 1) height = 1;
-        this.pageSize.setCustom(width, height);
+        this.pageSize.setCustom(width, height, unit);
         Zoomable.getInstance().setContentRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
         );
     }
 
-    public PDFBuilder<T> setPagePadding(
+    public PDFBuilder setPagePadding(
             @FloatRange(from = 0.0f) float vertical,
             @FloatRange(from = 0.0f) float horizontal){
         if(vertical < 0) vertical = 0;
@@ -58,7 +59,7 @@ public class PDFBuilder<T extends PDFLayout> {
         return this;
     }
 
-    public PDFBuilder<T> setPagePadding(@Nullable Float left,@Nullable Float top,@Nullable Float right,@Nullable Float bottom){
+    public PDFBuilder setPagePadding(@Nullable Float left,@Nullable Float top,@Nullable Float right,@Nullable Float bottom){
         float n_left = 0;
         float n_top = 0;
         float n_right = 0;
@@ -81,7 +82,7 @@ public class PDFBuilder<T extends PDFLayout> {
      * One image is entered per page. Can change compress quality. Default quality is 60.
      * @param quality 0 ~ 100, default = 60
      */
-    public PDFBuilder<T> setQuality(@IntRange(from = 0, to = 100) int quality){
+    public PDFBuilder setQuality(@IntRange(from = 0, to = 100) int quality){
         if(quality < 0) quality = 0;
         else if (quality > 100) quality = 100;
         this.quality = quality;
@@ -92,7 +93,7 @@ public class PDFBuilder<T extends PDFLayout> {
      * PDF 그리기<br>
      * draw PDF
      */
-    public PDFBuilder<T> draw(){
+    public PDFBuilder draw(){
         if(root != null) {
             root.setSize(Zoomable.getInstance().getContentRect().width(),0.0f).measure();
 
@@ -101,7 +102,7 @@ public class PDFBuilder<T extends PDFLayout> {
             // 필요한 페이지 개수
             int pageCount = (int) Math.ceil(root.getTotalHeight() / (float)contentHeight);
 
-            page = new BinarySerializer(root, pageCount);
+            page = new BinarySerializer(root, pageSize);
             page.setContentRect(Zoomable.getInstance().getContentRect());
         }
         return this;

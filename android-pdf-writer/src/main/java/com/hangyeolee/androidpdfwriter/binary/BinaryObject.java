@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * PDF 객체를 표현하는 클래스
  */
-public class BinaryObject {
+class BinaryObject {
     private final int objectNumber;
     private final List<BinaryObject> dependencies;  // 이 객체가 참조하는 다른 객체들
     protected Map<String, Object> dictionary;  // PDF 딕셔너리 데이터

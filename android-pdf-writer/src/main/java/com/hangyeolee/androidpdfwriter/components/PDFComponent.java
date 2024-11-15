@@ -6,13 +6,11 @@ import android.graphics.Rect;
 
 import androidx.annotation.ColorInt;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Locale;
 
@@ -184,10 +182,10 @@ public abstract class PDFComponent{
     /**
      * PDF 컨텐츠 스트림에 사각형 그리기
      */
-    protected void drawRectInPDF(StringBuilder content, float x, float y, float width, float height,
+    protected void drawRectInPDF(BinarySerializer page, StringBuilder content, float x, float y, float width, float height,
                                  boolean fill, boolean stroke) {
         content.append(String.format(Locale.getDefault(), "%.2f %.2f %.2f %.2f re\n",
-                x, y + height, // PDF 좌표계로 변환
+                x, page.getPageHeight() - (y + height), // PDF 좌표계로 변환
                 width, height));
 
         if (fill && stroke) {
@@ -201,25 +199,15 @@ public abstract class PDFComponent{
 
     /**
      * 컴포넌트의 리소스를 등록하고 PDF 오브젝트를 생성
-     * @param page BinaryPage 인스턴스
-     * @param content PDF 컨텐츠 생성을 위한 StringBuilder
+     * @param serializer BinaryPage 인스턴스
      */
-    public void draw(BinarySerializer page, StringBuilder content){
+    public StringBuilder draw(BinarySerializer serializer){
         float componentHeight = getTotalHeight();
 
-        // 현재 컴포넌트가 페이지 높이를 넘어가는지 확인
-        if (page.shouldCreateNewPage(measureY + componentHeight)) {
-            // 새 페이지 생성 및 컨텐츠 스트림 얻기
-            content = page.newPage();
-        }
-
-        float left = relativeX + margin.left;
-        float top = relativeY + margin.top;
-
-        if (parent != null) {
-            left += parent.measureX + parent.border.size.left + parent.padding.left;
-            top += parent.measureY + parent.border.size.top + parent.padding.top;
-        }
+        // 페이지 체크
+        int requiredPage = serializer.calculatePageIndex(measureY, componentHeight);
+        measureY -= requiredPage * serializer.getPageHeight();
+        StringBuilder content = serializer.getPage(requiredPage);
 
         // 그래픽스 상태 저장
         PDFGraphicsState.save(content);
@@ -227,17 +215,15 @@ public abstract class PDFComponent{
         // 배경 그리기
         if (backgroundColor != Color.TRANSPARENT && measureWidth > 0 && measureHeight > 0) {
             setColorInPDF(content, backgroundColor);
-            drawRectInPDF(content, left, top, measureWidth, measureHeight, true, false);
+            drawRectInPDF(serializer, content, measureX, measureY, measureWidth, measureHeight, true, false);
         }
 
         //--------------테두리 그리기-------------//
-        border.draw(page, content, left, top, measureWidth, measureHeight);
+        border.draw(serializer, content, measureX, measureY, measureWidth, measureHeight);
 
         // 그래픽스 상태 복원
         PDFGraphicsState.restore(content);
-
-        // Y 위치 업데이트
-        page.updateYPosition(componentHeight);
+        return content;
     }
 
     /**
@@ -291,11 +277,11 @@ public abstract class PDFComponent{
     public PDFComponent setSize(Float width, Float height){
         if(width != null){
             if(width < 0) width = 0f;
-            this.width = Math.round(width * Zoomable.getInstance().density);
+            this.width = Math.round(width);
         }
         if(height != null){
             if(height < 0) height = 0f;
-            this.height = Math.round(height * Zoomable.getInstance().density);
+            this.height = Math.round(height);
         }
         return this;
     }
@@ -317,12 +303,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setMargin(Rect margin){
-        this.margin.set(new Rect(
-                Math.round(margin.left * Zoomable.getInstance().density),
-                Math.round(margin.top * Zoomable.getInstance().density),
-                Math.round(margin.right * Zoomable.getInstance().density),
-                Math.round(margin.bottom * Zoomable.getInstance().density))
-        );
+        this.margin.set(margin);
         return this;
     }
 
@@ -357,12 +338,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setMargin(int left, int top, int right, int bottom){
-        this.margin.set(
-                Math.round(left * Zoomable.getInstance().density),
-                Math.round(top * Zoomable.getInstance().density),
-                Math.round(right * Zoomable.getInstance().density),
-                Math.round(bottom * Zoomable.getInstance().density)
-        );
+        this.margin.set(left, top, right, bottom);
         return this;
     }
 
@@ -373,12 +349,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setPadding(Rect padding){
-        this.padding.set(new Rect(
-                Math.round(padding.left * Zoomable.getInstance().density),
-                Math.round(padding.top * Zoomable.getInstance().density),
-                Math.round(padding.right * Zoomable.getInstance().density),
-                Math.round(padding.bottom * Zoomable.getInstance().density))
-        );
+        this.padding.set(padding);
         return this;
     }
 
@@ -389,12 +360,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setPadding(int all){
-        this.padding.set(
-                Math.round(all * Zoomable.getInstance().density),
-                Math.round(all * Zoomable.getInstance().density),
-                Math.round(all * Zoomable.getInstance().density),
-                Math.round(all * Zoomable.getInstance().density)
-        );
+        this.padding.set(all, all, all, all);
         return this;
     }
 
@@ -406,12 +372,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setPadding(int horizontal, int vertical){
-        this.padding.set(
-                Math.round(horizontal * Zoomable.getInstance().density),
-                Math.round(vertical * Zoomable.getInstance().density),
-                Math.round(horizontal * Zoomable.getInstance().density),
-                Math.round(vertical * Zoomable.getInstance().density)
-        );
+        this.padding.set(horizontal, vertical, horizontal, vertical);
         return this;
     }
 
@@ -425,12 +386,7 @@ public abstract class PDFComponent{
      * @return 컴포넌트 자기자신
      */
     public PDFComponent setPadding(int left, int top, int right, int bottom){
-        this.padding.set(
-                Math.round(left * Zoomable.getInstance().density),
-                Math.round(top * Zoomable.getInstance().density),
-                Math.round(right * Zoomable.getInstance().density),
-                Math.round(bottom * Zoomable.getInstance().density)
-        );
+        this.padding.set(left, top, right, bottom);
         return this;
     }
 

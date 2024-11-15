@@ -5,8 +5,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.text.TextPaint;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
@@ -139,8 +138,8 @@ public class  PDFImage extends PDFResourceComponent{
     }
 
     @Override
-    public void draw(BinarySerializer page, StringBuilder content) {
-        super.draw(page, content);
+    public StringBuilder draw(BinarySerializer serializer) {
+        StringBuilder content = super.draw(serializer);
 
         float _width = measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right;
@@ -149,7 +148,7 @@ public class  PDFImage extends PDFResourceComponent{
 
         // 이미지가 그려질 실제 위치 계산
         float x = measureX + border.size.left + padding.left + gapX;
-        float y = page.getPageHeight() - (measureY + border.size.top + padding.top + gapY + resizeH);
+        float y = serializer.getPageHeight() - (measureY + border.size.top + padding.top + gapY + resizeH);
 
         // 그래픽스 상태 저장 (이미지 변환을 위해 필요)
         PDFGraphicsState.save(content);
@@ -184,6 +183,7 @@ public class  PDFImage extends PDFResourceComponent{
         }
 
         PDFGraphicsState.restore(content);
+        return null;
     }
 
     /**

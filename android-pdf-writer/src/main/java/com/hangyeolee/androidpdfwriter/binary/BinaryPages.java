@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +18,23 @@ class BinaryPages extends BinaryObject {
         pages.add(page);
         page.setParent(this);
         addDependency(page);
+    }
+
+    public BinaryPage getPage(int index){
+        if (index < 0) {
+            throw new IllegalArgumentException("Page index cannot be negative");
+        }
+        return pages.get(index);
+    }
+
+    public int getPageSize(){
+        return pages.size();
+    }
+
+    public void finalizeContent(BinaryObjectManager manager){
+        for (BinaryPage page : pages) {
+            page.finalizeContent(manager);
+        }
     }
 
     @Override

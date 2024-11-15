@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
 import java.util.Locale;
 
@@ -8,11 +8,12 @@ import java.util.Locale;
 class BinaryPage extends BinaryObject {
     private BinaryPages parent;
     private BinaryResources resources;
-    private BinaryObject contents;  // 페이지의 모든 컨텐츠를 포함하는 스트림
+    private StringBuilder contentStream ;
 
     public BinaryPage(int objectNumber) {
         super(objectNumber);
         dictionary.put("/Type", "/Page");
+        contentStream  = new StringBuilder();
     }
 
     public void setParent(BinaryPages parent) {
@@ -26,14 +27,20 @@ class BinaryPage extends BinaryObject {
         addDependency(resources);
     }
 
-    /**
-     * 페이지의 컨텐츠 스트림 설정
-     * @param contents 컨텐츠 스트림 객체
-     */
-    public void setContents(BinaryObject contents) {
-        this.contents = contents;
-        dictionary.put("/Contents", contents);
-        addDependency(contents);
+    public StringBuilder getContents(){
+        return contentStream ;
+    }
+
+    // draw 완료 후 호출하여 컨텐츠를 ContentStream 객체로 변환
+    public void finalizeContent(BinaryObjectManager manager) {
+        if (contentStream != null && contentStream.length() > 0) {
+            BinaryObject contents = manager.createObject(n ->
+                    new BinaryContentStream(n, contentStream.toString()));
+            dictionary.put("/Contents", contents);
+            addDependency(contents);
+            contentStream.setLength(0);
+            contentStream = null;
+        }
     }
 
     public void setMediaBox(float[] dimensions) {

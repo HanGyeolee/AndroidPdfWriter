@@ -1,10 +1,12 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
+import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
+import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.BufferedOutputStream;
@@ -15,32 +17,33 @@ import java.util.Map;
 
 public class BinarySerializer {
     private final BinaryObjectManager manager;
-    // 페이지의 루트 컴포넌트
-    private PDFLayout rootComponent;
+    private final float[] mediaBox;
+    private final Map<Bitmap, String> imageResourceMap = new HashMap<>();
     private final Map<Typeface, String> fontResourceMap = new HashMap<>();
-    private int nextFontNumber = 1;
     private int nextImageNumber = 1;
+    private int nextFontNumber = 1;
+
+    // 페이지의 루트 컴포넌트
+    private final PDFLayout rootComponent;
 
     // 페이지 수
-    int pageCount;
     int pageWidth, pageHeight;
     // 페이지의 콘텐츠 영역 (여백을 제외한 실제 내용이 그려지는 영역)
     RectF contentRect;
 
-    private float currentY = 0; // 현재 그리기 Y 위치
     private BinaryPages pages;
     private BinaryPage currentPage;
     private BinaryResources resources;
-    private StringBuilder contentStream;
 
     /**
      * BinaryPage 생성자
      * @param root 페이지의 루트 컴포넌트
-     * @param pageCount 총 페이지 수
      */
-    public BinarySerializer(PDFLayout root, int pageCount){
+    public BinarySerializer(PDFLayout root, Paper pageSize){
         this.rootComponent = root;
-        this.pageCount = pageCount;
+        mediaBox = new float[]{
+                0, 0, pageSize.getWidth(), pageSize.getHeight()
+        };
         this.manager = new BinaryObjectManager();
     }
 
@@ -69,7 +72,11 @@ public class BinarySerializer {
         manager.createObject(n -> new BinaryCatalog(n, pages));
         // 2 0 obj Catalog
 
-        rootComponent.draw(this, newPage());
+        // 페이지 리소스 생성
+        resources = manager.createObject(BinaryResources::new);
+        rootComponent.draw(this);
+
+        pages.finalizeContent(manager);
 
         try {
             BufferedOutputStream bufos = new BufferedOutputStream(fos);
@@ -88,39 +95,37 @@ public class BinarySerializer {
     }
 
     public StringBuilder newPage(){
-        // 현재 페이지의 컨텐츠 스트림 저장
-        if (currentPage != null) {
-            // 9. 콘텐츠 스트림 객체 생성
-            BinaryObject contents = manager.createObject(n ->
-                    new BinaryContentStream(n, contentStream.toString()));
-            currentPage.setContents(contents);
-        }
-
-        // 페이지 리소스 생성
-        resources = manager.createObject(BinaryResources::new);
         // 페이지 생성 및 리소스 설정
         currentPage = manager.createObject(BinaryPage::new);
         currentPage.setResources(resources);
+        currentPage.setMediaBox(mediaBox);
         pages.addPage(currentPage);
-        // 새로운 컨텐츠 스트림 생성
-        contentStream = new StringBuilder();
 
-        // Y 위치 초기화
-        currentY = 0;
-
-        return contentStream;
+        return currentPage.getContents();
     }
 
-    public boolean shouldCreateNewPage(float componentHeight) {
-        return (currentY + componentHeight) > getPageHeight();
+    // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
+    public int calculatePageIndex(float measureY, float componentHeight) {
+        if (measureY < 0) return 0;
+        float pageHeight = getPageHeight();
+        return (int) Math.floor((measureY + componentHeight) / pageHeight);
     }
 
-    public void updateYPosition(float height) {
-        currentY += height;
+    // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
+    public int calculatePageIndex(float measureY) {
+        float pageHeight = getPageHeight();
+        return (int) Math.floor((measureY) / pageHeight);
     }
 
-    public float getCurrentY() {
-        return currentY;
+    public StringBuilder getPage(int index){
+        if(index < pages.getPageSize()) {
+            // 생성된 페이지로 전환
+            currentPage = pages.getPage(index);
+            return currentPage.getContents();
+        } else {
+            // 만약 생성된 페이지의 인덱스를 넘어가는 경우,
+            return newPage();
+        }
     }
 
     /**
@@ -167,7 +172,14 @@ public class BinarySerializer {
      * 이미지를 PDF 리소스로 등록
      */
     public String registerImage(android.graphics.Bitmap bitmap) {
-        String imageId = "Im" + nextImageNumber++;
+        // 이미 등록된 이미지인지 확인
+        String imageId = imageResourceMap.get(bitmap);
+        if (imageId != null) {
+            return imageId;
+        }
+
+        imageId = "Im" + nextImageNumber++;
+        imageResourceMap.put(bitmap, imageId);
 
         // 이미지 객체 생성
         BinaryImage image = manager.createObject(n -> new BinaryImage(n, bitmap, 85));

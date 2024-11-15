@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
 import android.os.Build;
 
@@ -18,7 +18,7 @@ import java.util.Set;
 /**
  * PDF 객체들을 관리하는 클래스
  */
-public class BinaryObjectManager {
+class BinaryObjectManager {
     public static final Charset US_ASCII = Charset.forName("US-ASCII");
 
     private int nextObjectNumber = 1;

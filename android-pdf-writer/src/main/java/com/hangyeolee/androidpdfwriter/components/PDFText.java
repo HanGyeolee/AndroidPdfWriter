@@ -12,16 +12,13 @@ import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
-import com.hangyeolee.androidpdfwriter.pdf.PDFTextsState;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FontType;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Locale;
 import java.util.Objects;
@@ -175,10 +172,10 @@ public class PDFText extends PDFResourceComponent {
     }
 
     @Override
-    public void draw(BinarySerializer page, StringBuilder content) {
-        super.draw(page, content);
+    public StringBuilder draw(BinarySerializer serializer) {
+        StringBuilder content = super.draw(serializer);
 
-        if (text == null || layout == null) return;
+        if (text == null || layout == null) return null;
 
         // 그래픽스 상태 저장
         PDFGraphicsState.save(content);
@@ -197,7 +194,7 @@ public class PDFText extends PDFResourceComponent {
 
         // 베이스라인 위치 계산
         float x = measureX + border.size.left + padding.left;
-        float y = page.getPageHeight() - (measureY + border.size.top + padding.top + bufferPaint.getFontMetrics().ascent);
+        float y = serializer.getPageHeight() - (measureY + border.size.top + padding.top + bufferPaint.getFontMetrics().ascent);
 
         // 텍스트 위치로 이동
         content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\n", x, y));
@@ -243,6 +240,8 @@ public class PDFText extends PDFResourceComponent {
         PDFTextsState.restore(content);
         // 그래픽스 상태 복원
         PDFGraphicsState.restore(content);
+
+        return null;
     }
 
     /**
@@ -350,7 +349,7 @@ public class PDFText extends PDFResourceComponent {
         if(paint == null){
             this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
-            this.bufferPaint.setTextSize(16f * Zoomable.getInstance().density);
+            this.bufferPaint.setTextSize(16f);
         }else{
             lastPaint = (TextPaint) this.bufferPaint;
             this.bufferPaint = paint;
@@ -379,7 +378,7 @@ public class PDFText extends PDFResourceComponent {
 
     public PDFText setFontsize(float fontsize){
         setTextPaint((TextPaint) bufferPaint);
-        this.bufferPaint.setTextSize(fontsize * Zoomable.getInstance().density);
+        this.bufferPaint.setTextSize(fontsize);
         return this;
     }
     public PDFText setTextAlign(@TextAlign.TextAlignInt int align){

@@ -1,6 +1,6 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 
 public class PDFEmpty extends PDFComponent{
     public static PDFEmpty build(){return new PDFEmpty();}
@@ -11,8 +11,9 @@ public class PDFEmpty extends PDFComponent{
     }
 
     @Override
-    public void draw(BinarySerializer page, StringBuilder content) {
+    public StringBuilder draw(BinarySerializer serializer) {
         // draw nothing
+        return null;
     }
 }
 

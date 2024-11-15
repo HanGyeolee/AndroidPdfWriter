@@ -6,8 +6,7 @@ import android.graphics.RectF;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.pdf.PDFGraphicsState;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 
 import java.util.Locale;
 
@@ -31,11 +30,7 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public Border(float size,@ColorInt int color){
-        this.size = new RectF(
-                size * Zoomable.getInstance().density,
-                size * Zoomable.getInstance().density,
-                size * Zoomable.getInstance().density,
-                size * Zoomable.getInstance().density);
+        this.size = new RectF(size, size, size, size);
         this.color = new ColorRect(color, color, color, color);
     }
 
@@ -46,10 +41,6 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public Border(RectF size, ColorRect color){
-        size.left *= Zoomable.getInstance().density;
-        size.top *= Zoomable.getInstance().density;
-        size.right *= Zoomable.getInstance().density;
-        size.bottom *= Zoomable.getInstance().density;
         this.size = size;
         this.color = color;
     }
@@ -62,10 +53,6 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public Border(RectF size,@ColorInt int color){
-        size.left *= Zoomable.getInstance().density;
-        size.top *= Zoomable.getInstance().density;
-        size.right *= Zoomable.getInstance().density;
-        size.bottom *= Zoomable.getInstance().density;
         this.size = size;
         this.color = new ColorRect(color, color, color, color);
     }
@@ -78,30 +65,30 @@ public class Border {
     }
 
     public Border setLeft(float size,@ColorInt int color){
-        this.size.left = size * Zoomable.getInstance().density;
+        this.size.left = size;
         this.color.left = color;
         return this;
     }
     public Border setTop(float size,@ColorInt int color){
-        this.size.top = size * Zoomable.getInstance().density;
+        this.size.top = size;
         this.color.top = color;
         return this;
     }
     public Border setRight(float size,@ColorInt int color){
-        this.size.right = size * Zoomable.getInstance().density;
+        this.size.right = size;
         this.color.right = color;
         return this;
     }
     public Border setBottom(float size,@ColorInt int color){
-        this.size.bottom = size * Zoomable.getInstance().density;
+        this.size.bottom = size;
         this.color.bottom = color;
         return this;
     }
 
-    public void draw(BinarySerializer page, StringBuilder content, float measureX, float measureY, int measureWidth, int measureHeight){
+    public void draw(BinarySerializer page, StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
         int pageHeight = page.getPageHeight();
         // 그래픽스 상태 저장
-        PDFGraphicsState.save(content);
+        content.append("q\n"); // Save graphics state
 
         float gap;
         // 왼쪽 테두리
@@ -163,7 +150,7 @@ public class Border {
         }
 
         // 그래픽스 상태 복원
-        PDFGraphicsState.restore(content);
+        content.append("Q\n"); // Restore graphics state
     }
 
     /**
@@ -206,7 +193,7 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public static Border BorderLeft(float size,@ColorInt int color){
-        return new Border(new RectF(size * Zoomable.getInstance().density,0,0, 0), new ColorRect(color, Color.WHITE, Color.WHITE, Color.WHITE));
+        return new Border(new RectF(size,0,0, 0), new ColorRect(color, Color.WHITE, Color.WHITE, Color.WHITE));
     }
     /**
      * 위쪽 테두리만 나타나도록 설정<br>
@@ -217,7 +204,7 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public static Border BorderTop(float size,@ColorInt int color){
-        return new Border(new RectF(0,size * Zoomable.getInstance().density,0, 0), new ColorRect(Color.WHITE, color, Color.WHITE, Color.WHITE));
+        return new Border(new RectF(0,size,0, 0), new ColorRect(Color.WHITE, color, Color.WHITE, Color.WHITE));
     }
     /**
      * 오른쪽 테두리만 나타나도록 설정<br>
@@ -228,7 +215,7 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public static Border BorderRight(float size,@ColorInt int color){
-        return new Border(new RectF(0,0,size * Zoomable.getInstance().density, 0), new ColorRect(Color.WHITE, Color.WHITE, color, Color.WHITE));
+        return new Border(new RectF(0,0,size, 0), new ColorRect(Color.WHITE, Color.WHITE, color, Color.WHITE));
     }
     /**
      * 아래쪽 테두리만 나타나도록 설정<br>
@@ -239,6 +226,6 @@ public class Border {
      * @param color 테두리 색상, color
      */
     public static Border BorderBottom(float size,@ColorInt int color){
-        return new Border(new RectF(0,0,0, size * Zoomable.getInstance().density), new ColorRect(Color.WHITE, Color.WHITE, Color.WHITE, color));
+        return new Border(new RectF(0,0,0, size), new ColorRect(Color.WHITE, Color.WHITE, Color.WHITE, color));
     }
 }

@@ -5,7 +5,7 @@ import android.graphics.Rect;
 import androidx.annotation.IntRange;
 
 import com.hangyeolee.androidpdfwriter.exceptions.TableCellHaveNotIndexException;
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import java.util.ArrayList;
@@ -140,7 +140,7 @@ public class PDFGridLayout extends PDFLayout{
             }
 
             // 페이지 넘기는 Grid Cell 이 있는 경우 다음 페이지로
-            float zoomHeight = Zoomable.getInstance().getZoomHeight();
+            float zoomHeight = Zoomable.getInstance().getContentRect().height();
             float lastHeight = totalHeight + measureY;
             while(lastHeight > zoomHeight){
                 lastHeight -= zoomHeight;
@@ -229,15 +229,17 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     @Override
-    public void draw(BinarySerializer page, StringBuilder content) {
-        super.draw(page, content);
+    public StringBuilder draw(BinarySerializer serializer) {
+        super.draw(serializer);
 
         for(int i = 0; i < child.size(); i++) {
             // Span에 의해 늘어난 만큼 관련 없는 부분은 draw 하지 않는 다.
             if(i == span.get(i)) {
-                child.get(i).draw(page, content);
+                child.get(i).draw(serializer);
             }
         }
+
+        return null;
     }
 
     /**
@@ -249,7 +251,7 @@ public class PDFGridLayout extends PDFLayout{
     public PDFGridLayout setChildWidth(int xIndex, int width){
         if(width < 0) width = 0;
         if(xIndex < gaps.length)
-            gaps[xIndex] = Math.round(width * Zoomable.getInstance().density);
+            gaps[xIndex] = width;
         return this;
     }
 
@@ -273,22 +275,12 @@ public class PDFGridLayout extends PDFLayout{
 
 
     public PDFGridLayout setChildMargin(Rect margin) {
-        this.childMargin.set(new Rect(
-                Math.round(margin.left * Zoomable.getInstance().density),
-                Math.round(margin.top * Zoomable.getInstance().density),
-                Math.round(margin.right * Zoomable.getInstance().density),
-                Math.round(margin.bottom * Zoomable.getInstance().density))
-        );
+        this.childMargin.set(margin);
         return this;
     }
 
     public PDFGridLayout setChildMargin(int left, int top, int right, int bottom) {
-        this.childMargin.set(
-                Math.round(left * Zoomable.getInstance().density),
-                Math.round(top * Zoomable.getInstance().density),
-                Math.round(right * Zoomable.getInstance().density),
-                Math.round(bottom * Zoomable.getInstance().density)
-        );
+        this.childMargin.set(left, top, right, bottom);
         return this;
     }
 

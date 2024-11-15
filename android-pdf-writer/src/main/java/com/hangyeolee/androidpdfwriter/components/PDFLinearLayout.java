@@ -2,13 +2,12 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Rect;
 
-import com.hangyeolee.androidpdfwriter.pdf.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
 import java.util.ArrayList;
 import com.hangyeolee.androidpdfwriter.listener.Action;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 public class PDFLinearLayout extends PDFLayout {
     @Orientation.OrientationInt
@@ -92,12 +91,13 @@ public class PDFLinearLayout extends PDFLayout {
 
 
     @Override
-    public void draw(BinarySerializer page, StringBuilder content) {
-        super.draw(page, content);
+    public StringBuilder draw(BinarySerializer serializer) {
+        super.draw(serializer);
 
         for(int i = 0; i < child.size(); i++) {
-            child.get(i).draw(page, content);
+            child.get(i).draw(serializer);
         }
+        return null;
     }
 
     /**
@@ -120,7 +120,7 @@ public class PDFLinearLayout extends PDFLayout {
      */
     public PDFLinearLayout addChild(PDFComponent component, int width){
         if(width < 0) width = 0;
-        gaps.add(Math.round(width * Zoomable.getInstance().density));
+        gaps.add(width);
         super.addChild(component);
         return this;
     }

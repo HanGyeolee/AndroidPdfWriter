@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.pdf;
+package com.hangyeolee.androidpdfwriter.binary;
 
 import java.io.ByteArrayOutputStream;
 import java.util.zip.Deflater;
