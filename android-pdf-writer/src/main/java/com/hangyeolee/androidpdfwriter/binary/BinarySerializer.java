@@ -207,6 +207,6 @@ public class BinarySerializer {
     }
 
     public float getPageHeight(){
-        return mediaBox.top - (Zoomable.getInstance().getContentRect().bottom);
+        return mediaBox.top - (Zoomable.getInstance().getContentRect().top);
     }
 }
