@@ -141,6 +141,8 @@ public class  PDFImage extends PDFResourceComponent{
     public StringBuilder draw(BinarySerializer serializer) {
         StringBuilder content = super.draw(serializer);
 
+        float originalWidth = origin.getWidth();
+        float originalHeight = origin.getHeight();
         float _width = measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right;
         float _height = measureHeight - border.size.top - padding.top
@@ -152,35 +154,31 @@ public class  PDFImage extends PDFResourceComponent{
 
         // 그래픽스 상태 저장 (이미지 변환을 위해 필요)
         PDFGraphicsState.save(content);
+        float scaleX = 1;
+        float scaleY = 1;
 
         switch (fit) {
             case Fit.FILL:
-                // 지정된 크기에 맞게 늘리기
-                content.append(String.format(Locale.getDefault(),"%.2f 0 0 %.2f %.2f %.2f cm\n",
-                        _width, _height, x, y));
-                content.append("/").append(resourceId).append(" Do\n");
+                // 1. 먼저 원하는 크기로 스케일 조정
+                scaleX = _width / originalWidth;
+                scaleY = _height / originalHeight;
                 break;
 
             case Fit.COVER:
             case Fit.CONTAIN:
-                // 비율 유지하며 크기 조정
-                content.append(String.format(Locale.getDefault(),"%.2f 0 0 %.2f %.2f %.2f cm\n",
-                        resizeW, resizeH, x, y));
-                content.append("/").append(resourceId).append(" Do\n");
+                // 1. 비율 유지하며 스케일 계산
+                scaleX = resizeW / originalWidth;
+                scaleY = resizeH / originalHeight;
                 break;
 
-            case Fit.NONE:
-                // 원본 크기 유지
-                float originalWidth = origin.getWidth();
-                float originalHeight = origin.getHeight();
-                content.append(String.format(Locale.getDefault(),"%.2f 0 0 %.2f %.2f %.2f cm\n",
-                        originalWidth, originalHeight, x, y));
-                content.append("/").append(resourceId).append(" Do\n");
-                break;
-
-            case Fit.SCALE_DOWN:
+            default:
                 break;
         }
+        // 지정된 크기에 맞게 늘리기
+        content.append(String.format(Locale.getDefault(),
+                "%.2f 0 0 %.2f %.2f %.2f cm\n",
+                scaleX, scaleY, x, y));
+        content.append("/").append(resourceId).append(" Do\n");
 
         PDFGraphicsState.restore(content);
         return null;

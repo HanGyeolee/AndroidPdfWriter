@@ -35,12 +35,17 @@ android {
         versionCode 3
         versionName PUBLISH_VERSION
 
+        testApplicationId "com.hangyeolee.androidpdfwriter.test"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aarMetadata{
-            minCompileSdk = 29
+            minCompileSdk = 22
         }
 
         buildConfigField "String", "PUBLISH_VERSION", "\""+PUBLISH_VERSION+"\""
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -50,8 +55,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     publishing {
@@ -63,13 +68,13 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.0.0'
+    implementation 'androidx.annotation:annotation:1.0.1'
     implementation 'org.jetbrains:annotations:15.0'
-    testImplementation 'junit:junit:1.0.0'
+    testImplementation 'junit:junit:4.13.2'
 
-    androidTestImplementation "androidx.test.ext:junit:1.1.5"
-    androidTestImplementation 'androidx.test:runner:1.1.0'
-    androidTestImplementation 'androidx.test:rules:1.1.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test:runner:1.4.0'
+    androidTestImplementation 'androidx.test:rules:1.4.0'
 }
 
 apply from: "${rootDir}/scripts/publish-remote.gradle"

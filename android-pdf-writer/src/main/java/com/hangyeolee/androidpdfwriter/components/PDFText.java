@@ -19,10 +19,12 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FontType;
 
+import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.Objects;
 
 public class PDFText extends PDFResourceComponent {
+    private static final Charset UTF_8 = Charset.forName("UTF-8");
     private int flags;
     private int italicAngle;
     private float ascent;
@@ -232,7 +234,7 @@ public class PDFText extends PDFResourceComponent {
 
             // 텍스트 이스케이프 처리
             String escapedText = escapePDFString(lineText);
-            content.append("(").append(escapedText).append(") Tj\n");
+            content.append(escapedText).append(" Tj\n");
         }
 
         // 텍스트 객체 종료
@@ -247,12 +249,22 @@ public class PDFText extends PDFResourceComponent {
      * PDF 문자열 이스케이프 처리
      */
     private String escapePDFString(String text) {
-        return text.replace("\\", "\\\\")
-                .replace("(", "\\(")
-                .replace(")", "\\)")
-                .replace("\r", "\\r")
-                .replace("\n", "\\n")
-                .replace("\t", "\\t");
+        try {
+            // UTF-8로 인코딩
+            byte[] utf8Bytes = text.getBytes(UTF_8);
+            StringBuilder result = new StringBuilder();
+            result.append("<"); // UTF-8 바이트 스트림 시작
+
+            // 바이트를 16진수로 변환
+            for (byte b : utf8Bytes) {
+                result.append(String.format("%02X", b & 0xff));
+            }
+            result.append(">"); // UTF-8 바이트 스트림 끝
+            return result.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return text; // 실패시 원본 반환
+        }
     }
 
     @Override

@@ -152,7 +152,7 @@ public class PDFGridLayout extends PDFLayout{
                 if(i == 0) {
                     margin.top += (gap);
                     updateHeight(gap);
-                    int d = 0;
+                    float d = 0;
                     if (parent != null)
                         d += parent.measureY + parent.border.size.top + parent.padding.top;
                     measureY = relativeY + margin.top + d;

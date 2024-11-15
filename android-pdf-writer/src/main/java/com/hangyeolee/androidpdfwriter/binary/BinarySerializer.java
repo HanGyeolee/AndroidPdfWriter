@@ -16,6 +16,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BinarySerializer {
+    private static final String TO_UNICODE_CMAP_TEMPLATE = """
+            /CIDInit /ProcSet findresource begin
+            12 dict begin
+            begincmap
+            /CIDSystemInfo
+            << /Registry (Adobe)
+            /Ordering (UCS)
+            /Supplement 0
+            >> def
+            /CMapName /Adobe-Identity-UCS def
+            /CMapType 2 def
+            1 begincodespacerange
+            <0000> <FFFF>
+            endcodespacerange
+            endcmap
+            CMapName currentdict /CMap defineresource pop
+            end
+            end
+            """;
+
     private final BinaryObjectManager manager;
     private final Map<Bitmap, String> imageResourceMap = new HashMap<>();
     private final Map<Typeface, String> fontResourceMap = new HashMap<>();
@@ -23,7 +43,7 @@ public class BinarySerializer {
     private int nextFontNumber = 1;
 
     private int quality;
-    private RectF mediaBox;
+    private final RectF mediaBox;
 
     // 페이지의 루트 컴포넌트
     private final PDFLayout rootComponent;
@@ -31,6 +51,7 @@ public class BinarySerializer {
     private BinaryPages pages;
     private BinaryPage currentPage;
     private BinaryResources resources;
+    private BinaryObject cmap;
 
     /**
      * BinaryPage 생성자
@@ -53,6 +74,8 @@ public class BinarySerializer {
         // 4. Catalog 딕셔너리 작성
         manager.createObject(n -> new BinaryCatalog(n, pages));
         // 2 0 obj Catalog
+
+        cmap = createToUnicode();
 
         // 페이지 리소스 생성
         resources = manager.createObject(BinaryResources::new);
@@ -140,7 +163,7 @@ public class BinarySerializer {
         fontDesc.setMetrics(metrics);
 
         // Font 객체 생성
-        BinaryFont font = manager.createObject(n -> new BinaryFont(n, fontDesc));
+        BinaryFont font = manager.createObject(n -> new BinaryFont(n, fontDesc, cmap));
         font.setBaseFont(typeface.toString());
         font.setWidths(metrics.charWidths);
 
@@ -172,6 +195,11 @@ public class BinarySerializer {
         return imageId;
     }
 
+    private BinaryObject createToUnicode() {
+        // ToUnicode CMap을 스트림 객체로 생성
+        return manager.createObject(n -> new BinaryContentStream(n, TO_UNICODE_CMAP_TEMPLATE));
+    }
+
     public void setQuality(int quality){
         if(quality < 0) quality = 0;
         else if (quality > 100) quality = 100;
@@ -179,6 +207,6 @@ public class BinarySerializer {
     }
 
     public float getPageHeight(){
-        return (Zoomable.getInstance().getContentRect().height());
+        return mediaBox.top - (Zoomable.getInstance().getContentRect().bottom);
     }
 }
