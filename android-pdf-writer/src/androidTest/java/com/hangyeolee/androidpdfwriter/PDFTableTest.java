@@ -46,10 +46,10 @@ public class PDFTableTest {
         Bitmap b = BitmapFactory.decodeStream(stream);
 
         builder = new PDFBuilder(Paper.A4);
-        builder.setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()
                     .setOrientation(Orientation.Column)
+                    .setPadding(30, 30)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
                             .setSize(null, 1200f)

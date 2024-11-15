@@ -31,7 +31,7 @@ class BinaryPages extends BinaryObject {
         return pages.size();
     }
 
-    public void finalizeContent(BinaryObjectManager manager){
+    public void finalizeContents(BinaryObjectManager manager){
         for (BinaryPage page : pages) {
             page.finalizeContent(manager);
         }

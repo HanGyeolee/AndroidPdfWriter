@@ -3,8 +3,6 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Typeface;
 import android.text.TextPaint;
 
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
-
 public class PDFH6 extends PDFText{
     public static float fontSize = 10.72f;
 

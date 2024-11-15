@@ -1,12 +1,10 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
-import android.graphics.RectF;
 import android.graphics.Typeface;
 
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
-import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.BufferedOutputStream;
@@ -17,19 +15,15 @@ import java.util.Map;
 
 public class BinarySerializer {
     private final BinaryObjectManager manager;
-    private final float[] mediaBox;
     private final Map<Bitmap, String> imageResourceMap = new HashMap<>();
     private final Map<Typeface, String> fontResourceMap = new HashMap<>();
     private int nextImageNumber = 1;
     private int nextFontNumber = 1;
 
+    private int quality;
+
     // 페이지의 루트 컴포넌트
     private final PDFLayout rootComponent;
-
-    // 페이지 수
-    int pageWidth, pageHeight;
-    // 페이지의 콘텐츠 영역 (여백을 제외한 실제 내용이 그려지는 영역)
-    RectF contentRect;
 
     private BinaryPages pages;
     private BinaryPage currentPage;
@@ -39,28 +33,12 @@ public class BinarySerializer {
      * BinaryPage 생성자
      * @param root 페이지의 루트 컴포넌트
      */
-    public BinarySerializer(PDFLayout root, Paper pageSize){
+    public BinarySerializer(PDFLayout root){
         this.rootComponent = root;
-        mediaBox = new float[]{
-                0, 0, pageSize.getWidth(), pageSize.getHeight()
-        };
         this.manager = new BinaryObjectManager();
     }
 
-    /**
-     * 페이지의 콘텐츠 영역 설정
-     * @param contentRect 콘텐츠 영역 정보
-     */
-    public void setContentRect(RectF contentRect){
-        this.contentRect = contentRect;
-        this.pageWidth = Math.round(contentRect.right+contentRect.left);
-        this.pageHeight = Math.round(contentRect.bottom+contentRect.top);
-    }
-
-    public void saveTo(OutputStream fos){
-        StringBuilder tmp;
-        byte[] tmp_b;
-
+    public void draw(){
         // 2. Info 딕셔너리 작성
         manager.createObject(BinaryInfo::new);
 
@@ -76,8 +54,10 @@ public class BinarySerializer {
         resources = manager.createObject(BinaryResources::new);
         rootComponent.draw(this);
 
-        pages.finalizeContent(manager);
+        pages.finalizeContents(manager);
+    }
 
+    public void saveTo(OutputStream fos){
         try {
             BufferedOutputStream bufos = new BufferedOutputStream(fos);
 
@@ -98,7 +78,7 @@ public class BinarySerializer {
         // 페이지 생성 및 리소스 설정
         currentPage = manager.createObject(BinaryPage::new);
         currentPage.setResources(resources);
-        currentPage.setMediaBox(mediaBox);
+        currentPage.setMediaBox(Zoomable.getInstance().getContentRect());
         pages.addPage(currentPage);
 
         return currentPage.getContents();
@@ -182,7 +162,7 @@ public class BinarySerializer {
         imageResourceMap.put(bitmap, imageId);
 
         // 이미지 객체 생성
-        BinaryImage image = manager.createObject(n -> new BinaryImage(n, bitmap, 85));
+        BinaryImage image = manager.createObject(n -> new BinaryImage(n, bitmap, quality));
 
         // Resources에 이미지 추가
         resources.addXObject(imageId, image);
@@ -190,7 +170,13 @@ public class BinarySerializer {
         return imageId;
     }
 
+    public void setQuality(int quality){
+        if(quality < 0) quality = 0;
+        else if (quality > 100) quality = 100;
+        this.quality = quality;
+    }
+
     public int getPageHeight(){
-        return Math.round(Zoomable.getInstance().getContentRect().height());
+        return (Zoomable.getInstance().getContentRect().height());
     }
 }

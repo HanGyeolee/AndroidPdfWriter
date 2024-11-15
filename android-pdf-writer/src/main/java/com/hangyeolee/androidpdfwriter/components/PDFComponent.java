@@ -2,7 +2,7 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
+import android.graphics.RectF;
 
 import androidx.annotation.ColorInt;
 
@@ -18,12 +18,12 @@ public abstract class PDFComponent{
     PDFComponent parent = null;
 
     // margin을 뺀 나머지 길이
-    int width = 0;
-    int height = 0;
+    float width = 0;
+    float height = 0;
     @ColorInt
     int backgroundColor = Color.TRANSPARENT;
-    final Rect margin = new Rect(0,0,0,0);
-    final Rect padding = new Rect(0,0,0,0);
+    final RectF margin = new RectF(0,0,0,0);
+    final RectF padding = new RectF(0,0,0,0);
     final Border border = new Border();
     final Anchor anchor = new Anchor();
 
@@ -35,8 +35,8 @@ public abstract class PDFComponent{
     protected float measureX = 0;
     protected float measureY = 0;
     // margin을 뺀 나머지 길이
-    protected int measureWidth = -1;
-    protected int measureHeight = -1;
+    protected float measureWidth = -1;
+    protected float measureHeight = -1;
 
     public PDFComponent(){}
 
@@ -70,13 +70,13 @@ public abstract class PDFComponent{
         relativeX = x;
         relativeY = y;
         float dx, dy;
-        int gapX = 0;
-        int gapY = 0;
+        float gapX = 0;
+        float gapY = 0;
 
-        int left = margin.left;
-        int top = margin.top;
-        int right = margin.right;
-        int bottom = margin.bottom;
+        float left = margin.left;
+        float top = margin.top;
+        float right = margin.right;
+        float bottom = margin.bottom;
         // Measure Width and Height
         if(parent == null){
             measureWidth = (width - left - right);
@@ -84,23 +84,23 @@ public abstract class PDFComponent{
         }
         else{
             // Get Max Width and Height from Parent
-            int maxW = Math.round (parent.measureWidth
+            float maxW = parent.measureWidth
                     - parent.border.size.left - parent.border.size.right
                     - parent.padding.left - parent.padding.right
-                    - left - right);
-            int maxH = Math.round (parent.measureHeight
+                    - left - right;
+            float maxH = parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
-                    - top - bottom);
+                    - top - bottom;
             if(maxW < 0) maxW = 0;
             if(maxH < 0) maxH = 0;
 
             // 설정한 Width 나 Height 가 최대값을 넘지 않으면, 설정한 값으로
             if(0 < width && width + relativeX <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
-            else measureWidth = Math.round (maxW - relativeX);
+            else measureWidth =  (maxW - relativeX);
             if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight = Math.round (maxH - relativeY);
+            else measureHeight =  (maxH - relativeY);
 
             gapX = maxW - measureWidth;
             gapY = maxH - measureHeight;
@@ -123,9 +123,9 @@ public abstract class PDFComponent{
      * @param width
      * @param height
      */
-    protected void force(Integer width, Integer height, Rect forceMargin) {
-        int max;
-        int gap = 0;
+    protected void force(Float width, Float height, RectF forceMargin) {
+        float max;
+        float gap = 0;
         float d;
         if (width != null) {
             if(forceMargin == null)
@@ -232,20 +232,20 @@ public abstract class PDFComponent{
      * @param heightGap
      */
     protected void updateHeight(float heightGap){
-        int top = margin.top;
-        int bottom = margin.bottom;
+        float top = margin.top;
+        float bottom = margin.bottom;
         if(parent == null){
             height += heightGap;
             measureHeight = (height - top - bottom);
         }
         else{
             parent.updateHeight(heightGap);
-            int maxH = Math.round (parent.measureHeight
+            float maxH = parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
-                    - top - bottom);
+                    - top - bottom;
             if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight = Math.round (maxH - relativeY);
+            else measureHeight = maxH - relativeY;
         }
     }
 
@@ -254,7 +254,7 @@ public abstract class PDFComponent{
      * Get the calculated total width.
      * @return 전체 너비
      */
-    public int getTotalWidth(){
+    public float getTotalWidth(){
         return measureWidth + margin.right + margin.left;
     }
 
@@ -263,7 +263,7 @@ public abstract class PDFComponent{
      * Get the calculated total height.
      * @return 전체 높이
      */
-    public int getTotalHeight(){
+    public float getTotalHeight(){
         return measureHeight + margin.top + margin.bottom;
     }
 
@@ -277,11 +277,11 @@ public abstract class PDFComponent{
     public PDFComponent setSize(Float width, Float height){
         if(width != null){
             if(width < 0) width = 0f;
-            this.width = Math.round(width);
+            this.width = (width);
         }
         if(height != null){
             if(height < 0) height = 0f;
-            this.height = Math.round(height);
+            this.height = (height);
         }
         return this;
     }
@@ -302,7 +302,7 @@ public abstract class PDFComponent{
      * @param margin 여백
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setMargin(Rect margin){
+    public PDFComponent setMargin(RectF margin){
         this.margin.set(margin);
         return this;
     }
@@ -313,7 +313,7 @@ public abstract class PDFComponent{
      * @param all 여백
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setMargin(int all){
+    public PDFComponent setMargin(float all){
         return setMargin(all, all, all, all);
     }
 
@@ -324,7 +324,7 @@ public abstract class PDFComponent{
      * @param vertical 세로 여백
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setMargin(int horizontal, int vertical){
+    public PDFComponent setMargin(float horizontal, float vertical){
         return setMargin(horizontal, vertical, horizontal, vertical);
     }
 
@@ -337,7 +337,7 @@ public abstract class PDFComponent{
      * @param bottom 아래쪽 여백
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setMargin(int left, int top, int right, int bottom){
+    public PDFComponent setMargin(float left, float top, float right, float bottom){
         this.margin.set(left, top, right, bottom);
         return this;
     }
@@ -348,7 +348,7 @@ public abstract class PDFComponent{
      * @param padding 패딩
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setPadding(Rect padding){
+    public PDFComponent setPadding(RectF padding){
         this.padding.set(padding);
         return this;
     }
@@ -359,7 +359,7 @@ public abstract class PDFComponent{
      * @param all 패딩
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setPadding(int all){
+    public PDFComponent setPadding(float all){
         this.padding.set(all, all, all, all);
         return this;
     }
@@ -371,7 +371,7 @@ public abstract class PDFComponent{
      * @param vertical 세로 패딩
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setPadding(int horizontal, int vertical){
+    public PDFComponent setPadding(float horizontal, float vertical){
         this.padding.set(horizontal, vertical, horizontal, vertical);
         return this;
     }
@@ -385,7 +385,7 @@ public abstract class PDFComponent{
      * @param bottom 아래쪽 패딩
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setPadding(int left, int top, int right, int bottom){
+    public PDFComponent setPadding(float left, float top, float right, float bottom){
         this.padding.set(left, top, right, bottom);
         return this;
     }

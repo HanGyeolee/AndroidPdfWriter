@@ -1,6 +1,7 @@
 package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Rect;
+import android.graphics.RectF;
 
 import androidx.annotation.IntRange;
 
@@ -17,8 +18,8 @@ public class PDFGridLayout extends PDFLayout{
 
     ArrayList<Integer> span;
 
-    final int[] gaps;
-    final Rect childMargin = new Rect(0,0,0,0);
+    final float[] gaps;
+    final RectF childMargin = new RectF(0,0,0,0);
 
     public PDFGridLayout(int rows, int columns){
         super();
@@ -29,7 +30,7 @@ public class PDFGridLayout extends PDFLayout{
         int length = rows*columns;
         child = new ArrayList<>(length);
         span = new ArrayList<>(length);
-        gaps = new int[rows];
+        gaps = new float[rows];
         for(int i = 0; i < length; i++){
             child.add(PDFEmpty.build().setParent(this));
             span.add(i);
@@ -42,11 +43,11 @@ public class PDFGridLayout extends PDFLayout{
 
         int i, j;
         float totalHeight = 0;
-        int gapWidth = 0;
+        float gapWidth = 0;
         int index;
 
         int zero_count = 0;
-        int lastWidth = Math.round (measureWidth - border.size.left - padding.left
+        float lastWidth =  (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
         // 가로 길이 자동 조절
         for(i = 0; i < gaps.length ; i++) {
@@ -67,11 +68,11 @@ public class PDFGridLayout extends PDFLayout{
             }
         }
 
-        int[] maxHeights = new int[columns];
+        float[] maxHeights = new float[columns];
         int columnSpanCount;
         // Cell 당 높이 계산
         for(i = 0; i < columns; i++){
-            int totalWidth = 0;
+            float totalWidth = 0;
             for(j = 0; j < rows; j++){
                 index = i*rows + j;
                 gapWidth = gaps[j];
@@ -116,16 +117,16 @@ public class PDFGridLayout extends PDFLayout{
                 }
             }
             totalHeight += maxHeights[i] + childMargin.top + childMargin.bottom;
-            measureHeight = Math.round(totalHeight);
+            measureHeight = (totalHeight);
         }
 
         totalHeight = 0;
-        int maxHeight;
-        int maxSpanHeight = 0;
+        float maxHeight;
+        float maxSpanHeight = 0;
         float lastTotalHeight = 0;
         boolean repeatIfor = false;
         for(i = 0; i < columns; i++) {
-            int totalWidth = 0;
+            float totalWidth = 0;
             maxSpanHeight = 0;
             // 세로 Span 존재 탐지
             for(j = 0; j < rows; j++){
@@ -149,7 +150,7 @@ public class PDFGridLayout extends PDFLayout{
             if(lastHeight < zoomHeight && zoomHeight < lastHeight + maxSpanHeight + childMargin.top + childMargin.bottom){
                 float gap = zoomHeight - lastHeight;
                 if(i == 0) {
-                    margin.top += Math.round(gap);
+                    margin.top += (gap);
                     updateHeight(gap);
                     int d = 0;
                     if (parent != null)
@@ -186,7 +187,7 @@ public class PDFGridLayout extends PDFLayout{
 
                     //Span 이후 span 된 컴포넌트의 높이가 주어진 높이보다 클 경우
                     if(child.get(index).height > maxHeight){
-                        int gapHeight = child.get(index).height - maxHeight;
+                        float gapHeight = child.get(index).height - maxHeight;
 
                         zero_count = columnSpanCount;
                         for(int yy = i; yy < i+columnSpanCount; yy++) {
@@ -225,7 +226,7 @@ public class PDFGridLayout extends PDFLayout{
 
             totalHeight += maxHeights[i] + childMargin.top + childMargin.bottom;
         }
-        measureHeight = Math.round(totalHeight + border.size.top + border.size.bottom + padding.top + padding.bottom);
+        measureHeight = (totalHeight + border.size.top + border.size.bottom + padding.top + padding.bottom);
     }
 
     @Override
@@ -248,7 +249,7 @@ public class PDFGridLayout extends PDFLayout{
      * @param width 가로 길이
      * @return 자기자신
      */
-    public PDFGridLayout setChildWidth(int xIndex, int width){
+    public PDFGridLayout setChildWidth(int xIndex, float width){
         if(width < 0) width = 0;
         if(xIndex < gaps.length)
             gaps[xIndex] = width;
@@ -343,49 +344,49 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     @Override
-    public PDFGridLayout setMargin(Rect margin) {
+    public PDFGridLayout setMargin(RectF margin) {
         super.setMargin(margin);
         return this;
     }
 
     @Override
-    public PDFGridLayout setMargin(int left, int top, int right, int bottom) {
+    public PDFGridLayout setMargin(float left, float top, float right, float bottom) {
         super.setMargin(left, top, right, bottom);
         return this;
     }
 
     @Override
-    public PDFGridLayout setMargin(int all) {
+    public PDFGridLayout setMargin(float all) {
         super.setMargin(all);
         return this;
     }
 
     @Override
-    public PDFGridLayout setMargin(int horizontal, int vertical) {
+    public PDFGridLayout setMargin(float horizontal, float vertical) {
         super.setMargin(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFGridLayout setPadding(int all) {
+    public PDFGridLayout setPadding(float all) {
         super.setPadding(all);
         return this;
     }
 
     @Override
-    public PDFGridLayout setPadding(int horizontal, int vertical) {
+    public PDFGridLayout setPadding(float horizontal, float vertical) {
         super.setPadding(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFGridLayout setPadding(Rect padding) {
+    public PDFGridLayout setPadding(RectF padding) {
         super.setPadding(padding);
         return this;
     }
 
     @Override
-    public PDFGridLayout setPadding(int left, int top, int right, int bottom) {
+    public PDFGridLayout setPadding(float left, float top, float right, float bottom) {
         super.setPadding(left, top, right, bottom);
         return this;
     }

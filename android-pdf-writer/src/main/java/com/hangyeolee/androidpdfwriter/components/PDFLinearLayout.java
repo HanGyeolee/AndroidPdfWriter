@@ -1,6 +1,6 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Rect;
+import android.graphics.RectF;
 
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -13,7 +13,7 @@ public class PDFLinearLayout extends PDFLayout {
     @Orientation.OrientationInt
     int orientation = Orientation.Column;
 
-    private final ArrayList<Integer> gaps = new ArrayList<>();
+    private final ArrayList<Float> gaps = new ArrayList<Float>();
 
     public PDFLinearLayout(){
         super();
@@ -32,10 +32,10 @@ public class PDFLinearLayout extends PDFLayout {
         super.measure(x, y);
 
         int i;
-        int gap = 0;
-        int totalAxis = 0;
-        int lastWidth = Math.round (measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right);
+        float gap = 0;
+        float totalAxis = 0;
+        float lastWidth = measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right;
         switch (orientation){
             case Orientation.Column:
                 for(i = 0; i < child.size(); i++){
@@ -48,12 +48,12 @@ public class PDFLinearLayout extends PDFLayout {
                 break;
             case Orientation.Row:
                 int zero_count = 0;
-                int maxHeight = 0;
+                float maxHeight = 0;
                 // 가로 길이 자동 조절
                 for(i = 0; i < child.size(); i++) {
-                    if(gaps.get(i) > lastWidth) gaps.set(i, 0);
+                    if(gaps.get(i) > lastWidth) gaps.set(i, 0.0f);
                     lastWidth -= child.get(i).margin.left + child.get(i).margin.right;
-                    if(lastWidth < 0) gaps.set(i, 0);
+                    if(lastWidth < 0) gaps.set(i, 0.0f);
                     if(gaps.get(i) == 0){
                         zero_count += 1;
                     }else{
@@ -118,7 +118,7 @@ public class PDFLinearLayout extends PDFLayout {
      * @param width 자식 컴포넌트가 차지하는 가로 길이
      * @return 자기자신
      */
-    public PDFLinearLayout addChild(PDFComponent component, int width){
+    public PDFLinearLayout addChild(PDFComponent component, float width){
         if(width < 0) width = 0;
         gaps.add(width);
         super.addChild(component);
@@ -149,49 +149,49 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setMargin(Rect margin) {
+    public PDFLinearLayout setMargin(RectF margin) {
         super.setMargin(margin);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setMargin(int left, int top, int right, int bottom) {
+    public PDFLinearLayout setMargin(float left, float top, float right, float bottom) {
         super.setMargin(left, top, right, bottom);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setMargin(int all) {
+    public PDFLinearLayout setMargin(float all) {
         super.setMargin(all);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setMargin(int horizontal, int vertical) {
+    public PDFLinearLayout setMargin(float horizontal, float vertical) {
         super.setMargin(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setPadding(int all) {
+    public PDFLinearLayout setPadding(float all) {
         super.setPadding(all);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setPadding(int horizontal, int vertical) {
+    public PDFLinearLayout setPadding(float horizontal, float vertical) {
         super.setPadding(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setPadding(Rect padding) {
+    public PDFLinearLayout setPadding(RectF padding) {
         super.setPadding(padding);
         return this;
     }
 
     @Override
-    public PDFLinearLayout setPadding(int left, int top, int right, int bottom) {
+    public PDFLinearLayout setPadding(float left, float top, float right, float bottom) {
         super.setPadding(left, top, right, bottom);
         return this;
     }

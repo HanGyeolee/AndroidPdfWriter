@@ -1,5 +1,7 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
+import android.graphics.RectF;
+
 import java.util.Locale;
 
 /**
@@ -43,15 +45,12 @@ class BinaryPage extends BinaryObject {
         }
     }
 
-    public void setMediaBox(float[] dimensions) {
+    public void setMediaBox(RectF dimensions) {
         dictionary.put("/MediaBox", String.format(Locale.getDefault(), "[%f %f %f %f]",
-                dimensions[0], dimensions[1], dimensions[2], dimensions[3]));
-    }
-
-    /**
-     * 현재 페이지의 리소스 객체 반환
-     */
-    public BinaryResources getResources() {
-        return resources;
+                dimensions.left,        //llx
+                dimensions.bottom,      //lly
+                dimensions.right,       //urx
+                dimensions.top          //ury
+        ));
     }
 }

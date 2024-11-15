@@ -2,7 +2,6 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -50,15 +49,15 @@ public class PDFText extends PDFResourceComponent {
     String lastText = null;
     TextPaint lastPaint = null;
     Layout.Alignment lastAlign = null;
-    int lastWidth = 0;
+    float lastWidth = 0;
 
-    int updatedHeight;
+    float updatedHeight;
     Typeface plaintype = null;
 
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-        int _width = Math.round (measureWidth - border.size.left - padding.left
+        float _width =  (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
 
         if(text != null) {
@@ -99,15 +98,15 @@ public class PDFText extends PDFResourceComponent {
                                     0,
                                     text.length(),
                                     (TextPaint) bufferPaint,
-                                    _width)
+                                    (int) _width)
                             .setAlignment(align)
                             .build();
                 }
                 else {
                     layout = new StaticLayout(
-                            text, 0, text.length(), (TextPaint) bufferPaint, _width, align,
+                            text, 0, text.length(), (TextPaint) bufferPaint, (int)_width, align,
                             DEFAULT_LINESPACING_MULTIPLIER, DEFAULT_LINESPACING_ADDITION,
-                            true, null, _width);
+                            true, null, (int)_width);
                 }
 
                 lastPaint = (TextPaint) bufferPaint;
@@ -117,9 +116,9 @@ public class PDFText extends PDFResourceComponent {
             }
 
             updatedHeight = layout.getHeight();
-            height = Math.round (updatedHeight + border.size.top + padding.top
+            height =  (updatedHeight + border.size.top + padding.top
                     + border.size.bottom + padding.bottom);
-            int _height = Math.round (measureHeight - border.size.top - padding.top
+            float _height =  (measureHeight - border.size.top - padding.top
                     - border.size.bottom - padding.bottom);
             /*
             updatedHeight 가 measureHeight 보다 크다면?
@@ -127,7 +126,7 @@ public class PDFText extends PDFResourceComponent {
             */
             while (updatedHeight > _height) {
                 updateHeight(updatedHeight - _height);
-                _height = Math.round (measureHeight - border.size.top - padding.top
+                _height =  (measureHeight - border.size.top - padding.top
                         - border.size.bottom - padding.bottom);
             }
         }
@@ -269,49 +268,49 @@ public class PDFText extends PDFResourceComponent {
     }
 
     @Override
-    public PDFText setMargin(Rect margin) {
+    public PDFText setMargin(RectF margin) {
         super.setMargin(margin);
         return this;
     }
 
     @Override
-    public PDFText setMargin(int left, int top, int right, int bottom) {
+    public PDFText setMargin(float left, float top, float right, float bottom) {
         super.setMargin(left, top, right, bottom);
         return this;
     }
 
     @Override
-    public PDFText setMargin(int all) {
+    public PDFText setMargin(float all) {
         super.setMargin(all);
         return this;
     }
 
     @Override
-    public PDFText setMargin(int horizontal, int vertical) {
+    public PDFText setMargin(float horizontal, float vertical) {
         super.setMargin(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFText setPadding(int all) {
+    public PDFText setPadding(float all) {
         super.setPadding(all);
         return this;
     }
 
     @Override
-    public PDFText setPadding(int horizontal, int vertical) {
+    public PDFText setPadding(float horizontal, float vertical) {
         super.setPadding(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFText setPadding(Rect padding) {
+    public PDFText setPadding(RectF padding) {
         super.setPadding(padding);
         return this;
     }
 
     @Override
-    public PDFText setPadding(int left, int top, int right, int bottom) {
+    public PDFText setPadding(float left, float top, float right, float bottom) {
         super.setPadding(left, top, right, bottom);
         return this;
     }

@@ -2,7 +2,7 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Bitmap;
 import android.graphics.Paint;
-import android.graphics.Rect;
+import android.graphics.RectF;
 import android.text.TextPaint;
 
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
@@ -27,9 +27,9 @@ public class  PDFImage extends PDFResourceComponent{
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-        int _width = Math.round (measureWidth - border.size.left - padding.left
+        float _width =  (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
-        int _height = Math.round (measureHeight - border.size.top - padding.top
+        float _height =  (measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom);
         if(height > 0){
             /*
@@ -38,7 +38,7 @@ public class  PDFImage extends PDFResourceComponent{
             */
             while (height > _height) {
                 updateHeight(height - _height);
-                _height = Math.round (measureHeight - border.size.top - padding.top
+                _height =  (measureHeight - border.size.top - padding.top
                         - border.size.bottom - padding.bottom);
             }
         }
@@ -52,7 +52,7 @@ public class  PDFImage extends PDFResourceComponent{
             */
             while (resizeH > _height) {
                 updateHeight(resizeH - _height);
-                _height = Math.round(measureHeight - border.size.top - padding.top
+                _height = (measureHeight - border.size.top - padding.top
                         - border.size.bottom - padding.bottom);
             }
 
@@ -60,7 +60,7 @@ public class  PDFImage extends PDFResourceComponent{
         }
     }
 
-    private void fitting(int _width, int _height){
+    private void fitting(float _width, float _height){
         float aspectRatio = 1;
         if(this.origin.getWidth() > 0)
             aspectRatio = (float)this.origin.getHeight() / this.origin.getWidth();
@@ -94,11 +94,11 @@ public class  PDFImage extends PDFResourceComponent{
                 break;
             case Fit.COVER:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
-                    resizeH = Math.round (_width * aspectRatio);
+                    resizeH =  (_width * aspectRatio);
                     gapX = 0;
                     gapY = (_height - resizeH);
                 } else {
-                    resizeW = Math.round (_height / aspectRatio);
+                    resizeW =  (_height / aspectRatio);
                     gapX = (_width - resizeW);
                     gapY = 0;
                 }
@@ -108,11 +108,11 @@ public class  PDFImage extends PDFResourceComponent{
                 break;
             case Fit.CONTAIN:
                 if (this.origin.getWidth() > this.origin.getHeight()) {
-                    resizeW = Math.round (_height / aspectRatio);
+                    resizeW =  (_height / aspectRatio);
                     gapX = (_width - resizeW);
                     gapY = 0;
                 } else {
-                    resizeH = Math.round (_width * aspectRatio);
+                    resizeH =  (_width * aspectRatio);
                     gapX = 0;
                     gapY = (_height - resizeH);
                 }
@@ -219,49 +219,49 @@ public class  PDFImage extends PDFResourceComponent{
     }
 
     @Override
-    public PDFImage setMargin(Rect margin) {
+    public PDFImage setMargin(RectF margin) {
         super.setMargin(margin);
         return this;
     }
 
     @Override
-    public PDFImage setMargin(int left, int top, int right, int bottom) {
+    public PDFImage setMargin(float left, float top, float right, float bottom) {
         super.setMargin(left, top, right, bottom);
         return this;
     }
 
     @Override
-    public PDFImage setMargin(int all) {
+    public PDFImage setMargin(float all) {
         super.setMargin(all);
         return this;
     }
 
     @Override
-    public PDFImage setMargin(int horizontal, int vertical) {
+    public PDFImage setMargin(float horizontal, float vertical) {
         super.setMargin(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFImage setPadding(int all) {
+    public PDFImage setPadding(float all) {
         super.setPadding(all);
         return this;
     }
 
     @Override
-    public PDFImage setPadding(int horizontal, int vertical) {
+    public PDFImage setPadding(float horizontal, float vertical) {
         super.setPadding(horizontal, vertical);
         return this;
     }
 
     @Override
-    public PDFImage setPadding(Rect padding) {
+    public PDFImage setPadding(RectF padding) {
         super.setPadding(padding);
         return this;
     }
 
     @Override
-    public PDFImage setPadding(int left, int top, int right, int bottom) {
+    public PDFImage setPadding(float left, float top, float right, float bottom) {
         super.setPadding(left, top, right, bottom);
         return this;
     }
