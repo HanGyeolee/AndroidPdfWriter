@@ -61,8 +61,7 @@ public class PDFBuilder {
             @FloatRange(from = 0.0f) float horizontal){
         if(vertical < 0) vertical = 0;
         if(horizontal < 0) horizontal = 0;
-        Zoomable.getInstance().getContentRect().set(horizontal, vertical,
-                this.pageSize.getWidth() - horizontal, this.pageSize.getHeight() - vertical);
+        Zoomable.getInstance().getPadding().set(horizontal, vertical, horizontal, vertical);
         return this;
     }
 
@@ -84,8 +83,7 @@ public class PDFBuilder {
         if(right != null && right > 0.0f) n_right = right;
         if(bottom != null && bottom > 0.0f) n_bottom = bottom;
 
-        Zoomable.getInstance().getContentRect().set(n_left, n_top,
-                this.pageSize.getWidth() - n_right, this.pageSize.getHeight() - n_bottom);
+        Zoomable.getInstance().getPadding().set(n_left, n_top, n_right, n_bottom);
         return this;
     }
 
@@ -109,11 +107,13 @@ public class PDFBuilder {
      */
     public PDFBuilder draw(){
         if(root != null) {
-            root.setSize(Zoomable.getInstance().getContentRect().width(), 0.0f).measure(
-                    Zoomable.getInstance().getContentRect().left,
-                    Zoomable.getInstance().getContentRect().top
-            );
-            page = new BinarySerializer(root, pageSize);
+            float width =
+                    Zoomable.getInstance().getContentRect().width() -
+                            Zoomable.getInstance().getPadding().left -
+                            Zoomable.getInstance().getPadding().right;
+
+            root.setSize(width, 0.0f).measure();
+            page = new BinarySerializer(root);
             page.setQuality(quality);
             page.draw();
         }

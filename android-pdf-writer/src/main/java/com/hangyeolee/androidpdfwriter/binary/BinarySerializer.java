@@ -22,7 +22,7 @@ public class BinarySerializer {
             begincmap
             /CIDSystemInfo
             << /Registry (Adobe)
-            /Ordering (UCS)
+            /Ordering (Identity)
             /Supplement 0
             >> def
             /CMapName /Adobe-Identity-UCS def
@@ -57,9 +57,11 @@ public class BinarySerializer {
      * BinaryPage 생성자
      * @param root 페이지의 루트 컴포넌트
      */
-    public BinarySerializer(PDFLayout root, Paper paper){
+    public BinarySerializer(PDFLayout root){
         this.rootComponent = root;
-        mediaBox = new RectF(0, paper.getHeight(), paper.getWidth(), 0);
+        mediaBox = new RectF(
+                0, Zoomable.getInstance().getContentRect().bottom,
+                Zoomable.getInstance().getContentRect().right, 0);
         this.manager = new BinaryObjectManager();
     }
 
@@ -163,8 +165,8 @@ public class BinarySerializer {
         fontDesc.setMetrics(metrics);
 
         // Font 객체 생성
-        BinaryFont font = manager.createObject(n -> new BinaryFont(n, fontDesc, cmap));
-        font.setBaseFont(typeface.toString());
+        BinaryFont font = manager.createObject(n -> new BinaryFont(n, fontDesc, "UTF-8", cmap));
+        font.setBaseFont("Helvetica");
         font.setWidths(metrics.charWidths);
 
         // Resources에 폰트 추가
@@ -207,6 +209,8 @@ public class BinarySerializer {
     }
 
     public float getPageHeight(){
-        return mediaBox.top - (Zoomable.getInstance().getContentRect().top);
+        return Zoomable.getInstance().getContentRect().bottom -
+                Zoomable.getInstance().getPadding().top -
+                Zoomable.getInstance().getPadding().bottom;
     }
 }

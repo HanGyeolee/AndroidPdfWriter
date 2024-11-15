@@ -11,6 +11,7 @@ import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Locale;
 
@@ -207,6 +208,7 @@ public abstract class PDFComponent{
         // 페이지 체크
         int requiredPage = serializer.calculatePageIndex(measureY, componentHeight);
         measureY -= requiredPage * serializer.getPageHeight();
+        if(measureY < 0) measureY = 0;
         StringBuilder content = serializer.getPage(requiredPage);
 
         // 그래픽스 상태 저장
@@ -215,7 +217,12 @@ public abstract class PDFComponent{
         // 배경 그리기
         if (backgroundColor != Color.TRANSPARENT && measureWidth > 0 && measureHeight > 0) {
             setColorInPDF(content, backgroundColor);
-            drawRectInPDF(serializer, content, measureX, measureY, measureWidth, measureHeight, true, false);
+            drawRectInPDF(serializer, content,
+                    measureX,
+                    measureY,
+                    measureWidth,
+                    measureHeight,
+                    true, false);
         }
 
         //--------------테두리 그리기-------------//

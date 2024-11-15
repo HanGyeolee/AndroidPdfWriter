@@ -13,6 +13,7 @@ public class Zoomable {
     }
 
     private RectF contentRect = null;
+    private final RectF padding = new RectF();
 
     public void setContentRect(RectF contentRect){
         this.contentRect = contentRect;
@@ -20,5 +21,10 @@ public class Zoomable {
 
     public RectF getContentRect() {
         return contentRect;
+    }
+
+
+    public RectF getPadding() {
+        return padding;
     }
 }

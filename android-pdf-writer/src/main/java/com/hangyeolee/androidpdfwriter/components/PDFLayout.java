@@ -4,6 +4,7 @@ import android.graphics.Color;
 
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Border;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.ArrayList;
 
@@ -35,7 +36,8 @@ public abstract class PDFLayout extends PDFComponent{
         float remainingHeight = getTotalHeight();
         int startPage = serializer.calculatePageIndex(measureY);
         int endPage = serializer.calculatePageIndex(measureY, getTotalHeight());
-        measureY -= startPage * serializer.getPageHeight();
+        measureY -= startPage * pageHeight;
+        if(measureY < 0) measureY = 0;
         StringBuilder content = serializer.getPage(startPage);
         float currentY = measureY;
 
@@ -66,7 +68,7 @@ public abstract class PDFLayout extends PDFComponent{
         float left = measureX;
         float top = startY;
 
-        // 배경 그리기
+        // 배경 그리기 841.8898
         if (backgroundColor != Color.TRANSPARENT && measureWidth > 0) {
             setColorInPDF(content, backgroundColor);
             drawRectInPDF(page, content, left, top, measureWidth, height, true, false);

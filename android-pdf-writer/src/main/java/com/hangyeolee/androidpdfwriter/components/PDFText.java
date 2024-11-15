@@ -54,7 +54,7 @@ public class PDFText extends PDFResourceComponent {
     float lastWidth = 0;
 
     float updatedHeight;
-    Typeface plaintype = null;
+    Typeface plaintype = Typeface.DEFAULT;
 
     @Override
     public void measure(float x, float y) {
