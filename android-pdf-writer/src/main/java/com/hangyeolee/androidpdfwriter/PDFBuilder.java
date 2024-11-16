@@ -32,7 +32,7 @@ public class PDFBuilder {
 
     public PDFBuilder(Paper pageSize){
         this.pageSize = pageSize;
-        Zoomable.getInstance().setContentRect(
+        Zoomable.getInstance().setPageRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
         );
     }
@@ -44,14 +44,16 @@ public class PDFBuilder {
         if(width < 1) width = 1;
         if(height < 1) height = 1;
         this.pageSize.setCustom(width, height, unit);
-        Zoomable.getInstance().setContentRect(
+        Zoomable.getInstance().setPageRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
         );
     }
 
     /**
-     * PDF 페이지 패딩, 세로 및 가로 설정
-     * set PDF page padding, vertical and horizontal
+     * PDF 페이지 패딩, 세로 및 가로 설정.<br/>
+     * 모든 페이지에 지정된 패딩이 적용된다.
+     * set PDF page padding, vertical and horizontal<br/>
+     * The specified padding applies to all pages.
      * @param vertical 세로 패딩
      * @param horizontal 가로 패딩
      * @return 자기 자신
@@ -108,7 +110,7 @@ public class PDFBuilder {
     public PDFBuilder draw(){
         if(root != null) {
             float width =
-                    Zoomable.getInstance().getContentRect().width() -
+                    Zoomable.getInstance().getPageRect().width() -
                             Zoomable.getInstance().getPadding().left -
                             Zoomable.getInstance().getPadding().right;
 

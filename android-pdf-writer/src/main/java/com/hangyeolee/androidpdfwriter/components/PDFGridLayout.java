@@ -141,7 +141,7 @@ public class PDFGridLayout extends PDFLayout{
             }
 
             // 페이지 넘기는 Grid Cell 이 있는 경우 다음 페이지로
-            float zoomHeight = Zoomable.getInstance().getContentRect().height();
+            float zoomHeight = Zoomable.getInstance().getPageRect().height();
             float lastHeight = totalHeight + measureY;
             while(lastHeight > zoomHeight){
                 lastHeight -= zoomHeight;

@@ -2,7 +2,6 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
 import android.graphics.RectF;
-import android.graphics.Typeface;
 
 import androidx.annotation.NonNull;
 
@@ -62,8 +61,8 @@ public class BinarySerializer {
     public BinarySerializer(PDFLayout root){
         this.rootComponent = root;
         mediaBox = new RectF(
-                0, Zoomable.getInstance().getContentRect().bottom,
-                Zoomable.getInstance().getContentRect().right, 0);
+                0, Zoomable.getInstance().getPageRect().bottom,
+                Zoomable.getInstance().getPageRect().right, 0);
         this.manager = new BinaryObjectManager();
     }
 
@@ -234,7 +233,7 @@ public class BinarySerializer {
     }
 
     public float getPageHeight(){
-        return Zoomable.getInstance().getContentRect().bottom -
+        return Zoomable.getInstance().getPageRect().bottom -
                 Zoomable.getInstance().getPadding().top -
                 Zoomable.getInstance().getPadding().bottom;
     }

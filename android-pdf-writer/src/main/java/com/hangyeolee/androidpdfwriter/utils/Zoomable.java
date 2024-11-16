@@ -12,18 +12,24 @@ public class Zoomable {
         return instance;
     }
 
-    private RectF contentRect = null;
+    private RectF pageRect = null;
     private final RectF padding = new RectF();
 
-    public void setContentRect(RectF contentRect){
-        this.contentRect = contentRect;
+    /**
+     * PDF 페이지 크기 설정
+     * @param pageRect 크기
+     */
+    public void setPageRect(RectF pageRect){
+        this.pageRect = pageRect;
     }
 
-    public RectF getContentRect() {
-        return contentRect;
+    public RectF getPageRect() {
+        return pageRect;
     }
 
-
+    /**
+     * PDF 페이지 패딩
+     */
     public RectF getPadding() {
         return padding;
     }
