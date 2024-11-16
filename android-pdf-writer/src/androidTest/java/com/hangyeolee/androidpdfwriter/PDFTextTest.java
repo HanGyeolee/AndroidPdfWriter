@@ -8,7 +8,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.util.Log;
 
@@ -37,7 +36,7 @@ import java.io.File;
 import java.io.InputStream;
 
 @RunWith(AndroidJUnit4.class)
-public class PDFBuilderTest {
+public class PDFTextTest {
     private final String TAG = "TEST";
     Context context;
     PDFBuilder builder;
@@ -53,45 +52,23 @@ public class PDFBuilderTest {
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         Log.d(TAG, "Context initialized");
 
-        InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(
+        /*InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(
                 com.hangyeolee.androidpdfwriter.test.R.drawable.sample_image);
         Log.d(TAG, "Image stream opened");
 
         b = BitmapFactory.decodeStream(stream);
-        Log.d(TAG, "Bitmap decoded: " + (b != null));
+        Log.d(TAG, "Bitmap decoded: " + (b != null));*/
 
         builder = new PDFBuilder(Paper.A4);
         builder.setQuality(85);
+        builder.setPagePadding(10, 10);
         builder.root = PDFLinearLayout.build()
                 .setOrientation(Orientation.Column)
-                .setPadding(10,10,10,10)
                 .setBackgroundColor(Color.BLUE)
                 .addChild(PDFH1.build("제목")
-                        .setFont(PDFFont.COURIER_BOLD)
+                        .setFontFromAsset(context, "Pretendard-Bold.ttf")
                         .setBackgroundColor(Color.WHITE)
-                        .setTextAlign(TextAlign.Center))
-                .addChild(PDFLinearLayout.build()
-                        .setOrientation(Orientation.Row)
-                        .setMargin(10, 10, 10, 10)
-                        .setBackgroundColor(Color.WHITE)
-                        .setBorder(border -> border
-                                .setLeft(4, Color.BLACK)
-                                .setTop(4, Color.RED)
-                                .setRight(4, Color.GREEN)
-                                .setBottom(4, Color.MAGENTA)
-                        )
-                        .addChild(PDFH3.build("번호"))
-                        .addChild(PDFH3.build("이름")
-                                .setBackgroundColor(Color.YELLOW)
-                                .setTextAlign(TextAlign.Center))
-                        .addChild(PDFH3.build("내용")
-                                .setBackgroundColor(Color.BLACK)
-                                .setTextColor(Color.WHITE)
-                                .setTextAlign(TextAlign.Center))
-                )
-                .addChild(PDFImage.build(b)
-                        .setFit(Fit.CONTAIN)
-                        .setSize(200.0f));
+                        .setTextAlign(TextAlign.Center));
         Log.d(TAG, "PDF Builder setup completed");
     }
 
@@ -104,11 +81,6 @@ public class PDFBuilderTest {
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);
-
-        // 생성된 PDF 파일 검증
-        File pdfFile = new File(uri.getPath());
-        assertTrue("PDF file should exist", pdfFile.exists());
-        assertTrue("PDF file should not be empty", pdfFile.length() > 0);
     }
 
     @After

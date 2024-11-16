@@ -1,5 +1,6 @@
 package com.hangyeolee.androidpdfwriter.components;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -10,9 +11,14 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.RawRes;
 
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
+import com.hangyeolee.androidpdfwriter.exceptions.FontNotFoundException;
+import com.hangyeolee.androidpdfwriter.font.FontExtractor;
+import com.hangyeolee.androidpdfwriter.font.FontMetrics;
+import com.hangyeolee.androidpdfwriter.font.PDFFont;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
@@ -24,7 +30,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 public class PDFText extends PDFResourceComponent {
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
+    FontExtractor.FontInfo info = null;
     private int flags;
     private int italicAngle;
     private float ascent;
@@ -54,7 +60,6 @@ public class PDFText extends PDFResourceComponent {
     float lastWidth = 0;
 
     float updatedHeight;
-    Typeface plaintype = Typeface.DEFAULT;
 
     @Override
     public void measure(float x, float y) {
@@ -148,7 +153,7 @@ public class PDFText extends PDFResourceComponent {
                     fontBBox,
                     charWidths
             );
-            resourceId = page.registerFont(bufferPaint.getTypeface(), fontMetrics);
+            resourceId = page.registerFont(info, fontMetrics);
         }
     }
 
@@ -251,19 +256,19 @@ public class PDFText extends PDFResourceComponent {
     private String escapePDFString(String text) {
         try {
             // UTF-8로 인코딩
-            byte[] utf8Bytes = text.getBytes(UTF_8);
             StringBuilder result = new StringBuilder();
             result.append("<"); // UTF-8 바이트 스트림 시작
 
-            // 바이트를 16진수로 변환
-            for (byte b : utf8Bytes) {
-                result.append(String.format("%02X", b & 0xff));
+            for (int i = 0; i < text.length(); i++) {
+                char c = text.charAt(i);
+                // Unicode code point를 16비트 CID로 변환
+                result.append(String.format("%04X", (int)c));
             }
+
             result.append(">"); // UTF-8 바이트 스트림 끝
             return result.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return text; // 실패시 원본 반환
+        } catch (Exception ignored) {
+            return "("+text.replace("(", "\\(").replace(")", "\\)")+")" ; // fallback - 일반 문자열로 처리
         }
     }
 
@@ -345,11 +350,30 @@ public class PDFText extends PDFResourceComponent {
         return this;
     }
 
+    /**
+     * 기본 폰트로 helvetica 를 사용.<br/>
+     * Use helvetica as the default font
+     * @param text 글자
+     */
+    @Deprecated
     public PDFText(String text){
-        this.setText(text).setTextPaint(null);
+        this(text, PDFFont.HELVETICA);
     }
+    /**
+     * 기본 폰트로 helvetica 를 사용.<br/>
+     * Use helvetica as the default font
+     * @param text 글자
+     * @param paint 스타일
+     */
+    @Deprecated
     public PDFText(String text, TextPaint paint){
-        this.setText(text).setTextPaint(paint);
+        this(text, paint, PDFFont.HELVETICA);
+    }
+    public PDFText(String text, @NonNull @PDFFont.ID String fontName){
+        this.setText(text).setTextPaint(null).setFont(fontName);
+    }
+    public PDFText(String text, TextPaint paint, @NonNull @PDFFont.ID String fontName){
+        this.setText(text).setTextPaint(paint).setFont(fontName);
     }
     public PDFText setText(String text){
         lastText = this.text;
@@ -361,7 +385,7 @@ public class PDFText extends PDFResourceComponent {
             this.bufferPaint = new TextPaint();
             this.align = Layout.Alignment.ALIGN_NORMAL;
             this.bufferPaint.setTextSize(16f);
-        }else{
+        }else if(paint != this.bufferPaint){
             lastPaint = (TextPaint) this.bufferPaint;
             this.bufferPaint = paint;
         }
@@ -373,17 +397,42 @@ public class PDFText extends PDFResourceComponent {
         this.bufferPaint.setColor(color);
         return this;
     }
-    public PDFText setFontFamily(Typeface plaintype){
-        return this.setFontFamily(plaintype, FontType.NORMAL);
+    public PDFText setFont(@NonNull @PDFFont.ID String fontName){
+        FontExtractor.FontInfo info = FontExtractor.loadFromDefault(fontName);
+        if(info == null) throw new FontNotFoundException("Font not found.");
+        this.info = info;
+        setTextPaint((TextPaint) bufferPaint);
+        this.bufferPaint.setTypeface(info.typeface);
+        return this;
     }
-    public PDFText setFontFamily(Typeface plaintype, @FontType.Style int style){
-        this.plaintype = plaintype;
-        return setFontStyle(style);
+    public PDFText setFontFromAsset(@NonNull Context context, @NonNull String assetPath){
+        FontExtractor.FontInfo info = FontExtractor.loadFromAsset(context, assetPath);
+        if(info == null) throw new FontNotFoundException("Font not found.");
+        this.info = info;
+        setTextPaint((TextPaint) bufferPaint);
+        this.bufferPaint.setTypeface(info.typeface);
+        return this;
+    }
+    public PDFText setFontFromFile(@NonNull String path){
+        FontExtractor.FontInfo info = FontExtractor.loadFromFile(path);
+        if(info == null) throw new FontNotFoundException("Font not found.");
+        this.info = info;
+        setTextPaint((TextPaint) bufferPaint);
+        this.bufferPaint.setTypeface(info.typeface);
+        return this;
+    }
+    public PDFText setFontFromResource(@NonNull Context context, @RawRes int resourceId){
+        FontExtractor.FontInfo info = FontExtractor.loadFromResource(context, resourceId);
+        if(info == null) throw new FontNotFoundException("Font not found.");
+        this.info = info;
+        setTextPaint((TextPaint) bufferPaint);
+        this.bufferPaint.setTypeface(info.typeface);
+        return this;
     }
     public PDFText setFontStyle(@FontType.Style int style){
-        if(this.plaintype == null) throw new NullPointerException("Please, call setFont first.");
+        if(info == null) throw new FontNotFoundException("Font of PDFText class is not initialized.");
         setTextPaint((TextPaint) bufferPaint);
-        this.bufferPaint.setTypeface(Typeface.create(plaintype, style));
+        this.bufferPaint.setTypeface(Typeface.create(info.typeface, style));
         return this;
     }
 

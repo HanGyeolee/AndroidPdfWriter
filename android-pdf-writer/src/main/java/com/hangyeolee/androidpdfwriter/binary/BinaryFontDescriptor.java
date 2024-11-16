@@ -1,6 +1,6 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
-import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
+import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 
 import java.util.Locale;
 

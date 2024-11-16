@@ -4,9 +4,11 @@ import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 
+import androidx.annotation.NonNull;
+
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
-import com.hangyeolee.androidpdfwriter.utils.FontMetrics;
-import com.hangyeolee.androidpdfwriter.utils.Paper;
+import com.hangyeolee.androidpdfwriter.font.FontExtractor;
+import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.BufferedOutputStream;
@@ -38,7 +40,7 @@ public class BinarySerializer {
 
     private final BinaryObjectManager manager;
     private final Map<Bitmap, String> imageResourceMap = new HashMap<>();
-    private final Map<Typeface, String> fontResourceMap = new HashMap<>();
+    private final Map<FontExtractor.FontInfo, String> fontResourceMap = new HashMap<>();
     private int nextImageNumber = 1;
     private int nextFontNumber = 1;
 
@@ -149,30 +151,53 @@ public class BinarySerializer {
     /**
      * 폰트를 PDF 리소스로 등록
      */
-    public String registerFont(Typeface typeface, FontMetrics metrics) {
+    public String registerFont(@NonNull FontExtractor.FontInfo info, FontMetrics metrics) {
         // 이미 등록된 폰트인지 확인
-        String fontId = fontResourceMap.get(typeface);
+        String fontId = fontResourceMap.get(info);
         if (fontId != null) {
             return fontId;
         }
 
         // 새로운 폰트 ID 생성
         fontId = "F" + nextFontNumber++;
-        fontResourceMap.put(typeface, fontId);
+        fontResourceMap.put(info, fontId);
 
-        // FontDescriptor 객체 생성
-        BinaryFontDescriptor fontDesc = manager.createObject(BinaryFontDescriptor::new);
-        fontDesc.setMetrics(metrics);
+        BinaryFont font;
+        if(isBase14Font(info.postScriptName)){
+            // Font 객체 생성
+            font = manager.createObject(n -> new BinaryFont(n, null, null, null));
+        }else {
+            // FontDescriptor 객체 생성
+            BinaryFontDescriptor fontDesc = manager.createObject(BinaryFontDescriptor::new);
+            fontDesc.setMetrics(metrics);
 
-        // Font 객체 생성
-        BinaryFont font = manager.createObject(n -> new BinaryFont(n, fontDesc, "UTF-8", cmap));
-        font.setBaseFont("Helvetica");
+            // Font 객체 생성
+            font = manager.createObject(n -> new BinaryFont(n, fontDesc, info.encoding, cmap));
+        }
+        font.setBaseFont(info.postScriptName);
         font.setWidths(metrics.charWidths);
 
         // Resources에 폰트 추가
         resources.addFont(fontId, font);
 
         return fontId;
+    }
+
+    private boolean isBase14Font(String name) {
+        return name.equals("Times-Roman") ||
+                name.equals("Times-Bold") ||
+                name.equals("Times-Italic") ||
+                name.equals("Times-BoldItalic") ||
+                name.equals("Helvetica") ||
+                name.equals("Helvetica-Bold") ||
+                name.equals("Helvetica-Oblique") ||
+                name.equals("Helvetica-BoldOblique") ||
+                name.equals("Courier") ||
+                name.equals("Courier-Bold") ||
+                name.equals("Courier-Oblique") ||
+                name.equals("Courier-BoldOblique") ||
+                name.equals("Symbol") ||
+                name.equals("ZapfDingbats");
     }
 
     /**
