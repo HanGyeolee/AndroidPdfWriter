@@ -18,26 +18,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BinarySerializer {
-    private static final String HEADER = "%PDF-1.4\r\n" +
-            "%" + (char)0xE2 + (char)0xE3 + (char)0xCF + (char)0xD3 +"\r\n";
+    private static final String HEADER = "%PDF-1.4\r\n"
+            + "%" + (char)0xE2 + (char)0xE3 + (char)0xCF + (char)0xD3 +"\r\n";
     private static final String TO_UNICODE_CMAP_TEMPLATE = """
                     /CIDInit /ProcSet findresource begin\r
                     12 dict begin\r
                     begincmap\r
-                    /CIDSystemInfo\r
-                    <</Registry (Adobe)\r
-                    /Ordering (Identity)\r
-                    /Supplement 0\r
-                    >> def\r
+                    /CIDSystemInfo <</Registry (Adobe) /Ordering (Identity) /Supplement 0 >> def\r
                     /CMapName /Adobe-Identity-UCS def\r
                     /CMapType 2 def\r
                     1 begincodespacerange\r
                     <0000> <FFFF>\r
                     endcodespacerange\r
+                    %s\r
                     endcmap\r
                     CMapName currentdict /CMap defineresource pop\r
-                    end\r
-                    end\r
+                    end end
                     """;
 
     private final BinaryObjectManager manager;
@@ -70,22 +66,17 @@ public class BinarySerializer {
     }
 
     public void draw(){
-        // 2. Info 딕셔너리 작성
+        // 1. Catalog 작성 1 0 obj
+        BinaryCatalog catalog = manager.createObject(BinaryCatalog::new);
+        // 2. Pages 작성
+        pages = manager.createObject(BinaryPages::new);
+        catalog.setPages(pages);
+        // 3. Info 작성
         manager.createObject(BinaryInfo::new);
 
-        // 객체 생성
-        // 3. Pages 딕셔너리 작성
-        pages = manager.createObject(BinaryPages::new);
-        // 1 0 obj Pages
-        // 4. Catalog 딕셔너리 작성
-        manager.createObject(n -> new BinaryCatalog(n, pages));
-        // 2 0 obj Catalog
-
-        // 페이지 리소스 생성
-        resources = manager.createObject(BinaryResources::new);
         rootComponent.draw(this);
 
-        pages.finalizeContents(manager);
+        pages.finalizeContents(manager, resources);
     }
 
     public void save(OutputStream os){
@@ -106,7 +97,6 @@ public class BinarySerializer {
     public StringBuilder newPage(){
         // 페이지 생성 및 리소스 설정
         currentPage = manager.createObject(BinaryPage::new);
-        currentPage.setResources(resources);
         currentPage.setMediaBox(mediaBox);
         pages.addPage(currentPage);
 
@@ -142,7 +132,7 @@ public class BinarySerializer {
      * PDF 버전 1.4 명시
      */
     private void writePDFHeader(OutputStream bufos) throws IOException {
-        byte[] bytes = HEADER.getBytes(BinaryObjectManager.US_ASCII);
+        byte[] bytes = BinaryConverter.toBytes(HEADER);
         manager.addXRef(65535, (byte) 'f');
         manager.byteLength += bytes.length;
         bufos.write(bytes);
@@ -152,6 +142,11 @@ public class BinarySerializer {
      * 폰트를 PDF 리소스로 등록
      */
     public String registerFont(@NonNull FontExtractor.FontInfo info, FontMetrics metrics) {
+        if(resources == null){
+            // 페이지 리소스 생성
+            resources = manager.createObject(BinaryResources::new);
+        }
+
         // 이미 등록된 폰트인지 확인
         String fontId = fontResourceMap.get(info);
         if (fontId != null) {
@@ -163,30 +158,34 @@ public class BinarySerializer {
         fontResourceMap.put(info, fontId);
 
         BinaryFont font;
-        // FontDescriptor 객체 생성
-        BinaryFontDescriptor fontDesc = manager.createObject(BinaryFontDescriptor::new);
-        fontDesc.setMetrics(metrics);
-        fontDesc.setFontName(info.postScriptName);
+        BinaryFontDescriptor fontDesc;
         if(isBase14Font(info.postScriptName)){
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, fontDesc,  null, null));
+            font = manager.createObject(n -> new BinaryFont(n, null, null));
             font.setSubtype("Type1");
+            // FontDescriptor 객체 생성
+            fontDesc = manager.createObject(BinaryFontDescriptor::new);
+            font.setFontDescriptor(fontDesc);
         }else {
             if(cmap == null){
                 cmap = createToUnicode();
             }
-            BinaryContentStream fontfile3 = manager.createObject(n ->
-                    new BinaryContentStream(n, true, info.stream));
-            fontfile3.setSubtype("Type1C");
-
-            fontDesc.setFontFile3(fontfile3);
-
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, fontDesc, info.encoding, cmap));
+            font = manager.createObject(n -> new BinaryFont(n, info.encoding, cmap));
             font.setSubtype("TrueType");
             font.setWidths(metrics.charWidths);
+            // FontDescriptor 객체 생성
+            fontDesc = manager.createObject(BinaryFontDescriptor::new);
+            font.setFontDescriptor(fontDesc);
+            // Font 파일 생성
+            BinaryContentStream fontfile2 = manager.createObject(n ->
+                    new BinaryContentStream(n, true, info.stream));
+            fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
+            fontDesc.setFontFile2(fontfile2);
         }
         font.setBaseFont(info.postScriptName);
+        fontDesc.setMetrics(metrics);
+        fontDesc.setFontName(info.postScriptName);
 
         // Resources에 폰트 추가
         resources.addFont(fontId, font);
@@ -215,6 +214,11 @@ public class BinarySerializer {
      * 이미지를 PDF 리소스로 등록
      */
     public String registerImage(android.graphics.Bitmap bitmap) {
+        if(resources == null){
+            // 페이지 리소스 생성
+            resources = manager.createObject(BinaryResources::new);
+        }
+
         // 이미 등록된 이미지인지 확인
         String imageId = imageResourceMap.get(bitmap);
         if (imageId != null) {

@@ -137,7 +137,7 @@ public class PDFBuilder {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Files.FileColumns.TITLE, filename);
                 values.put(MediaStore.Files.FileColumns.DISPLAY_NAME, filename);
-                values.put(MediaStore.Files.FileColumns.MIME_TYPE, "application/octet-stream");
+                values.put(MediaStore.Files.FileColumns.MIME_TYPE, "application/pdf");
                 values.put(MediaStore.Files.FileColumns.BUCKET_ID, filename);
                 values.put(MediaStore.Files.FileColumns.DATE_TAKEN, System.currentTimeMillis());
                 values.put(MediaStore.Files.FileColumns.RELATIVE_PATH, relativePath);
