@@ -33,6 +33,8 @@ class BinaryFontDescriptor extends BinaryObject {
     }
     public void setFontFile3(BinaryObject fontfile3) {
         dictionary.put("/FontFile3", fontfile3);
-        addDependency(fontfile3);
+    }
+    public void setFontFile2(BinaryObject fontfile3) {
+        dictionary.put("/FontFile2", fontfile3);
     }
 }

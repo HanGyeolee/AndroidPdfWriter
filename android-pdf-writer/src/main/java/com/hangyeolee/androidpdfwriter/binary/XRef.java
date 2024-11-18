@@ -16,7 +16,7 @@ class XRef {
 
     private byte[] Pos2Ten(long pos){
         byte[] result = new byte[10];
-        byte[] tmp = String.valueOf(pos).getBytes(BinaryObjectManager.US_ASCII);
+        byte[] tmp = BinaryConverter.toBytes(String.valueOf(pos));
 
         int i = result.length - 1;
         int j = tmp.length - 1;
@@ -33,7 +33,7 @@ class XRef {
     }
     private byte[] Gen2Fiv(int gen){
         byte[] result = new byte[5];
-        byte[] tmp = String.valueOf(gen).getBytes(BinaryObjectManager.US_ASCII);
+        byte[] tmp = BinaryConverter.toBytes(String.valueOf(gen));
 
         int i = result.length - 1;
         int j = tmp.length - 1;
@@ -61,7 +61,7 @@ class XRef {
         }
         result[i++] = ' ';
         result[i++] = fn;
-        result[i++] = '\n';
+        result[i++] = '\r';
         result[i] = '\n';
 
         return result;

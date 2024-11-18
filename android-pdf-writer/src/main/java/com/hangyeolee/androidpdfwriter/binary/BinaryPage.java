@@ -26,7 +26,6 @@ class BinaryPage extends BinaryObject {
     public void setResources(BinaryResources resources) {
         this.resources = resources;
         dictionary.put("/Resources", resources);
-        addDependency(resources);
     }
 
     public StringBuilder getContents(){
@@ -36,22 +35,20 @@ class BinaryPage extends BinaryObject {
     // draw 완료 후 호출하여 컨텐츠를 ContentStream 객체로 변환
     public void finalizeContent(BinaryObjectManager manager) {
         if (contentStream != null && contentStream.length() > 0) {
-            // TODO 압축
             BinaryObject contents = manager.createObject(n ->
-                    new BinaryContentStream(n, false, contentStream.toString()));
+                    new BinaryContentStream(n, true, contentStream.toString()));
             dictionary.put("/Contents", contents);
-            addDependency(contents);
             contentStream.setLength(0);
             contentStream = null;
         }
     }
 
     public void setMediaBox(RectF dimensions) {
-        dictionary.put("/MediaBox", String.format(Locale.getDefault(), "[%f %f %f %f]",
-                dimensions.left,        //llx
-                dimensions.bottom,      //lly
-                dimensions.right,       //urx
-                dimensions.top          //ury
+        dictionary.put("/MediaBox", String.format(Locale.getDefault(), "[%s %s %s %s]",
+                formatNumber(dimensions.left),
+                formatNumber(dimensions.bottom),
+                formatNumber(dimensions.right),
+                formatNumber(dimensions.top)
         ));
     }
 }

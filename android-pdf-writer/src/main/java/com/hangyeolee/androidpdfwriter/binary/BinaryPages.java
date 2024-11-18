@@ -17,7 +17,6 @@ class BinaryPages extends BinaryObject {
     public void addPage(BinaryPage page) {
         pages.add(page);
         page.setParent(this);
-        addDependency(page);
     }
 
     public BinaryPage getPage(int index){
@@ -31,8 +30,9 @@ class BinaryPages extends BinaryObject {
         return pages.size();
     }
 
-    public void finalizeContents(BinaryObjectManager manager){
+    public void finalizeContents(BinaryObjectManager manager, BinaryResources resources){
         for (BinaryPage page : pages) {
+            page.setResources(resources);
             page.finalizeContent(manager);
         }
     }
@@ -40,7 +40,7 @@ class BinaryPages extends BinaryObject {
     @Override
     public String toDictionaryString() {
         dictionary.put("/Count", pages.size());
-        StringBuilder kids = new StringBuilder("[");
+        StringBuilder kids = new StringBuilder("[ ");
         for (BinaryPage page : pages) {
             kids.append(page.getObjectNumber()).append(" 0 R ");
         }

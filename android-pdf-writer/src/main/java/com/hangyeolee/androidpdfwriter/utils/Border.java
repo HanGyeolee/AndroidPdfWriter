@@ -86,7 +86,7 @@ public class Border {
     public void draw(StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
         if(canDraw()) {
             // 그래픽스 상태 저장
-            content.append("q\n"); // Save graphics state
+            content.append("q\r\n"); // Save graphics state
 
             float gap;
             // 왼쪽 테두리
@@ -96,14 +96,14 @@ public class Border {
                 setLineWidthInPDF(content, size.left);
 
                 // 시작점 이동
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX + gap),
                         Zoomable.getInstance().transform2PDFHeight(measureY)));  // y좌표 변환
                 // 선 그리기
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX + gap),
                         Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight)));
-                content.append("S\n");  // 선 그리기 실행
+                content.append("S\r\n");  // 선 그리기 실행
             }
 
             // 위쪽 테두리
@@ -111,13 +111,13 @@ public class Border {
                 gap = size.top * 0.5f;
                 setColorInPDF(content, color.top);
                 setLineWidthInPDF(content, size.top);
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX),
                         Zoomable.getInstance().transform2PDFHeight(measureY + gap)));
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth),
                         Zoomable.getInstance().transform2PDFHeight(measureY + gap)));
-                content.append("S\n");
+                content.append("S\r\n");
             }
 
             // 오른쪽 테두리
@@ -125,13 +125,13 @@ public class Border {
                 gap = size.right * 0.5f;
                 setColorInPDF(content, color.right);
                 setLineWidthInPDF(content, size.right);
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap),
                         Zoomable.getInstance().transform2PDFHeight(measureY)));
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap),
                         Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight)));
-                content.append("S\n");
+                content.append("S\r\n");
             }
 
             // 아래쪽 테두리
@@ -139,17 +139,17 @@ public class Border {
                 gap = size.bottom * 0.5f;
                 setColorInPDF(content, color.bottom);
                 setLineWidthInPDF(content, size.bottom);
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX),
                         Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap)));
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
                         Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth),
                         Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap)));
-                content.append("S\n");
+                content.append("S\r\n");
             }
 
             // 그래픽스 상태 복원
-            content.append("Q\n"); // Restore graphics state
+            content.append("Q\r\n"); // Restore graphics state
         }
     }
 
@@ -167,11 +167,11 @@ public class Border {
         float alpha = Color.alpha(color) / 255f;
 
         if (alpha == 1.0f) {
-            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\n", red, green, blue));
+            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\r\n", red, green, blue));
         } else {
             // 알파값이 있는 경우 ExtGState 사용
-            content.append(String.format(Locale.getDefault(),"/GS%.2f gs\n", alpha)); // 알파값에 해당하는 ExtGState 사용
-            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\n", red, green, blue));
+            content.append(String.format(Locale.getDefault(),"/GS%.2f gs\r\n", alpha)); // 알파값에 해당하는 ExtGState 사용
+            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\r\n", red, green, blue));
         }
     }
 
@@ -179,7 +179,7 @@ public class Border {
      * PDF 컨텐츠 스트림에 선 두께 설정
      */
     private void setLineWidthInPDF(StringBuilder content, float width) {
-        content.append(String.format(Locale.getDefault(),"%.2f w\n", width));
+        content.append(String.format(Locale.getDefault(),"%.2f w\r\n", width));
     }
 
 

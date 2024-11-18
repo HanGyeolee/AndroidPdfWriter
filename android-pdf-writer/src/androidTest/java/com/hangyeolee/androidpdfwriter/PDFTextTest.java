@@ -32,7 +32,6 @@ import org.junit.runner.RunWith;
 public class PDFTextTest {
     private final String TAG = "TEST";
     Context context;
-    PDFBuilder builder;
     Bitmap b = null;
 
     @Rule
@@ -44,15 +43,11 @@ public class PDFTextTest {
 
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         Log.d(TAG, "Context initialized");
+    }
 
-        /*InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(
-                com.hangyeolee.androidpdfwriter.test.R.drawable.sample_image);
-        Log.d(TAG, "Image stream opened");
-
-        b = BitmapFactory.decodeStream(stream);
-        Log.d(TAG, "Bitmap decoded: " + (b != null));*/
-
-        builder = new PDFBuilder(Paper.A4);
+    @Test
+    public void testLinearLayoutNText() {
+        PDFBuilder builder = new PDFBuilder(Paper.A4);
         builder.setQuality(85);
         builder.setPagePadding(10, 10);
         builder.root = PDFLinearLayout.build()
@@ -64,14 +59,30 @@ public class PDFTextTest {
                         .setTextAlign(TextAlign.Center)
                         .setAnchor(Anchor.Center, Anchor.Center));
         Log.d(TAG, "PDF Builder setup completed");
+        builder.draw();
+        Log.d(TAG, "builder draw");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_Text.pdf");
+        Log.d(TAG, "builder save");
+
+        assertNotNull("Generated PDF URI should not be null", uri);
     }
 
     @Test
-    public void testLinearLayoutNText() {
-        Log.d(TAG, "실행");
+    public void testKoreanText() {
+        PDFBuilder builder = new PDFBuilder(Paper.A4);
+        builder.setQuality(85);
+        builder.setPagePadding(10, 10);
+        builder.root = PDFLinearLayout.build()
+                .setOrientation(Orientation.Vertical)
+                .setBackgroundColor(Color.TRANSPARENT)
+                .addChild(PDFH1.build("제목")
+                        .setFontFromAsset(context, "Pretendard-Bold.ttf")
+                        .setTextAlign(TextAlign.Center)
+                        .setAnchor(Anchor.Center, Anchor.Center));
+        Log.d(TAG, "PDF Builder setup completed");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "result.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_KoreanText.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);

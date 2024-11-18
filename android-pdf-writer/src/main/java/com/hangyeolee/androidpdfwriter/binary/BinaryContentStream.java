@@ -21,7 +21,7 @@ class BinaryContentStream extends BinaryObject {
             dictionary.put("/Filter", "/FlateDecode");
             dictionary.put("/Length", compressedContent.length);
         } else {
-            this.compressedContent = content.getBytes(BinaryObjectManager.US_ASCII);
+            this.compressedContent = BinaryConverter.toBytes(content);
             dictionary.put("/Length", compressedContent.length);
         }
     }
@@ -46,7 +46,7 @@ class BinaryContentStream extends BinaryObject {
      */
     private byte[] compressContent(String content) {
         try {
-            byte[] input = content.getBytes(BinaryObjectManager.US_ASCII);
+            byte[] input = BinaryConverter.toBytes(content);
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream(input.length);
 
             // DeflaterOutputStream 사용 - zlib 형식 준수
@@ -65,7 +65,7 @@ class BinaryContentStream extends BinaryObject {
         } catch (Exception e) {
             e.printStackTrace();
             // 압축 실패시 원본 반환
-            return content.getBytes(BinaryObjectManager.US_ASCII);
+            return BinaryConverter.toBytes(content);
         }
     }
     private byte[] compressContent(byte[] content) {

@@ -76,15 +76,19 @@ public abstract class PDFLayout extends PDFComponent{
     private void drawPageSection(BinarySerializer serializer, StringBuilder content,
                                  float startY, float height,
                                  boolean isFirstPage, boolean isLastPage) {
-        // 그래픽스 상태 저장
-        PDFGraphicsState.save(content);
 
         // 배경 그리기
         if (backgroundColor != Color.TRANSPARENT && measureWidth > 0) {
+            // 그래픽스 상태 저장
+            PDFGraphicsState.save(content);
+
             setColorInPDF(content, backgroundColor);
             drawRectInPDF(content,
                     measureX, startY, measureWidth, height,
                     true, false);
+
+            // 그래픽스 상태 복원
+            PDFGraphicsState.restore(content);
         }
 
         // 테두리 그리기 - 페이지 경계에서 적절히 분할
@@ -101,9 +105,6 @@ public abstract class PDFLayout extends PDFComponent{
 
         sectionBorder.draw(content, measureX, startY,
                 measureWidth, height);
-
-        // 그래픽스 상태 복원
-        PDFGraphicsState.restore(content);
     }
 
     /**

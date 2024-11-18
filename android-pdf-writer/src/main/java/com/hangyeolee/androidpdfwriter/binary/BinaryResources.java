@@ -17,12 +17,10 @@ class BinaryResources extends BinaryObject {
 
     public void addFont(String name, BinaryFont font) {
         fonts.put(name, font);
-        addDependency(font);
     }
 
     public void addXObject(String name, BinaryXObject xObject) {
         xObjects.put(name, xObject);
-        addDependency(xObject);
     }
 
     @Override
@@ -51,7 +49,7 @@ class BinaryResources extends BinaryObject {
         }
 
         procSet.append("]");
-        dictionary.put("ProcSet", procSet.toString());
+        dictionary.put("/ProcSet", procSet.toString());
         return super.toDictionaryString();
     }
 }

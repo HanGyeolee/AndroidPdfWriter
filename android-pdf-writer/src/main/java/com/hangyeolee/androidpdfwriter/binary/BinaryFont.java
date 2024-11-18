@@ -3,21 +3,22 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Font 객체
  */
 class BinaryFont extends BinaryObject {
+    private final List<BinaryFont> descendantFonts = new ArrayList<>();
     public BinaryFont(
             int objectNumber,
-            @Nullable BinaryFontDescriptor descriptor,
             @Nullable String encoding,
             @Nullable BinaryObject cmap) {
         super(objectNumber);
         dictionary.put("/Type", "/Font");
-        if(descriptor != null) {
-            dictionary.put("/FontDescriptor", descriptor);
-            addDependency(descriptor);
-        }
         // 기본 14 폰트용 공통 설정
         if (encoding == null) {
             dictionary.put("/Encoding", "/WinAnsiEncoding");
@@ -28,8 +29,15 @@ class BinaryFont extends BinaryObject {
         }
         if(cmap != null) {
             dictionary.put("/ToUnicode", cmap); // ToUnicode CMap 추가
-            addDependency(cmap);
         }
+    }
+
+    public void addDescendantFont(BinaryFont font) {
+        descendantFonts.add(font);
+    }
+
+    public void setFontDescriptor(BinaryFontDescriptor descriptor){
+        dictionary.put("/FontDescriptor", descriptor);
     }
 
     public void setBaseFont(String name) {
@@ -39,9 +47,22 @@ class BinaryFont extends BinaryObject {
     public void setWidths(int[] widths) {
         StringBuilder sb = new StringBuilder("[");
         for (float width : widths) {
-            sb.append(width).append(" ");
+            sb.append(formatNumber(width)).append(" ");
         }
         sb.append("]");
         dictionary.put("/Widths", sb.toString());
+    }
+
+    @Override
+    public String toDictionaryString() {
+        if(!descendantFonts.isEmpty()) {
+            StringBuilder fontDict = new StringBuilder("[ ");
+            for (var object : descendantFonts) {
+                fontDict.append(object.getObjectNumber()).append(" 0 R ");
+            }
+            fontDict.append("]");
+            dictionary.put("/DescendantFonts", fontDict.toString());
+        }
+        return super.toDictionaryString();
     }
 }

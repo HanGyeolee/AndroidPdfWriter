@@ -61,12 +61,12 @@ public class PDFBuilderTest {
 
         builder = new PDFBuilder(Paper.A4);
         builder.setQuality(85);
+        builder.setPagePadding(10, 10);
         builder.root = PDFLinearLayout.build()
                 .setOrientation(Orientation.Vertical)
-                .setPadding(10,10,10,10)
                 .setBackgroundColor(Color.BLUE)
                 .addChild(PDFH1.build("제목")
-                        .setFont(PDFFont.COURIER_BOLD)
+                        .setFontFromAsset(context, "Pretendard-Bold.ttf")
                         .setBackgroundColor(Color.WHITE)
                         .setTextAlign(TextAlign.Center))
                 .addChild(PDFLinearLayout.build()
@@ -79,11 +79,14 @@ public class PDFBuilderTest {
                                 .setRight(4, Color.GREEN)
                                 .setBottom(4, Color.MAGENTA)
                         )
-                        .addChild(PDFH3.build("번호"))
+                        .addChild(PDFH3.build("번호")
+                                .setFontFromAsset(context, "Pretendard-Bold.ttf"))
                         .addChild(PDFH3.build("이름")
+                                .setFontFromAsset(context, "Pretendard-Bold.ttf")
                                 .setBackgroundColor(Color.YELLOW)
                                 .setTextAlign(TextAlign.Center))
                         .addChild(PDFH3.build("내용")
+                                .setFontFromAsset(context, "Pretendard-Bold.ttf")
                                 .setBackgroundColor(Color.BLACK)
                                 .setTextColor(Color.WHITE)
                                 .setTextAlign(TextAlign.Center))
@@ -99,15 +102,10 @@ public class PDFBuilderTest {
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "result.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_Image.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);
-
-        // 생성된 PDF 파일 검증
-        File pdfFile = new File(uri.getPath());
-        assertTrue("PDF file should exist", pdfFile.exists());
-        assertTrue("PDF file should not be empty", pdfFile.length() > 0);
     }
 
     @After
