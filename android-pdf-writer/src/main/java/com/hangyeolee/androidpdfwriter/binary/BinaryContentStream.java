@@ -10,15 +10,35 @@ import java.util.zip.DeflaterOutputStream;
 class BinaryContentStream extends BinaryObject {
     private final byte[] compressedContent;
 
-    public BinaryContentStream(int objectNumber, String content) {
+    public BinaryContentStream(int objectNumber, boolean doFlate, String content) {
         super(objectNumber);
 
-        // 컨텐츠 압축
-        this.compressedContent = compressContent(content);
+        if(doFlate) {
+            // 컨텐츠 압축
+            this.compressedContent = compressContent(content);
 
-        // 딕셔너리에 압축 관련 항목 추가
-        dictionary.put("/Filter", "/FlateDecode");
-        dictionary.put("/Length", compressedContent.length);
+            // 딕셔너리에 압축 관련 항목 추가
+            dictionary.put("/Filter", "/FlateDecode");
+            dictionary.put("/Length", compressedContent.length);
+        } else {
+            this.compressedContent = content.getBytes(BinaryObjectManager.US_ASCII);
+            dictionary.put("/Length", compressedContent.length);
+        }
+    }
+    public BinaryContentStream(int objectNumber, boolean doFlate, byte[] stream) {
+        super(objectNumber);
+
+        if(doFlate) {
+            // 컨텐츠 압축
+            this.compressedContent = compressContent(stream);
+
+            // 딕셔너리에 압축 관련 항목 추가
+            dictionary.put("/Filter", "/FlateDecode");
+            dictionary.put("/Length", compressedContent.length);
+        } else {
+            this.compressedContent = stream;
+            dictionary.put("/Length", compressedContent.length);
+        }
     }
 
     /**
@@ -46,6 +66,29 @@ class BinaryContentStream extends BinaryObject {
             e.printStackTrace();
             // 압축 실패시 원본 반환
             return content.getBytes(BinaryObjectManager.US_ASCII);
+        }
+    }
+    private byte[] compressContent(byte[] content) {
+        try {
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(content.length);
+
+            // DeflaterOutputStream 사용 - zlib 형식 준수
+            Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+            DeflaterOutputStream zlibStream = new DeflaterOutputStream(outputStream, deflater);
+
+            // 데이터 쓰기
+            zlibStream.write(content);
+            zlibStream.finish();
+            zlibStream.close();
+
+            // 리소스 정리
+            deflater.end();
+
+            return outputStream.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 압축 실패시 원본 반환
+            return content;
         }
     }
 

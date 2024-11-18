@@ -29,11 +29,15 @@ public class FontExtractor {
         public final String postScriptName;
         public final Typeface typeface;
         public final String encoding;
+        public final byte[] stream;
 
-        public FontInfo(String postScriptName, String encoding, Typeface typeface) {
+        public FontInfo(
+                String postScriptName, String encoding,
+                Typeface typeface, byte[] stream) {
             this.postScriptName = postScriptName;
             this.encoding = encoding;
             this.typeface = typeface;
+            this.stream = stream;
         }
     }
 
@@ -46,7 +50,7 @@ public class FontExtractor {
         if (fontCache.containsKey(fontName)) {
             return fontCache.get(fontName);
         }
-        FontInfo fontInfo = new FontInfo(fontName, null, PDFFont.getTypeface(fontName));
+        FontInfo fontInfo = new FontInfo(fontName, null, PDFFont.getTypeface(fontName), null);
         fontCache.put(fontName, fontInfo);
         return fontInfo;
     }
@@ -70,8 +74,21 @@ public class FontExtractor {
             NameTableRecord record = extractPostScriptName(is);
 
             if(record == null) throw new IOException();
+            is = context.getAssets().open(assetPath);
+            byte[] stream;
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    stream = is.readAllBytes();
+                } else {
+                    stream = new byte[is.available()];
+                    is.read(stream);
+                }
+            } finally {
+                is.close();
+            }
+
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface);
+            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface, stream);
             fontCache.put(assetPath, fontInfo);
             return fontInfo;
 
@@ -100,8 +117,20 @@ public class FontExtractor {
             NameTableRecord record = extractPostScriptName(fis);
 
             if(record == null) throw new IOException();
+            fis = new FileInputStream(path);
+            byte[] stream;
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    stream = fis.readAllBytes();
+                } else {
+                    stream = new byte[fis.available()];
+                    fis.read(stream);
+                }
+            } finally {
+                fis.close();
+            }
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface);
+            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface, stream);
             fontCache.put(path, fontInfo);
             return fontInfo;
 
@@ -148,8 +177,21 @@ public class FontExtractor {
             NameTableRecord record = extractPostScriptName(is);
 
             if(record == null) throw new IOException();
+            is = context.getResources().openRawResource(resourceId);
+            byte[] stream;
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    stream = is.readAllBytes();
+                } else {
+                    stream = new byte[is.available()];
+                    is.read(stream);
+                }
+            } finally {
+                is.close();
+            }
+
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface);
+            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface, stream);
             fontCache.put(key, fontInfo);
 
             return fontInfo;

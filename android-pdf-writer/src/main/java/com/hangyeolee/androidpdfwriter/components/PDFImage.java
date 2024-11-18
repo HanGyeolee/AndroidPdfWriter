@@ -11,6 +11,7 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Locale;
 
@@ -149,8 +150,8 @@ public class  PDFImage extends PDFResourceComponent{
                 - border.size.bottom - padding.bottom;
 
         // 이미지가 그려질 실제 위치 계산
-        float x = measureX + border.size.left + padding.left + gapX;
-        float y = serializer.getPageHeight() - (measureY + border.size.top + padding.top + gapY + resizeH);
+        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
+        float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + resizeH);
 
         // 그래픽스 상태 저장 (이미지 변환을 위해 필요)
         PDFGraphicsState.save(content);

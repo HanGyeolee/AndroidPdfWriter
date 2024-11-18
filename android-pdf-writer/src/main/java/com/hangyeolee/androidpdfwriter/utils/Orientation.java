@@ -7,14 +7,14 @@ import java.lang.annotation.RetentionPolicy;
 
 public class Orientation {
     @Retention(RetentionPolicy.SOURCE)
-    @IntDef({Row, Column})
+    @IntDef({Horizontal, Vertical})
     public @interface OrientationInt {}
     /**
      * 가로
      */
-    public static final int Row = 0;
+    public static final int Horizontal = 0;
     /**
      * 세로
      */
-    public static final int Column = 1;
+    public static final int Vertical = 1;
 }

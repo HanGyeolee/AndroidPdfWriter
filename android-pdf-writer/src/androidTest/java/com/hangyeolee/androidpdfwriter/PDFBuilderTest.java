@@ -8,7 +8,6 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.util.Log;
 
@@ -63,7 +62,7 @@ public class PDFBuilderTest {
         builder = new PDFBuilder(Paper.A4);
         builder.setQuality(85);
         builder.root = PDFLinearLayout.build()
-                .setOrientation(Orientation.Column)
+                .setOrientation(Orientation.Vertical)
                 .setPadding(10,10,10,10)
                 .setBackgroundColor(Color.BLUE)
                 .addChild(PDFH1.build("제목")
@@ -71,7 +70,7 @@ public class PDFBuilderTest {
                         .setBackgroundColor(Color.WHITE)
                         .setTextAlign(TextAlign.Center))
                 .addChild(PDFLinearLayout.build()
-                        .setOrientation(Orientation.Row)
+                        .setOrientation(Orientation.Horizontal)
                         .setMargin(10, 10, 10, 10)
                         .setBackgroundColor(Color.WHITE)
                         .setBorder(border -> border

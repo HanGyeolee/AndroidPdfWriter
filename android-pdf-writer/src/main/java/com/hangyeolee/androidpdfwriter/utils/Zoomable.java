@@ -33,4 +33,23 @@ public class Zoomable {
     public RectF getPadding() {
         return padding;
     }
+
+    public float getContentWidth(){
+        return pageRect.width() - padding.left - padding.right;
+    }
+    public float getContentHeight(){
+        return pageRect.height() - padding.top - padding.bottom;
+    }
+
+    /**
+     *
+     * @param y ContentPage 에서 상단으로 부터 거리
+     * @return
+     */
+    public float transform2PDFHeight(float y){
+        return pageRect.height() - padding.top - y;
+    }
+    public float transform2PDFWidth(float x){
+        return padding.left + x;
+    }
 }

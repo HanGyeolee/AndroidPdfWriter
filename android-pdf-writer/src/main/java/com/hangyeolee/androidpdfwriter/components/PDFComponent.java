@@ -16,28 +16,39 @@ import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 import java.util.Locale;
 
 public abstract class PDFComponent{
+    // 부모 컴포넌트 참조
     PDFComponent parent = null;
 
-    // margin을 뺀 나머지 길이
-    float width = 0;
-    float height = 0;
-    @ColorInt
-    int backgroundColor = Color.TRANSPARENT;
+    // 컴포넌트 스타일링
     final RectF margin = new RectF(0,0,0,0);
     final RectF padding = new RectF(0,0,0,0);
     final Border border = new Border();
     final Anchor anchor = new Anchor();
-
     Paint bufferPaint = null;
+    @ColorInt int backgroundColor = Color.TRANSPARENT;
 
-    float relativeX = 0;
-    float relativeY = 0;
-    // Absolute Position
+    // 크기 관련
+    protected float width = 0;    // 설정된 너비(margin 포함)
+    protected float height = 0;   // 설정된 높이(margin 포함)
+
+    // 상대 좌표 (부모 기준)
+    protected float relativeX = 0;
+    protected float relativeY = 0;
+
+    // 절대 좌표 (첫번째 페이지 기준)
+    // 각 페이지의 높이는 ContentRect.Height = PageHeight - Page Top padding - Page Bottom padding 이다.
+    /**
+     * 해당 절대 좌표를 Page 좌표로 변환한다면 다음과 같다.<br/>
+     * Page Left padding + measureX
+     */
     protected float measureX = 0;
+    /**
+     * 해당 절대 좌표를 Page 좌표로 변환한다면 다음과 같다.<br/>
+     * PageHeight - Page Top padding - measureY - measureHeight
+     */
     protected float measureY = 0;
-    // margin을 뺀 나머지 길이
-    protected float measureWidth = -1;
-    protected float measureHeight = -1;
+    protected float measureWidth = -1; // (margin 제외)
+    protected float measureHeight = -1; // (margin 제외)
 
     public PDFComponent(){}
 
@@ -70,21 +81,24 @@ public abstract class PDFComponent{
 
         relativeX = x;
         relativeY = y;
-        float dx, dy;
-        float gapX = 0;
-        float gapY = 0;
+        float dx = 0, dy = 0;
+        float gapX = 0, gapY = 0;
 
+        // 여백 계산
         float left = margin.left;
         float top = margin.top;
         float right = margin.right;
         float bottom = margin.bottom;
-        // Measure Width and Height
+
+        // 측정된 크기 계산
         if(parent == null){
+            // 루트 컴포넌트인 경우
             measureWidth = (width - left - right);
             measureHeight = (height - top - bottom);
         }
         else{
-            // Get Max Width and Height from Parent
+            // 자식 컴포넌트인 경우
+            // 부모의 사용 가능한 최대 크기 계산
             float maxW = parent.measureWidth
                     - parent.border.size.left - parent.border.size.right
                     - parent.padding.left - parent.padding.right
@@ -96,7 +110,7 @@ public abstract class PDFComponent{
             if(maxW < 0) maxW = 0;
             if(maxH < 0) maxH = 0;
 
-            // 설정한 Width 나 Height 가 최대값을 넘지 않으면, 설정한 값으로
+            // 설정된 크기와 최대 크기 중 적절한 값 선택
             if(0 < width && width + relativeX <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
             else measureWidth =  (maxW - relativeX);
@@ -106,8 +120,12 @@ public abstract class PDFComponent{
             gapX = maxW - measureWidth;
             gapY = maxH - measureHeight;
         }
+
+        // 앵커에 따른 위치 조정
         dx = Anchor.getDeltaPixel(anchor.horizontal, gapX);
         dy = Anchor.getDeltaPixel(anchor.vertical, gapY);
+
+        // 절대 좌표 계산
         if(parent != null){
             dx += parent.measureX + parent.border.size.left + parent.padding.left;
             dy += parent.measureY + parent.border.size.top + parent.padding.top;
@@ -117,51 +135,9 @@ public abstract class PDFComponent{
     }
 
     /**
-     * 부모 컴포넌트에서 부모 컴포넌트의 연산에 맞게<br>
-     * 자식 컴포넌트를 강제로 수정해야할 떄 사용<br>
-     * Used when a parent component needs to force a child component ~<br>
-     * to be modified to match the parent component's operations
-     * @param width
-     * @param height
-     */
-    protected void force(Float width, Float height, RectF forceMargin) {
-        float max;
-        float gap = 0;
-        float d;
-        if (width != null) {
-            if(forceMargin == null)
-                max = (width - margin.left - margin.right);
-            else
-                max = width;
-            gap = max - measureWidth;
-            // Measure X Anchor and Y Anchor
-            d = Anchor.getDeltaPixel(anchor.horizontal, gap);
-            if (parent != null)
-                d += parent.measureX + parent.border.size.left + parent.padding.left;
-            // Set Absolute Position From Parent
-            measureWidth = max;
-            measureX = relativeX + margin.left + d;
-        }
-        if(height != null) {
-            if(forceMargin == null)
-                max = (height - margin.top - margin.bottom);
-            else
-                max = height;
-            gap = max - measureHeight;
-            // Measure X Anchor and Y Anchor
-            d = Anchor.getDeltaPixel(anchor.vertical, gap);
-            if (parent != null)
-                d += parent.measureY + parent.border.size.top + parent.padding.top;
-            // Set Absolute Position From Parent
-            measureHeight = max;
-            measureY = relativeY + margin.top + d;
-        }
-    }
-
-    /**
      * PDF 컨텐츠 스트림에 색상 설정
      */
-    protected void setColorInPDF(StringBuilder content, int color) {
+    protected void setColorInPDF(StringBuilder content, @ColorInt int color) {
         float red = Color.red(color) / 255f;
         float green = Color.green(color) / 255f;
         float blue = Color.blue(color) / 255f;
@@ -183,10 +159,14 @@ public abstract class PDFComponent{
     /**
      * PDF 컨텐츠 스트림에 사각형 그리기
      */
-    protected void drawRectInPDF(BinarySerializer page, StringBuilder content, float x, float y, float width, float height,
+    protected void drawRectInPDF(StringBuilder content,
+                                 float x, float y, float width, float height,
                                  boolean fill, boolean stroke) {
+        // PDF 좌표계로 변환 (좌하단 기준)
+        float pdfX = Zoomable.getInstance().transform2PDFWidth(x);
+        float pdfY = Zoomable.getInstance().transform2PDFHeight(y + height);
         content.append(String.format(Locale.getDefault(), "%.2f %.2f %.2f %.2f re\n",
-                x, page.getPageHeight() - (y + height), // PDF 좌표계로 변환
+                pdfX, pdfY, // PDF 좌표계로 변환
                 width, height));
 
         if (fill && stroke) {
@@ -207,29 +187,27 @@ public abstract class PDFComponent{
 
         // 페이지 체크
         int requiredPage = serializer.calculatePageIndex(measureY, componentHeight);
-        measureY -= requiredPage * serializer.getPageHeight();
-        if(measureY < 0) measureY = 0;
         StringBuilder content = serializer.getPage(requiredPage);
-
-        // 그래픽스 상태 저장
-        PDFGraphicsState.save(content);
 
         // 배경 그리기
         if (backgroundColor != Color.TRANSPARENT && measureWidth > 0 && measureHeight > 0) {
+            // 그래픽스 상태 저장
+            PDFGraphicsState.save(content);
+
             setColorInPDF(content, backgroundColor);
-            drawRectInPDF(serializer, content,
+            drawRectInPDF(content,
                     measureX,
                     measureY,
                     measureWidth,
                     measureHeight,
                     true, false);
+
+            // 그래픽스 상태 복원
+            PDFGraphicsState.restore(content);
         }
 
         //--------------테두리 그리기-------------//
-        border.draw(serializer, content, measureX, measureY, measureWidth, measureHeight);
-
-        // 그래픽스 상태 복원
-        PDFGraphicsState.restore(content);
+        border.draw(content, measureX, measureY, measureWidth, measureHeight);
         return content;
     }
 
@@ -239,20 +217,29 @@ public abstract class PDFComponent{
      * @param heightGap
      */
     protected void updateHeight(float heightGap){
+        // heightGap이 0이면 업데이트할 필요 없음
+        if (heightGap == 0) return;
+        float verticalMargins = margin.top + margin.bottom;
+
         float top = margin.top;
         float bottom = margin.bottom;
         if(parent == null){
+            // 루트 컴포넌트인 경우 직접 높이 조정
             height += heightGap;
-            measureHeight = (height - top - bottom);
+            measureHeight = height - verticalMargins;
         }
         else{
+            // 부모 컴포넌트의 높이를 먼저 업데이트
             parent.updateHeight(heightGap);
-            float maxH = parent.measureHeight
+
+            // 부모의 새로운 크기에 맞춰 자신의 크기 재조정
+            float maxHeight = parent.measureHeight
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
-                    - top - bottom;
-            if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight = maxH - relativeY;
+                    - verticalMargins;
+
+            if(0 < height && height + relativeY <= maxHeight) measureHeight = height;
+            else measureHeight = maxHeight - relativeY;
         }
     }
 

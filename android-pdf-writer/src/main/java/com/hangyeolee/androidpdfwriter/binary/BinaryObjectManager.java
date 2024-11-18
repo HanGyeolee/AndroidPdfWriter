@@ -8,8 +8,8 @@ import com.hangyeolee.androidpdfwriter.listener.Action;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ class BinaryObjectManager {
         return object;
     }
 
-    public void writeAllObjects(BufferedOutputStream bufos) throws IOException {
+    public void writeAllObjects(OutputStream bufos) throws IOException {
         // 객체들의 의존성을 고려한 순서로 쓰기
         Set<BinaryObject> written = new HashSet<>();
         for (BinaryObject obj : objects.values()) {
@@ -46,7 +46,7 @@ class BinaryObjectManager {
     }
 
     private void writeObjectWithDependencies(BinaryObject obj, Set<BinaryObject> written,
-                                             BufferedOutputStream bufos) throws IOException {
+                                             OutputStream bufos) throws IOException {
         // 이미 쓴 객체는 건너뛰기
         if (written.contains(obj)) return;
 
@@ -60,7 +60,7 @@ class BinaryObjectManager {
         written.add(obj);
     }
 
-    private void writeObject(BinaryObject obj, BufferedOutputStream bufos) throws IOException {
+    private void writeObject(BinaryObject obj, OutputStream bufos) throws IOException {
         byte[] data = addObject(obj);
         bufos.write(data);
         // xref 정보 추가
@@ -78,42 +78,40 @@ class BinaryObjectManager {
         byte[] dictionary = ASCII(obj.toDictionaryString());
         // 스트림 데이터가 있다면 쓰기
         byte[] streamData = obj.getStreamData();
-        byte[] data;
+        byte[] data = new byte[0];
         int sum = 0;
         if (streamData != null) {
-            byte[] streamHeader = ASCII("\nstream\n");
-            byte[] streamFooter = ASCII("\nendstream");
+            byte[] streamHeader = ASCII("\r\nstream\r\n");
+            byte[] streamFooter = ASCII("endstream");
             data = new byte[
-                    dictionary.length +
                     streamHeader.length +
                     streamData.length +
                     streamFooter.length
             ];
-            System.arraycopy(dictionary, 0, data, sum, dictionary.length);
-            sum += dictionary.length;
             System.arraycopy(streamHeader, 0, data, sum, streamHeader.length);
             sum += streamHeader.length;
             System.arraycopy(streamData, 0, data, sum, streamData.length);
             sum += streamData.length;
             System.arraycopy(streamFooter, 0, data, sum, streamFooter.length);
         }
-        else {
-            data = new byte[
-                dictionary.length
-            ];
-            System.arraycopy(dictionary, 0, data, 0, dictionary.length);
-        }
 
         // {객체 번호} {세대 번호} obj
         // 객체 헤더
-        byte[] header = ASCII(obj.getObjectNumber() + " 0 obj\n");
+        byte[] header = ASCII(obj.getObjectNumber() + " 0 obj\r\n");
         // 객체 끝
-        byte[] footer = ASCII("\nendobj\n");
-        byte[] result = new byte[header.length + data.length + footer.length];
+        byte[] footer = ASCII("\r\nendobj\r\n");
+        byte[] result = new byte[
+                header.length +
+                dictionary.length +
+                data.length +
+                footer.length
+        ];
 
         sum = 0;
         System.arraycopy(header, 0, result, sum, header.length);
         sum += header.length;
+        System.arraycopy(dictionary, 0, result, sum, dictionary.length);
+        sum += dictionary.length;
         System.arraycopy(data, 0, result, sum, data.length);
         sum += data.length;
         System.arraycopy(footer, 0, result, sum, footer.length);
@@ -122,18 +120,18 @@ class BinaryObjectManager {
     }
 
     public void addXRef(int value, byte b){
-        XRefs.add(new XRef(byteLength,value, b));
+        XRefs.add(new XRef(byteLength, value, b));
     }
     private void addXRef(byte b){
         XRefs.add(new XRef(byteLength, b));
     }
-    public void writeXref(BufferedOutputStream bufos) throws IOException {
-        bufos.write(ASCII("xref\n" + "0 " + XRefs.size() + "\n"));
+    public void writeXref(OutputStream bufos) throws IOException {
+        bufos.write(ASCII("xref\r\n" + "0 " + XRefs.size() + "\r\n"));
         for(XRef b: XRefs){
             bufos.write(b.write());
         }
     }
-    public void wrtieTrailer(BufferedOutputStream bufos) throws IOException {
+    public void wrtieTrailer(OutputStream bufos) throws IOException {
         int infoObjNum;
         BinaryObject foundObject = findFirstObject(objects, BinaryInfo.class);
         if (foundObject != null) {
@@ -150,13 +148,13 @@ class BinaryObjectManager {
             throw new NullPointerException("Can not find Catalog Type");
         }
 
-        bufos.write(ASCII("trailer\n" +
-                "<< /Size " + XRefs.size() + "\n" +
-                "/Info "+infoObjNum+" 0 R\n" +
-                "/Root "+catalogObjNum+" 0 R\n>>\n" +
-                "startxref\n" + byteLength
+        bufos.write(ASCII("trailer\r\n" +
+                "<</Size " + XRefs.size() + "\r\n" +
+                "/Info "+infoObjNum+" 0 R\r\n" +
+                "/Root "+catalogObjNum+" 0 R\r\n>>\r\n" +
+                "startxref\r\n" + byteLength
                 ));
-        bufos.write(ASCII("\n%%EOF"));
+        bufos.write(ASCII("\r\n%%EOF\r\n"));
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)

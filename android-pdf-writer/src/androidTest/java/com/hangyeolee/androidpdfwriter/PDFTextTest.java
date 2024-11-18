@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import android.Manifest;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
@@ -16,11 +15,8 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
-import com.hangyeolee.androidpdfwriter.components.PDFH3;
-import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
-import com.hangyeolee.androidpdfwriter.font.PDFFont;
-import com.hangyeolee.androidpdfwriter.utils.Fit;
+import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
 import com.hangyeolee.androidpdfwriter.utils.StandardDirectory;
@@ -32,15 +28,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.File;
-import java.io.InputStream;
-
 @RunWith(AndroidJUnit4.class)
 public class PDFTextTest {
     private final String TAG = "TEST";
     Context context;
     PDFBuilder builder;
-    Bitmap b;
+    Bitmap b = null;
 
     @Rule
     public GrantPermissionRule permissionRule = GrantPermissionRule.grant(Manifest.permission.WRITE_EXTERNAL_STORAGE);
@@ -63,17 +56,18 @@ public class PDFTextTest {
         builder.setQuality(85);
         builder.setPagePadding(10, 10);
         builder.root = PDFLinearLayout.build()
-                .setOrientation(Orientation.Column)
-                .setBackgroundColor(Color.BLUE)
-                .addChild(PDFH1.build("제목")
-                        .setFontFromAsset(context, "Pretendard-Bold.ttf")
-                        .setBackgroundColor(Color.WHITE)
-                        .setTextAlign(TextAlign.Center));
+                .setOrientation(Orientation.Vertical)
+                .setBackgroundColor(Color.TRANSPARENT)
+                .addChild(PDFH1.build("Title")
+                        //.setFontFromAsset(context, "Pretendard-Bold.ttf")
+//                        .setBackgroundColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .setAnchor(Anchor.Center, Anchor.Center));
         Log.d(TAG, "PDF Builder setup completed");
     }
 
     @Test
-    public void testSave() {
+    public void testLinearLayoutNText() {
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");

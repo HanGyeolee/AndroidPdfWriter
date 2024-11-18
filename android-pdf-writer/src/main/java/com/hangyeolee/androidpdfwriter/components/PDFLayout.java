@@ -9,89 +9,109 @@ import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 import java.util.ArrayList;
 
 public abstract class PDFLayout extends PDFComponent{
-    ArrayList<PDFComponent> child;
+    protected ArrayList<PDFComponent> children;
+    protected boolean fitChildrenToLayout = false;  // 자식 컴포넌트 높이 맞춤 옵션
 
-    public PDFLayout(){super();}
-
-    public ArrayList<PDFComponent> getChild(){return child;}
+    public PDFLayout(){
+        super();
+        children = new ArrayList<>();
+    }
+    public PDFLayout(int length){
+        super();
+        children = new ArrayList<>(length);
+        for(int i = 0; i < length; i++){
+            children.add(PDFEmpty.build().setParent(this));
+        }
+    }
 
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
 
-        // 레이아웃은 Anchor를 적용하지 않는 다.
-        float d = 0;
-        if (parent != null)
-            d += parent.measureX + parent.border.size.left + parent.padding.left;
-        measureX = relativeX + margin.left + d;
-        d = 0;
-        if (parent != null)
-            d += parent.measureY + parent.border.size.top + parent.padding.top;
-        measureY = relativeY + margin.top + d;
+        // 레이아웃은 앵커를 사용하지 않고 항상 좌상단 기준
+        float dx = (parent != null) ?
+                parent.measureX + parent.border.size.left + parent.padding.left : 0;
+        float dy = (parent != null) ?
+                parent.measureY + parent.border.size.top + parent.padding.top : 0;
+
+        measureX = relativeX + margin.left + dx;
+        measureY = relativeY + margin.top + dy;
     }
 
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
-        float pageHeight = serializer.getPageHeight();
+        float pageHeight = Zoomable.getInstance().getContentHeight();
         float remainingHeight = getTotalHeight();
+
+        // 시작 페이지와 끝 페이지 계산
         int startPage = serializer.calculatePageIndex(measureY);
         int endPage = serializer.calculatePageIndex(measureY, getTotalHeight());
-        measureY -= startPage * pageHeight;
-        if(measureY < 0) measureY = 0;
-        StringBuilder content = serializer.getPage(startPage);
-        float currentY = measureY;
 
-        int add = 0;
+        // 첫 페이지의 Y 좌표 조정
+        float y = measureY - startPage * pageHeight;
+        if(y < 0) y = 0;
+
+        float currentY = y;
+
+        // 페이지별로 분할하여 그리기
+        int currentPage = 0;
         while (remainingHeight > 0) {
+            StringBuilder content = serializer.getPage(startPage + currentPage);
+
             // 현재 페이지에 그릴 수 있는 높이 계산
             float availableHeight = pageHeight - (currentY % pageHeight);
             float heightToDraw = Math.min(availableHeight, remainingHeight);
 
             // 현재 페이지에 배경과 테두리 그리기
-            drawPageSection(serializer, content, currentY, heightToDraw, startPage, add, endPage);
+            drawPageSection(serializer, content, currentY, heightToDraw,
+                    currentPage == 0, currentPage == endPage - startPage);
 
             remainingHeight -= heightToDraw;
             currentY = 0; // 다음 페이지에서는 최상단부터 시작
-
-            // 다음 페이지가 필요한 경우
-            if (remainingHeight > 0) {
-                content = serializer.getPage(startPage+ ++add);
-            }
+            currentPage++;
         }
-        return content;
+        return null;
     }
 
-    private void drawPageSection(BinarySerializer page, StringBuilder content, float startY, float height, int start, int add, int end) {
+    private void drawPageSection(BinarySerializer serializer, StringBuilder content,
+                                 float startY, float height,
+                                 boolean isFirstPage, boolean isLastPage) {
         // 그래픽스 상태 저장
         PDFGraphicsState.save(content);
 
-        float left = measureX;
-        float top = startY;
-
-        // 배경 그리기 841.8898
+        // 배경 그리기
         if (backgroundColor != Color.TRANSPARENT && measureWidth > 0) {
             setColorInPDF(content, backgroundColor);
-            drawRectInPDF(page, content, left, top, measureWidth, height, true, false);
+            drawRectInPDF(content,
+                    measureX, startY, measureWidth, height,
+                    true, false);
         }
 
         // 테두리 그리기 - 페이지 경계에서 적절히 분할
         Border sectionBorder = new Border();
         sectionBorder.copy(border);
 
-        // 첫 페이지가 아니면 위쪽 테두리 제거
-        if (add > 0) {
+        // 페이지 경계에서 테두리 처리
+        if (!isFirstPage) {
             sectionBorder.setTop(0, Color.TRANSPARENT);
         }
-
-        // 마지막 섹션이 아니면 아래쪽 테두리 제거
-        if (start + add < end) {
+        if (!isLastPage) {
             sectionBorder.setBottom(0, Color.TRANSPARENT);
         }
 
-        sectionBorder.draw(page, content, left, top, measureWidth, height);
+        sectionBorder.draw(content, measureX, startY,
+                measureWidth, height);
 
         // 그래픽스 상태 복원
         PDFGraphicsState.restore(content);
+    }
+
+    /**
+     * 레이아웃의 모든 자식 컴포넌트를 부모 크기에 맞출지 설정
+     */
+    public PDFLayout setFitChildrenToLayout(boolean fit) {
+        this.fitChildrenToLayout = fit;
+        return this;
     }
 
     /**
@@ -100,10 +120,34 @@ public abstract class PDFLayout extends PDFComponent{
      * @param component 자식 컴포넌트
      * @return 자기자신
      */
-    public PDFLayout addChild(PDFComponent component){
+    public PDFLayout addChild(PDFComponent component) {
         component.setParent(this);
-        child.add(component);
+        children.add(component);
         return this;
+    }
+
+    /**
+     * 자식 컴포넌트 목록 반환
+     */
+    public ArrayList<PDFComponent> getChildren() {
+        return children;
+    }
+
+    /**
+     * 페이지 경계를 체크하고 필요한 경우 분할
+     */
+    protected boolean checkPageBoundary(float y, float height) {
+        float contentHeight = Zoomable.getInstance().getContentHeight();
+        return (y + height) > contentHeight;
+    }
+
+    /**
+     * 자식 컴포넌트의 높이를 부모에 맞추기
+     */
+    protected void fitChildToParent(PDFComponent child, float availableHeight) {
+        if (fitChildrenToLayout) {
+            child.setSize(null, availableHeight - child.margin.top - child.margin.bottom);
+        }
     }
 }
 

@@ -6,8 +6,6 @@ import android.graphics.RectF;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 
-import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
-
 import java.util.Locale;
 
 public class Border {
@@ -85,72 +83,78 @@ public class Border {
         return this;
     }
 
-    public void draw(BinarySerializer page, StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
-        float pageHeight = page.getPageHeight();
-        // 그래픽스 상태 저장
-        content.append("q\n"); // Save graphics state
+    public void draw(StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
+        if(canDraw()) {
+            // 그래픽스 상태 저장
+            content.append("q\n"); // Save graphics state
 
-        float gap;
-        // 왼쪽 테두리
-        if(size.left > 0) {
-            gap = size.left * 0.5f;
-            setColorInPDF(content, color.left);
-            setLineWidthInPDF(content, size.left);
-            // 시작점 이동
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
-                    measureX + gap,
-                    pageHeight - measureY));  // y좌표 변환
-            // 선 그리기
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
-                    measureX + gap,
-                    pageHeight - (measureY + measureHeight)));
-            content.append("S\n");  // 선 그리기 실행
+            float gap;
+            // 왼쪽 테두리
+            if (size.left > 0) {
+                gap = size.left * 0.5f;
+                setColorInPDF(content, color.left);
+                setLineWidthInPDF(content, size.left);
+
+                // 시작점 이동
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX + gap),
+                        Zoomable.getInstance().transform2PDFHeight(measureY)));  // y좌표 변환
+                // 선 그리기
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX + gap),
+                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight)));
+                content.append("S\n");  // 선 그리기 실행
+            }
+
+            // 위쪽 테두리
+            if (size.top > 0) {
+                gap = size.top * 0.5f;
+                setColorInPDF(content, color.top);
+                setLineWidthInPDF(content, size.top);
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX),
+                        Zoomable.getInstance().transform2PDFHeight(measureY + gap)));
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth),
+                        Zoomable.getInstance().transform2PDFHeight(measureY + gap)));
+                content.append("S\n");
+            }
+
+            // 오른쪽 테두리
+            if (size.right > 0) {
+                gap = size.right * 0.5f;
+                setColorInPDF(content, color.right);
+                setLineWidthInPDF(content, size.right);
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap),
+                        Zoomable.getInstance().transform2PDFHeight(measureY)));
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap),
+                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight)));
+                content.append("S\n");
+            }
+
+            // 아래쪽 테두리
+            if (size.bottom > 0) {
+                gap = size.bottom * 0.5f;
+                setColorInPDF(content, color.bottom);
+                setLineWidthInPDF(content, size.bottom);
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX),
+                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap)));
+                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\n",
+                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth),
+                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap)));
+                content.append("S\n");
+            }
+
+            // 그래픽스 상태 복원
+            content.append("Q\n"); // Restore graphics state
         }
+    }
 
-        // 위쪽 테두리
-        if(size.top > 0) {
-            gap = size.top * 0.5f;
-            setColorInPDF(content, color.top);
-            setLineWidthInPDF(content, size.top);
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
-                    measureX,
-                    pageHeight - (measureY + gap)));
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
-                    measureX + measureWidth,
-                    pageHeight - (measureY + gap)));
-            content.append("S\n");
-        }
-
-        // 오른쪽 테두리
-        if(size.right > 0) {
-            gap = size.right * 0.5f;
-            setColorInPDF(content, color.right);
-            setLineWidthInPDF(content, size.right);
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
-                    measureX + measureWidth - gap,
-                    pageHeight - measureY));
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
-                    measureX + measureWidth - gap,
-                    pageHeight - (measureY + measureHeight)));
-            content.append("S\n");
-        }
-
-        // 아래쪽 테두리
-        if(size.bottom > 0) {
-            gap = size.bottom * 0.5f;
-            setColorInPDF(content, color.bottom);
-            setLineWidthInPDF(content, size.bottom);
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f m\n",
-                    measureX,
-                    pageHeight - (measureY + measureHeight - gap)));
-            content.append(String.format(Locale.getDefault(),"%.2f %.2f l\n",
-                    measureX + measureWidth,
-                    pageHeight - (measureY + measureHeight - gap)));
-            content.append("S\n");
-        }
-
-        // 그래픽스 상태 복원
-        content.append("Q\n"); // Restore graphics state
+    public boolean canDraw(){
+        return size.left > 0 || size.top > 0 || size.right > 0 || size.bottom > 0;
     }
 
     /**

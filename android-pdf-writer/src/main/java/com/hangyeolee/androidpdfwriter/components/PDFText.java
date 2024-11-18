@@ -3,6 +3,7 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.os.Build;
@@ -24,21 +25,27 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FontType;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Objects;
 
 public class PDFText extends PDFResourceComponent {
+    private static String FONTBBOX_TEXT = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" +
+            " !@#$%^&*()_+-=,./<>?;':\"[]{}`~\\|";
     FontExtractor.FontInfo info = null;
     private int flags;
     private int italicAngle;
-    private float ascent;
-    private float descent;
-    private float capHeight;
-    private float stemV;
-    private RectF fontBBox;
-    private float[] charWidths;  // 문자별 폭 저장
+    private int ascent;
+    private int descent;
+    private int capHeight;
+    private int stemV;
+    private int xHeight;
+    private int stemH;
+    private Rect fontBBox;
+    private int[] charWidths;  // 문자별 폭 저장
 
     /*
      * Line spacing multiplier for default line spacing.
@@ -69,34 +76,7 @@ public class PDFText extends PDFResourceComponent {
 
         if(text != null) {
             // Paint 메트릭 계산
-            Paint.FontMetrics metrics = bufferPaint.getFontMetrics();
-
-            flags = getFontFlags(bufferPaint.getTypeface());
-            italicAngle = bufferPaint.getTypeface().isItalic() ? -12 : 0;
-            // 폰트 메트릭 정보 저장
-            ascent = -metrics.ascent;
-            descent = metrics.descent;
-            // capHeight는 대문자 'H'의 높이로 추정
-            capHeight = bufferPaint.measureText("H");
-
-            // stemV는 대문자 'I'의 폭으로 추정
-            stemV = bufferPaint.measureText("I");
-
-            // FontBBox 계산
-            float maxWidth = 0;
-            charWidths = new float[text.length()];
-            for (int i = 0; i < text.length(); i++) {
-                float charWidth = bufferPaint.measureText(text, i, i + 1);
-                charWidths[i] = charWidth;
-                maxWidth = Math.max(maxWidth, charWidth);
-            }
-
-            fontBBox = new RectF(
-                    0,                  // left
-                    metrics.bottom,     // bottom
-                    maxWidth,           // right
-                    -metrics.top        // top
-            );
+            setFontMetrics();
 
             if(layout == null || bufferPaint != lastPaint ||
                     !Objects.equals(text, lastText) || lastWidth != _width || lastAlign != align) {
@@ -150,11 +130,72 @@ public class PDFText extends PDFResourceComponent {
                     descent,
                     capHeight,
                     stemV,
+                    xHeight,
+                    stemH,
                     fontBBox,
                     charWidths
             );
             resourceId = page.registerFont(info, fontMetrics);
         }
+    }
+
+    private void setFontMetrics(){
+        TextPaint paint = (TextPaint) this.bufferPaint;
+        // 1000 유닛 기준으로 변환할 스케일 팩터 계산
+        float scale = 1000f / bufferPaint.getTextSize();
+        Rect bounds = new Rect();
+
+        flags = getFontFlags(paint.getTypeface());
+        italicAngle = paint.getTypeface().isItalic() ? -12 : 0;
+        // 폰트 메트릭 정보 저장
+        ascent = (int)Math.ceil(-paint.ascent() * scale);
+        descent = (int)Math.ceil(paint.descent() * scale);
+
+        // 대문자 'H'의 bounds를 측정하여 높이 계산
+        paint.getTextBounds("H", 0, 1, bounds);
+        capHeight = (int)Math.ceil(bounds.height() * scale);
+
+        // xHeight는 평면 비 어센딩 소문자(예: "x") 위쪽의 Y 좌표로, 기준선에서 측정됩니다.
+        // 소문자 'x'의 높이로 추정
+        paint.getTextBounds("x", 0, 1, bounds);
+        xHeight = (int)Math.ceil(bounds.height() * scale);
+
+        // stemV: 수직 스템 두께 (대문자 'I'의 너비로 더 정확하게 측정)
+        paint.getTextBounds("I", 0, 1, bounds);
+        stemV = (int)Math.ceil(bounds.width() * scale);
+
+        // stemH: 수평 스템 두께 (소문자 'f' 또는 't'의 주 수평선 두께로 추정)
+        paint.getTextBounds("f", 0, 1, bounds);
+        stemH = (int)Math.ceil(Math.min(bounds.width() * 0.25f, stemV) * scale); // 일반적으로 stemV보다 작음
+
+        // charWidths 계산
+        charWidths = new int[text.length()];
+        for (int i = 0; i < text.length(); i++) {
+            float charWidth = bufferPaint.measureText(text, i, i + 1);
+            charWidths[i] = (int)Math.ceil(charWidth * scale);
+        }
+
+        // FontBBox 계산
+        // 모든 가능한 문자에 대한 경계 상자 계산
+        Paint.FontMetrics metrics = paint.getFontMetrics();
+
+        // 가장 왼쪽으로 확장되는 문자들 체크 (예: 'j', 'f' 등)
+        String allChars = text + FONTBBOX_TEXT;
+        float minLeft = 0;
+        float maxRight = 0;
+        for (char c : allChars.toCharArray()) {
+            paint.getTextBounds(String.valueOf(c), 0, 1, bounds);
+            minLeft = Math.min(minLeft, bounds.left);
+            maxRight = Math.max(maxRight, bounds.right);
+        }
+
+        fontBBox = new Rect(
+                (int)Math.ceil(minLeft * scale),                    // 왼쪽 확장
+                (int)Math.ceil(-metrics.ascent * scale),               // 상단 확장(어센더)
+                (int)Math.ceil(maxRight * scale),                   // 오른쪽 확장
+                (int)Math.ceil(-metrics.descent * scale)            // 하단 확장(디센더)
+        );
+        return;
     }
 
     /**
@@ -190,20 +231,22 @@ public class PDFText extends PDFResourceComponent {
 
         // 폰트 및 크기 설정
         content.append("/").append(resourceId).append(" ")
-                .append(String.format(Locale.getDefault(),"%.2f", bufferPaint.getTextSize())).append(" Tf\n");
+                .append(String.format(Locale.getDefault(),"%.2f", bufferPaint.getTextSize()))
+                .append(" Tf\r\n");
 
         // 텍스트 색상 설정
         float red = Color.red(bufferPaint.getColor()) / 255f;
         float green = Color.green(bufferPaint.getColor()) / 255f;
         float blue = Color.blue(bufferPaint.getColor()) / 255f;
-        content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f rg\n", red, green, blue));
+        content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f rg\r\n", red, green, blue));
 
+        float lineHeight = layout.getLineBaseline(0) - layout.getLineTop(0);
         // 베이스라인 위치 계산
-        float x = measureX + border.size.left + padding.left;
-        float y = serializer.getPageHeight() - (measureY + border.size.top + padding.top + bufferPaint.getFontMetrics().ascent);
+        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left);
+        float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + lineHeight);
 
         // 텍스트 위치로 이동
-        content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\n", x, y));
+        content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\r\n", x, y));
 
         // 여러 줄의 텍스트 처리
         for (int i = 0; i < layout.getLineCount(); i++) {
@@ -229,17 +272,19 @@ public class PDFText extends PDFResourceComponent {
                     break;
             }
 
+            float alignX = x + alignmentOffset;
+
             // 첫 줄이 아닌 경우 새로운 줄로 이동
             if (i > 0) {
-                float lineHeight = layout.getLineBottom(i) - layout.getLineTop(i);
-                content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\n", alignmentOffset, -lineHeight));
-            } else if (alignmentOffset > 0) {
-                content.append(String.format(Locale.getDefault(),"%.2f 0 Td\n", alignmentOffset));
+                lineHeight = layout.getLineBottom(i) - layout.getLineTop(i);
+                content.append(String.format(Locale.getDefault(),"%.2f %.2f Td\r\n", alignX, -lineHeight));
+            } else if (alignX > 0) {
+                content.append(String.format(Locale.getDefault(),"%.2f 0 Td\r\n", alignX));
             }
 
             // 텍스트 이스케이프 처리
             String escapedText = escapePDFString(lineText);
-            content.append(escapedText).append(" Tj\n");
+            content.append(escapedText).append(" Tj\r\n");
         }
 
         // 텍스트 객체 종료
@@ -254,21 +299,41 @@ public class PDFText extends PDFResourceComponent {
      * PDF 문자열 이스케이프 처리
      */
     private String escapePDFString(String text) {
-        try {
-            // UTF-8로 인코딩
-            StringBuilder result = new StringBuilder();
-            result.append("<"); // UTF-8 바이트 스트림 시작
-
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                // Unicode code point를 16비트 CID로 변환
-                result.append(String.format("%04X", (int)c));
+        // ASCII 문자만 있는지 확인
+        boolean isAsciiOnly = true;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) > 127) {
+                isAsciiOnly = false;
+                break;
             }
+        }
 
-            result.append(">"); // UTF-8 바이트 스트림 끝
+        String s = "(" + text.replace("\\", "\\\\")
+                .replace("(", "\\(")
+                .replace(")", "\\)") + ")";
+        if (isAsciiOnly) {
+            // ASCII only - 괄호 문자열로 처리
+            return s;
+        } else {
+            StringBuilder result = new StringBuilder();
+            result.append("<");
+            byte[] bytes;
+            try {
+                // UTF-16BE로 인코딩
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                    bytes = text.getBytes(StandardCharsets.UTF_16BE);
+                } else {
+                    bytes = text.getBytes(Charset.forName("UTF-16BE"));
+                }
+
+                for (byte b : bytes) {
+                    result.append(String.format("%02X", b & 0xFF));
+                }
+            } catch (Exception ignored) {
+                return s; // fallback - 일반 문자열로 처리
+            }
+            result.append(">");
             return result.toString();
-        } catch (Exception ignored) {
-            return "("+text.replace("(", "\\(").replace(")", "\\)")+")" ; // fallback - 일반 문자열로 처리
         }
     }
 

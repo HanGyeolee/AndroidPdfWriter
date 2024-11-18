@@ -6,6 +6,7 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
 import androidx.annotation.FloatRange;
@@ -109,10 +110,7 @@ public class PDFBuilder {
      */
     public PDFBuilder draw(){
         if(root != null) {
-            float width =
-                    Zoomable.getInstance().getPageRect().width() -
-                            Zoomable.getInstance().getPadding().left -
-                            Zoomable.getInstance().getPadding().right;
+            float width = Zoomable.getInstance().getContentWidth();
 
             root.setSize(width, 0.0f).measure();
             page = new BinarySerializer(root);
@@ -133,12 +131,13 @@ public class PDFBuilder {
         Uri uri = null;
 
         try {
+            ParcelFileDescriptor pfd = null;
             OutputStream fos;
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Files.FileColumns.TITLE, filename);
                 values.put(MediaStore.Files.FileColumns.DISPLAY_NAME, filename);
-                values.put(MediaStore.Files.FileColumns.MIME_TYPE, "application/pdf");
+                values.put(MediaStore.Files.FileColumns.MIME_TYPE, "application/octet-stream");
                 values.put(MediaStore.Files.FileColumns.BUCKET_ID, filename);
                 values.put(MediaStore.Files.FileColumns.DATE_TAKEN, System.currentTimeMillis());
                 values.put(MediaStore.Files.FileColumns.RELATIVE_PATH, relativePath);
@@ -147,7 +146,11 @@ public class PDFBuilder {
                         MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
                         , values);
                 if(uri == null) throw new NullPointerException("Can not Create PDF file at " + relativePath);
-                fos = context.getContentResolver().openOutputStream(uri, "w");
+                pfd = context.getContentResolver().openFileDescriptor(uri, "w");
+                if(pfd != null)
+                    fos = new FileOutputStream(pfd.getFileDescriptor());
+                else
+                    throw new NullPointerException("Can not Call FileDescriptor");
             } else {
 
                 File dir;
@@ -167,10 +170,11 @@ public class PDFBuilder {
                 fos = new FileOutputStream(file, false);
             }
 
-            if(fos != null) {
-                page.save(fos);
-                fos.flush();
-                fos.close();
+            page.save(fos);
+            fos.flush();
+            fos.close();
+            if(pfd != null){
+                pfd.close();
             }
         } catch(IOException ignored){}
 

@@ -20,9 +20,19 @@ class BinaryFontDescriptor extends BinaryObject {
         dictionary.put("/Descent", metrics.descent);
         dictionary.put("/CapHeight", metrics.capHeight);
         dictionary.put("/StemV", metrics.stemV);
+        dictionary.put("/XHeight", metrics.xHeight);
+        dictionary.put("/StemH", metrics.stemH);
         dictionary.put("/FontBBox", String.format(Locale.getDefault(),
-                "[%f %f %f %f]",
+                "[%d %d %d %d]",
                 metrics.fontBBox.left, metrics.fontBBox.bottom,
                 metrics.fontBBox.right, metrics.fontBBox.top));
+    }
+
+    public void setFontName(String name) {
+        dictionary.put("/FontName", "/" + name);
+    }
+    public void setFontFile3(BinaryObject fontfile3) {
+        dictionary.put("/FontFile3", fontfile3);
+        addDependency(fontfile3);
     }
 }

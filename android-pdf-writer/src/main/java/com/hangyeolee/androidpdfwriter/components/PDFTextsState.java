@@ -5,10 +5,10 @@ package com.hangyeolee.androidpdfwriter.components;
  */
 class PDFTextsState {
     public static void save(StringBuilder content) {
-        content.append("BT\n"); // Save graphics state
+        content.append("BT\r\n"); // Save graphics state
     }
 
     public static void restore(StringBuilder content) {
-        content.append("ET\n"); // Restore graphics state
+        content.append("ET\r\n"); // Restore graphics state
     }
 }

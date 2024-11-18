@@ -50,7 +50,7 @@ class XRef {
     }
 
     public byte[] write(){
-        byte[] result = new byte[pos.length + gen.length + 1 + 3];
+        byte[] result = new byte[pos.length + gen.length + 1 + 4];
         int i = 0;
         for(int j = 0; j < pos.length; j++, i++){
             result[i] = pos[j];
@@ -61,6 +61,7 @@ class XRef {
         }
         result[i++] = ' ';
         result[i++] = fn;
+        result[i++] = '\n';
         result[i] = '\n';
 
         return result;

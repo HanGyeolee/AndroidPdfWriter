@@ -27,25 +27,31 @@ class BinaryResources extends BinaryObject {
 
     @Override
     public String toDictionaryString() {
-        StringBuilder fontDict = new StringBuilder("<<\n");
-        for (Map.Entry<String, BinaryFont> entry : fonts.entrySet()) {
-            fontDict.append("/").append(entry.getKey()).append(" ")
-                    .append(entry.getValue().getObjectNumber()).append(" 0 R\n");
+        StringBuilder procSet = new StringBuilder("[/PDF ");
+        if(!fonts.isEmpty()) {
+            procSet.append("/Text ");
+            StringBuilder fontDict = new StringBuilder("<< ");
+            for (Map.Entry<String, BinaryFont> entry : fonts.entrySet()) {
+                fontDict.append("/").append(entry.getKey()).append(" ")
+                        .append(entry.getValue().getObjectNumber()).append(" 0 R ");
+            }
+            fontDict.append(">>");
+            dictionary.put("/Font", fontDict.toString());
         }
-        fontDict.append(">>");
-        dictionary.put("/Font", fontDict.toString());
 
         if (!xObjects.isEmpty()) {
-            StringBuilder xObjectDict = new StringBuilder("<<\n");
+            procSet.append("/ImageB /ImageC /ImageI ");
+            StringBuilder xObjectDict = new StringBuilder("<< ");
             for (Map.Entry<String, BinaryXObject> entry : xObjects.entrySet()) {
                 xObjectDict.append("/").append(entry.getKey()).append(" ")
-                        .append(entry.getValue().getObjectNumber()).append(" 0 R\n");
+                        .append(entry.getValue().getObjectNumber()).append(" 0 R ");
             }
             xObjectDict.append(">>");
             dictionary.put("/XObject", xObjectDict.toString());
         }
 
-        dictionary.put("ProcSet", "[/PDF /Text /ImageB /ImageC /ImageI]");
+        procSet.append("]");
+        dictionary.put("ProcSet", procSet.toString());
         return super.toDictionaryString();
     }
 }

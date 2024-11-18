@@ -11,31 +11,34 @@ import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 public class BinarySerializer {
+    private static final String HEADER = "%PDF-1.4\r\n" +
+            "%" + (char)0xE2 + (char)0xE3 + (char)0xCF + (char)0xD3 +"\r\n";
     private static final String TO_UNICODE_CMAP_TEMPLATE = """
-            /CIDInit /ProcSet findresource begin
-            12 dict begin
-            begincmap
-            /CIDSystemInfo
-            << /Registry (Adobe)
-            /Ordering (Identity)
-            /Supplement 0
-            >> def
-            /CMapName /Adobe-Identity-UCS def
-            /CMapType 2 def
-            1 begincodespacerange
-            <0000> <FFFF>
-            endcodespacerange
-            endcmap
-            CMapName currentdict /CMap defineresource pop
-            end
-            end
-            """;
+                    /CIDInit /ProcSet findresource begin\r
+                    12 dict begin\r
+                    begincmap\r
+                    /CIDSystemInfo\r
+                    <</Registry (Adobe)\r
+                    /Ordering (Identity)\r
+                    /Supplement 0\r
+                    >> def\r
+                    /CMapName /Adobe-Identity-UCS def\r
+                    /CMapType 2 def\r
+                    1 begincodespacerange\r
+                    <0000> <FFFF>\r
+                    endcodespacerange\r
+                    endcmap\r
+                    CMapName currentdict /CMap defineresource pop\r
+                    end\r
+                    end\r
+                    """;
 
     private final BinaryObjectManager manager;
     private final Map<Bitmap, String> imageResourceMap = new HashMap<>();
@@ -52,7 +55,7 @@ public class BinarySerializer {
     private BinaryPages pages;
     private BinaryPage currentPage;
     private BinaryResources resources;
-    private BinaryObject cmap;
+    private BinaryObject cmap = null;
 
     /**
      * BinaryPage 생성자
@@ -78,8 +81,6 @@ public class BinarySerializer {
         manager.createObject(n -> new BinaryCatalog(n, pages));
         // 2 0 obj Catalog
 
-        cmap = createToUnicode();
-
         // 페이지 리소스 생성
         resources = manager.createObject(BinaryResources::new);
         rootComponent.draw(this);
@@ -87,9 +88,9 @@ public class BinarySerializer {
         pages.finalizeContents(manager);
     }
 
-    public void save(OutputStream fos){
+    public void save(OutputStream os){
         try {
-            BufferedOutputStream bufos = new BufferedOutputStream(fos);
+            BufferedOutputStream bufos = new BufferedOutputStream(os);
 
             writePDFHeader(bufos);
             manager.writeAllObjects(bufos);
@@ -115,13 +116,13 @@ public class BinarySerializer {
     // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
     public int calculatePageIndex(float measureY, float componentHeight) {
         if (measureY < 0) return 0;
-        float pageHeight = getPageHeight();
+        float pageHeight = Zoomable.getInstance().getContentHeight();
         return (int) Math.floor((measureY + componentHeight) / pageHeight);
     }
 
     // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
     public int calculatePageIndex(float measureY) {
-        float pageHeight = getPageHeight();
+        float pageHeight = Zoomable.getInstance().getContentHeight();
         return (int) Math.floor((measureY) / pageHeight);
     }
 
@@ -140,8 +141,8 @@ public class BinarySerializer {
      * PDF 헤더 작성
      * PDF 버전 1.4 명시
      */
-    private void writePDFHeader(BufferedOutputStream bufos) throws IOException {
-        byte[] bytes = "%PDF-1.4\n".getBytes(BinaryObjectManager.US_ASCII);
+    private void writePDFHeader(OutputStream bufos) throws IOException {
+        byte[] bytes = HEADER.getBytes(BinaryObjectManager.US_ASCII);
         manager.addXRef(65535, (byte) 'f');
         manager.byteLength += bytes.length;
         bufos.write(bytes);
@@ -162,19 +163,30 @@ public class BinarySerializer {
         fontResourceMap.put(info, fontId);
 
         BinaryFont font;
+        // FontDescriptor 객체 생성
+        BinaryFontDescriptor fontDesc = manager.createObject(BinaryFontDescriptor::new);
+        fontDesc.setMetrics(metrics);
+        fontDesc.setFontName(info.postScriptName);
         if(isBase14Font(info.postScriptName)){
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, null, null, null));
+            font = manager.createObject(n -> new BinaryFont(n, fontDesc,  null, null));
+            font.setSubtype("Type1");
         }else {
-            // FontDescriptor 객체 생성
-            BinaryFontDescriptor fontDesc = manager.createObject(BinaryFontDescriptor::new);
-            fontDesc.setMetrics(metrics);
+            if(cmap == null){
+                cmap = createToUnicode();
+            }
+            BinaryContentStream fontfile3 = manager.createObject(n ->
+                    new BinaryContentStream(n, true, info.stream));
+            fontfile3.setSubtype("Type1C");
+
+            fontDesc.setFontFile3(fontfile3);
 
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, fontDesc, info.encoding, cmap));
+            font.setSubtype("TrueType");
+            font.setWidths(metrics.charWidths);
         }
         font.setBaseFont(info.postScriptName);
-        font.setWidths(metrics.charWidths);
 
         // Resources에 폰트 추가
         resources.addFont(fontId, font);
@@ -222,19 +234,13 @@ public class BinarySerializer {
     }
 
     private BinaryObject createToUnicode() {
-        // ToUnicode CMap을 스트림 객체로 생성
-        return manager.createObject(n -> new BinaryContentStream(n, TO_UNICODE_CMAP_TEMPLATE));
+        // ToUnicode CMap을 스트림 객체로 생성 TODO 압축
+        return manager.createObject(n -> new BinaryContentStream(n, false, TO_UNICODE_CMAP_TEMPLATE));
     }
 
     public void setQuality(int quality){
         if(quality < 0) quality = 0;
         else if (quality > 100) quality = 100;
         this.quality = quality;
-    }
-
-    public float getPageHeight(){
-        return Zoomable.getInstance().getPageRect().bottom -
-                Zoomable.getInstance().getPadding().top -
-                Zoomable.getInstance().getPadding().bottom;
     }
 }

@@ -52,7 +52,7 @@ public class PDFTableTest {
                 .setQuality(100);
         {
             builder.root = PDFLinearLayout.build()
-                    .setOrientation(Orientation.Column)
+                    .setOrientation(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
                             .setSize(1200f)
