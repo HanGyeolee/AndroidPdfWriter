@@ -21,18 +21,20 @@ public class BinarySerializer {
     private static final String HEADER = "%PDF-1.4\r\n"
             + "%" + (char)0xE2 + (char)0xE3 + (char)0xCF + (char)0xD3 +"\r\n";
     private static final String TO_UNICODE_CMAP_TEMPLATE = """
-                    /CIDInit /ProcSet findresource begin\r
+                    /CIDInit/ProcSet findresource begin\r
                     12 dict begin\r
                     begincmap\r
-                    /CIDSystemInfo <</Registry (Adobe) /Ordering (Identity) /Supplement 0 >> def\r
-                    /CMapName /Adobe-Identity-UCS def\r
+                    /CIDSystemInfo <</Registry (Adobe)/Ordering (Identity)/Supplement 0>> def\r
+                    /CMapName/Adobe-Identity-UCS def\r
                     /CMapType 2 def\r
                     1 begincodespacerange\r
                     <0000> <FFFF>\r
                     endcodespacerange\r
-                    %s\r
+                    1 beginbfrange\r
+                    <0000> <FFFF> <0000>\r
+                    endbfrange\r
                     endcmap\r
-                    CMapName currentdict /CMap defineresource pop\r
+                    CMapName currentdict/CMap defineresource pop\r
                     end end
                     """;
 
@@ -163,6 +165,7 @@ public class BinarySerializer {
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, null, null));
             font.setSubtype("Type1");
+            font.setBase14Font();
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
             font.setFontDescriptor(fontDesc);
@@ -171,12 +174,22 @@ public class BinarySerializer {
                 cmap = createToUnicode();
             }
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, info.encoding, cmap));
-            font.setSubtype("TrueType");
-            font.setWidths(metrics.charWidths);
+            font = manager.createObject(n -> new BinaryFont(n, "Identity-H", cmap));
+            font.setSubtype("Type0");
+//            font.setWidths(metrics.charWidths);
+
+            BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null, null));
+            cidFont.setSubtype("CIDFontType2");
+            cidFont.setBaseFont(info.postScriptName);
+            cidFont.setW(metrics.charWidths);
+            cidFont.dictionary.put("/CIDSystemInfo",
+                    "<</Registry (Adobe)/Ordering (Identity)/Supplement 0>>");
+            font.addDescendantFont(cidFont);
+
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
-            font.setFontDescriptor(fontDesc);
+            cidFont.setFontDescriptor(fontDesc);
+
             // Font 파일 생성
             BinaryContentStream fontfile2 = manager.createObject(n ->
                     new BinaryContentStream(n, true, info.stream));

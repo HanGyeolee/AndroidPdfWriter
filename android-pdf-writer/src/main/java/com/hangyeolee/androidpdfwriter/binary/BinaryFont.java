@@ -12,7 +12,7 @@ import java.util.Map;
  * Font 객체
  */
 class BinaryFont extends BinaryObject {
-    private final List<BinaryFont> descendantFonts = new ArrayList<>();
+    private final List<BinaryObject> descendantFonts = new ArrayList<>();
     public BinaryFont(
             int objectNumber,
             @Nullable String encoding,
@@ -20,11 +20,7 @@ class BinaryFont extends BinaryObject {
         super(objectNumber);
         dictionary.put("/Type", "/Font");
         // 기본 14 폰트용 공통 설정
-        if (encoding == null) {
-            dictionary.put("/Encoding", "/WinAnsiEncoding");
-            dictionary.put("/FirstChar", 32);      // 시작 문자 (space)
-            dictionary.put("/LastChar", 255);      // 마지막 문자
-        } else {
+        if (encoding != null) {
             dictionary.put("/Encoding", "/" + encoding);
         }
         if(cmap != null) {
@@ -32,8 +28,14 @@ class BinaryFont extends BinaryObject {
         }
     }
 
-    public void addDescendantFont(BinaryFont font) {
+    public void addDescendantFont(BinaryObject font) {
         descendantFonts.add(font);
+    }
+
+    public void setBase14Font(){
+        dictionary.put("/Encoding", "/WinAnsiEncoding");
+        dictionary.put("/FirstChar", 32);      // 시작 문자 (space)
+        dictionary.put("/LastChar", 255);      // 마지막 문자
     }
 
     public void setFontDescriptor(BinaryFontDescriptor descriptor){
@@ -51,6 +53,15 @@ class BinaryFont extends BinaryObject {
         }
         sb.append("]");
         dictionary.put("/Widths", sb.toString());
+    }
+
+    public void setW(int[] widths) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < widths.length; i++) {
+            sb.append(i).append(" [").append(formatNumber(widths[i])).append("] ");
+        }
+        sb.append("]");
+        dictionary.put("/W", sb.toString());
     }
 
     @Override

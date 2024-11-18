@@ -316,7 +316,6 @@ public class PDFText extends PDFResourceComponent {
             return s;
         } else {
             StringBuilder result = new StringBuilder();
-            result.append("<");
             byte[] bytes;
             try {
                 // UTF-16BE로 인코딩
@@ -326,13 +325,14 @@ public class PDFText extends PDFResourceComponent {
                     bytes = text.getBytes(Charset.forName("UTF-16BE"));
                 }
 
-                for (byte b : bytes) {
-                    result.append(String.format("%02X", b & 0xFF));
+                result.append("<");
+                for (int i = 0; i < bytes.length; i += 2) {
+                    result.append(String.format("%02X%02X", bytes[i] & 0xFF, bytes[i + 1] & 0xFF));
                 }
+                result.append(">");
             } catch (Exception ignored) {
                 return s; // fallback - 일반 문자열로 처리
             }
-            result.append(">");
             return result.toString();
         }
     }
