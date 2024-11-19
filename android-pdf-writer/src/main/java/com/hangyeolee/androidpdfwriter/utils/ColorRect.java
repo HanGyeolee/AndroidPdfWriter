@@ -32,6 +32,21 @@ public class ColorRect{
         }
     }
 
+    /**
+     * Sets the color of the rectangle to the specified value.
+     *
+     * @param left   The color of the left side of the rectangle
+     * @param top    The color of the top of the rectangle
+     * @param right  The color of the right side of the rectangle
+     * @param bottom The color of the bottom of the rectangle
+     */
+    public void set(int left, int top, int right, int bottom) {
+        this.left   = left;
+        this.top    = top;
+        this.right  = right;
+        this.bottom = bottom;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

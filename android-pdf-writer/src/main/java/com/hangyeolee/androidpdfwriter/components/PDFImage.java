@@ -5,6 +5,8 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.text.TextPaint;
 
+import androidx.annotation.ColorInt;
+
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -17,8 +19,6 @@ import java.util.Locale;
 
 public class  PDFImage extends PDFResourceComponent{
     Bitmap origin = null;
-    @Fit.FitInt
-    int fit = Fit.NONE;
 
     float resizeW;
     float resizeH;
@@ -30,8 +30,7 @@ public class  PDFImage extends PDFResourceComponent{
         super.measure(x, y);
         float _width =  (measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right);
-        float _height =  (measureHeight - border.size.top - padding.top
-                - border.size.bottom - padding.bottom);
+        float _height = getTotalHeight();
         if(height > 0){
             /*
             height 가 measureHeight 보다 크다면?
@@ -39,8 +38,7 @@ public class  PDFImage extends PDFResourceComponent{
             */
             while (height > _height) {
                 updateHeight(height - _height);
-                _height =  (measureHeight - border.size.top - padding.top
-                        - border.size.bottom - padding.bottom);
+                _height = getTotalHeight();
             }
         }
 
@@ -191,7 +189,7 @@ public class  PDFImage extends PDFResourceComponent{
      * The size of the image in GridLayout is applied when there is only one image in the same column.<br>
      * If a larger component exists in the same column, it will fit according to the size of that component.
      * @deprecated 이 메소드는 더 이상 사용되지 않습니다.<br/>This method is no longer used.
-     * @see PDFImage#setSize(Float)
+     * @see PDFImage#setHeight(Float)
      * @param width 가로 크기
      * @param height 세로 크기
      * @return 자기 자신
@@ -208,7 +206,7 @@ public class  PDFImage extends PDFResourceComponent{
      * @param height 세로 크기
      * @return 자기 자신
      */
-    public PDFImage setSize(Float height) {
+    public PDFImage setHeight(Float height) {
         super.setSize(null, height);
         return this;
     }
@@ -269,6 +267,12 @@ public class  PDFImage extends PDFResourceComponent{
     @Override
     public PDFImage setBorder(Action<Border, Border> action) {
         super.setBorder(action);
+        return this;
+    }
+
+    @Override
+    public PDFImage setBorder(float size, @ColorInt int color) {
+        super.setBorder(size, color);
         return this;
     }
 

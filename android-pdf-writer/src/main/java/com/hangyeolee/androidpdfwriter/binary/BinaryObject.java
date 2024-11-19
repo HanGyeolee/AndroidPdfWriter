@@ -58,28 +58,4 @@ class BinaryObject {
     public byte[] getStreamData() { return null; }
 
     public int getObjectNumber() { return objectNumber; }
-
-    /**
-     * 단일 숫자에 대한 포맷팅
-     * - 0인 경우: "0"
-     * - 0이 아닌 경우: 소수점 아래 유효숫자만 표시
-     */
-    protected static String formatNumber(float number) {
-        if (number == 0f) {
-            return "0";
-        }
-
-        // 숫자를 문자열로 변환 (지수 표기법 없이)
-        String str = String.format(Locale.US, "%.5f", number);
-
-        // 후행 0 제거
-        str = str.replaceAll("0*$", "");
-
-        // 소수점이 마지막 문자인 경우 제거
-        if (str.endsWith(".")) {
-            str = str.substring(0, str.length() - 1);
-        }
-
-        return str;
-    }
 }

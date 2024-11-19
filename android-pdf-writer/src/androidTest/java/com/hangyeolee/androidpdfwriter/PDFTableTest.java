@@ -55,7 +55,7 @@ public class PDFTableTest {
                     .setOrientation(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
-                            .setSize(1200f)
+                            .setHeight(1200f)
                             .setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("제목")
                             .setBackgroundColor(Color.RED)
@@ -88,7 +88,7 @@ public class PDFTableTest {
                             .addChild(1, 4, PDFImage.build(b)
                                     .setBackgroundColor(Color.RED)
                                     .setFit(Fit.FILL)
-                                    .setSize(50.0f))
+                                    .setHeight(50.0f))
                             .addChild(2, 4, PDFH3.build(
                                     "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다." +
                                     "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다.")

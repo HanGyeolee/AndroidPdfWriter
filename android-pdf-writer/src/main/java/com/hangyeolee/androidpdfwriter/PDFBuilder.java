@@ -26,6 +26,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class PDFBuilder {
+    /**
+     * 만약 DEBUG 가 true 라면 모든 stream 의 압축을 진행하지 않는 다.<br/>
+     * 즉, Filter FlateDecode 항목을 해제한다.<br/>
+     * If DEBUG is true, it does not compress all streams.<br/>
+     * That is, release the Filter FlatDecode entry.
+     */
+    public static boolean DEBUG = false;
     int quality = 85;
     BinarySerializer page;
     Paper pageSize = Paper.A4;
@@ -52,7 +59,7 @@ public class PDFBuilder {
 
     /**
      * PDF 페이지 패딩, 세로 및 가로 설정.<br/>
-     * 모든 페이지에 지정된 패딩이 적용된다.
+     * 모든 페이지에 지정된 패딩이 적용 됩니다.<br/>
      * set PDF page padding, vertical and horizontal<br/>
      * The specified padding applies to all pages.
      * @param vertical 세로 패딩
@@ -91,8 +98,8 @@ public class PDFBuilder {
     }
 
     /**
-     * PDF 내에 들어가는 이미지에 대한 품질 값을 설정합니다. <br>
-     * JPEG 압축 품질을 변경할 수 있으며, 품질 기본 설정값은 85 입니다.<br>
+     * PDF 내에 들어 가는 이미지에 대한 품질 값을 설정 합니다. <br>
+     * JPEG 압축 품질을 변경할 수 있으며, 품질 기본 설정 값은 85 입니다.<br>
      * Sets the quality value for the image within the PDF. <br>
      * Can change compress quality. Default quality is 85.
      * @param quality 0 ~ 100, default = 85

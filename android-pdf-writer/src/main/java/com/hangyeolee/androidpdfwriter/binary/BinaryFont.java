@@ -49,7 +49,7 @@ class BinaryFont extends BinaryObject {
     public void setWidths(int[] widths) {
         StringBuilder sb = new StringBuilder("[");
         for (float width : widths) {
-            sb.append(formatNumber(width)).append(" ");
+            sb.append(BinaryConverter.formatNumber(width)).append(" ");
         }
         sb.append("]");
         dictionary.put("/Widths", sb.toString());
@@ -58,7 +58,7 @@ class BinaryFont extends BinaryObject {
     public void setW(int[] widths) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < widths.length; i++) {
-            sb.append(i).append(" [").append(formatNumber(widths[i])).append("] ");
+            sb.append(i).append(" [").append(BinaryConverter.formatNumber(widths[i])).append("] ");
         }
         sb.append("]");
         dictionary.put("/W", sb.toString());

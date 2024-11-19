@@ -2,6 +2,8 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.RectF;
 
+import com.hangyeolee.androidpdfwriter.PDFBuilder;
+
 import java.util.Locale;
 
 /**
@@ -36,7 +38,7 @@ class BinaryPage extends BinaryObject {
     public void finalizeContent(BinaryObjectManager manager) {
         if (contentStream != null && contentStream.length() > 0) {
             BinaryObject contents = manager.createObject(n ->
-                    new BinaryContentStream(n, true, contentStream.toString()));
+                    new BinaryContentStream(n, !PDFBuilder.DEBUG, contentStream.toString()));
             dictionary.put("/Contents", contents);
             contentStream.setLength(0);
             contentStream = null;
@@ -45,10 +47,10 @@ class BinaryPage extends BinaryObject {
 
     public void setMediaBox(RectF dimensions) {
         dictionary.put("/MediaBox", String.format(Locale.getDefault(), "[%s %s %s %s]",
-                formatNumber(dimensions.left),
-                formatNumber(dimensions.bottom),
-                formatNumber(dimensions.right),
-                formatNumber(dimensions.top)
+                BinaryConverter.formatNumber(dimensions.left),
+                BinaryConverter.formatNumber(dimensions.bottom),
+                BinaryConverter.formatNumber(dimensions.right),
+                BinaryConverter.formatNumber(dimensions.top)
         ));
     }
 }

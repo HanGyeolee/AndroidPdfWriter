@@ -6,6 +6,8 @@ import android.graphics.RectF;
 import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
+
 import java.util.Locale;
 
 public class Border {
@@ -62,6 +64,12 @@ public class Border {
         }
     }
 
+    public Border setBorder(float size, @ColorInt int color){
+        this.size.set(size, size, size, size);
+        this.color.set(color, color, color, color);
+        return this;
+    }
+
     public Border setLeft(float size,@ColorInt int color){
         this.size.left = size;
         this.color.left = color;
@@ -83,69 +91,94 @@ public class Border {
         return this;
     }
 
+    int currentColor = Color.TRANSPARENT;
+    String currentWidth;
     public void draw(StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
         if(canDraw()) {
             // 그래픽스 상태 저장
             content.append("q\r\n"); // Save graphics state
+            currentColor = Color.TRANSPARENT;
+            currentWidth = "";
 
             float gap;
-            // 왼쪽 테두리
-            if (size.left > 0) {
+            if(allSame()){
                 gap = size.left * 0.5f;
                 setColorInPDF(content, color.left);
-                setLineWidthInPDF(content, size.left);
+                setLineWidthInPDF(content, BinaryConverter.formatNumber(size.left, 2));
 
-                // 시작점 이동
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX + gap),
-                        Zoomable.getInstance().transform2PDFHeight(measureY)));  // y좌표 변환
-                // 선 그리기
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX + gap),
-                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight)));
+                // PDF 좌표계로 변환 (좌하단 기준)
+                float pdfX = Zoomable.getInstance().transform2PDFWidth(measureX + gap);
+                float pdfY = Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap);
+
+                // PDF 컨텐츠 스트림에 사각형 그리기
+                content.append(String.format(Locale.getDefault(), "%s %s %s %s re\r\n",
+                        BinaryConverter.formatNumber(pdfX),
+                        BinaryConverter.formatNumber(pdfY),
+                        BinaryConverter.formatNumber(measureWidth - size.left),
+                        BinaryConverter.formatNumber(measureHeight - size.left)
+                ));
+
                 content.append("S\r\n");  // 선 그리기 실행
-            }
+            }else
+            {
+                // 왼쪽 테두리
+                if (size.left > 0) {
+                    gap = size.left * 0.5f;
+                    setColorInPDF(content, color.left);
+                    setLineWidthInPDF(content, BinaryConverter.formatNumber(size.left, 2));
 
-            // 위쪽 테두리
-            if (size.top > 0) {
-                gap = size.top * 0.5f;
-                setColorInPDF(content, color.top);
-                setLineWidthInPDF(content, size.top);
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX),
-                        Zoomable.getInstance().transform2PDFHeight(measureY + gap)));
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth),
-                        Zoomable.getInstance().transform2PDFHeight(measureY + gap)));
-                content.append("S\r\n");
-            }
+                    // 시작점 이동
+                    content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + gap)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY))));  // y좌표 변환
+                    // 선 그리기
+                    content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + gap)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight))));
+                    content.append("S\r\n");  // 선 그리기 실행
+                }
 
-            // 오른쪽 테두리
-            if (size.right > 0) {
-                gap = size.right * 0.5f;
-                setColorInPDF(content, color.right);
-                setLineWidthInPDF(content, size.right);
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap),
-                        Zoomable.getInstance().transform2PDFHeight(measureY)));
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap),
-                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight)));
-                content.append("S\r\n");
-            }
+                // 위쪽 테두리
+                if (size.top > 0) {
+                    gap = size.top * 0.5f;
+                    setColorInPDF(content, color.top);
+                    setLineWidthInPDF(content, BinaryConverter.formatNumber(size.top, 2));
+                    content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + gap))));
+                    content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + gap))));
+                    content.append("S\r\n");
+                }
 
-            // 아래쪽 테두리
-            if (size.bottom > 0) {
-                gap = size.bottom * 0.5f;
-                setColorInPDF(content, color.bottom);
-                setLineWidthInPDF(content, size.bottom);
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f m\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX),
-                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap)));
-                content.append(String.format(Locale.getDefault(), "%.2f %.2f l\r\n",
-                        Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth),
-                        Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap)));
-                content.append("S\r\n");
+                // 오른쪽 테두리
+                if (size.right > 0) {
+                    gap = size.right * 0.5f;
+                    setColorInPDF(content, color.right);
+                    setLineWidthInPDF(content, BinaryConverter.formatNumber(size.right, 2));
+                    content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY))));
+                    content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight))));
+                    content.append("S\r\n");
+                }
+
+                // 아래쪽 테두리
+                if (size.bottom > 0) {
+                    gap = size.bottom * 0.5f;
+                    setColorInPDF(content, color.bottom);
+                    setLineWidthInPDF(content, BinaryConverter.formatNumber(size.bottom, 2));
+                    content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap))));
+                    content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth)),
+                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap))));
+                    content.append("S\r\n");
+                }
             }
 
             // 그래픽스 상태 복원
@@ -157,29 +190,50 @@ public class Border {
         return size.left > 0 || size.top > 0 || size.right > 0 || size.bottom > 0;
     }
 
+    private boolean allSame(){
+        return (size.left == size.top && size.top == size.right && size.right == size.bottom) &&
+                (color.left == color.top && color.top == color.right && color.right == color.bottom);
+    }
+
     /**
      * PDF 컨텐츠 스트림에 색상 설정
      */
     private void setColorInPDF(StringBuilder content, @ColorInt int color) {
-        float red = Color.red(color) / 255f;
-        float green = Color.green(color) / 255f;
-        float blue = Color.blue(color) / 255f;
-        float alpha = Color.alpha(color) / 255f;
+        if(currentColor != color) {
+            float red = Color.red(color) / 255f;
+            float green = Color.green(color) / 255f;
+            float blue = Color.blue(color) / 255f;
+            float alpha = Color.alpha(color) / 255f;
 
-        if (alpha == 1.0f) {
-            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\r\n", red, green, blue));
-        } else {
-            // 알파값이 있는 경우 ExtGState 사용
-            content.append(String.format(Locale.getDefault(),"/GS%.2f gs\r\n", alpha)); // 알파값에 해당하는 ExtGState 사용
-            content.append(String.format(Locale.getDefault(),"%.3f %.3f %.3f RG\r\n", red, green, blue));
+            if (alpha == 1.0f) {
+                content.append(String.format(Locale.getDefault(), "%s %s %s RG\r\n",
+                        BinaryConverter.formatNumber(red, 3),
+                        BinaryConverter.formatNumber(green, 3),
+                        BinaryConverter.formatNumber(blue, 3))
+                );
+            } else {
+                // 알파값이 있는 경우 ExtGState 사용
+                content.append(String.format(Locale.getDefault(), "/GS%s gs\r\n",
+                        BinaryConverter.formatNumber(alpha, 2)
+                )); // 알파값에 해당하는 ExtGState 사용
+                content.append(String.format(Locale.getDefault(), "%s %s %s RG\r\n",
+                        BinaryConverter.formatNumber(red, 3),
+                        BinaryConverter.formatNumber(green, 3),
+                        BinaryConverter.formatNumber(blue, 3))
+                );
+            }
+            currentColor = color;
         }
     }
 
     /**
      * PDF 컨텐츠 스트림에 선 두께 설정
      */
-    private void setLineWidthInPDF(StringBuilder content, float width) {
-        content.append(String.format(Locale.getDefault(),"%.2f w\r\n", width));
+    private void setLineWidthInPDF(StringBuilder content, String width) {
+        if(!currentWidth.equals(width)) {
+            content.append(String.format(Locale.getDefault(), "%s w\r\n", width));
+            currentWidth = width;
+        }
     }
 
 

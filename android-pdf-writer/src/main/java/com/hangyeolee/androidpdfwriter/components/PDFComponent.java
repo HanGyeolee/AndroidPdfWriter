@@ -6,6 +6,7 @@ import android.graphics.RectF;
 
 import androidx.annotation.ColorInt;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -138,21 +139,25 @@ public abstract class PDFComponent{
      * PDF 컨텐츠 스트림에 색상 설정
      */
     protected void setColorInPDF(StringBuilder content, @ColorInt int color) {
-        float red = Color.red(color) / 255f;
-        float green = Color.green(color) / 255f;
-        float blue = Color.blue(color) / 255f;
         float alpha = Color.alpha(color) / 255f;
 
         // RGB 색상 설정
         if (alpha == 1.0f) {
-            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f RG\n", red, green, blue)); // 선 색상
-            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f rg\n", red, green, blue)); // 채움 색상
+            // 선 색상
+            PDFGraphicsState.addStrokeColor(content, color);
+            // 채움 색상
+            PDFGraphicsState.addFillColor(content, color);
         } else {
-            // 투명도가 있는 경우 ExtGState 사용
+            // 알파값이 있는 경우 ExtGState 사용
             // Note: ExtGState는 리소스로 등록되어야 함
-            content.append("/GS1 gs\n"); // 알파값이 설정된 그래픽스 상태 사용
-            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f RG\n", red, green, blue));
-            content.append(String.format(Locale.getDefault(), "%.3f %.3f %.3f rg\n", red, green, blue));
+            //content.append("/GS1 gs\n"); // 알파값이 설정된 그래픽스 상태 사용
+            content.append(String.format(Locale.getDefault(),"/GS%s gs\r\n",
+                    BinaryConverter.formatNumber(alpha, 2)
+            )); // 알파값에 해당하는 ExtGState 사용
+            // 선 색상
+            PDFGraphicsState.addStrokeColor(content, color);
+            // 채움 색상
+            PDFGraphicsState.addFillColor(content, color);
         }
     }
 
@@ -165,16 +170,19 @@ public abstract class PDFComponent{
         // PDF 좌표계로 변환 (좌하단 기준)
         float pdfX = Zoomable.getInstance().transform2PDFWidth(x);
         float pdfY = Zoomable.getInstance().transform2PDFHeight(y + height);
-        content.append(String.format(Locale.getDefault(), "%.2f %.2f %.2f %.2f re\n",
-                pdfX, pdfY, // PDF 좌표계로 변환
-                width, height));
+        content.append(String.format(Locale.getDefault(), "%s %s %s %s re\r\n",
+                BinaryConverter.formatNumber(pdfX),
+                BinaryConverter.formatNumber(pdfY),
+                BinaryConverter.formatNumber(width),
+                BinaryConverter.formatNumber(height)
+        ));
 
         if (fill && stroke) {
-            content.append("B\n"); // 채우기 및 테두리
+            content.append("B\r\n"); // 채우기 및 테두리
         } else if (fill) {
-            content.append("f\n"); // 채우기만
+            content.append("f\r\n"); // 채우기만
         } else if (stroke) {
-            content.append("S\n"); // 테두리만
+            content.append("S\r\n"); // 테두리만
         }
     }
 
@@ -221,8 +229,6 @@ public abstract class PDFComponent{
         if (heightGap == 0) return;
         float verticalMargins = margin.top + margin.bottom;
 
-        float top = margin.top;
-        float bottom = margin.bottom;
         if(parent == null){
             // 루트 컴포넌트인 경우 직접 높이 조정
             height += heightGap;
@@ -391,6 +397,17 @@ public abstract class PDFComponent{
      */
     public PDFComponent setBorder(Action<Border, Border> action){
         border.copy(action.invoke(border));
+        return this;
+    }
+
+    /**
+     * 테두리 굵기 및 색상 지정<br>
+     * Specify border thickness and color
+     * @param size 전체 테두리 굵기
+     * @param color 전체 테두리 색상
+     */
+    public PDFComponent setBorder(float size, @ColorInt int color){
+        border.setBorder(size, color);
         return this;
     }
 

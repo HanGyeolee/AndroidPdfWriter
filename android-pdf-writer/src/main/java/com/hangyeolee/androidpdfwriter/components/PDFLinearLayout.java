@@ -2,7 +2,12 @@ package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.RectF;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.FloatRange;
+
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.exceptions.LayoutChildrenFitDeniedException;
+import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
@@ -42,9 +47,11 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     private void measureVertical() {
+        if (fitChildrenToLayout && height <= 0) {
+            throw new LayoutChildrenFitDeniedException(
+                    "In Orientation.Vertical, height must be specified to fit the child into"+this.getClass().getName()+".");
+        }
         // 테두리와 패딩을 제외한 실제 사용 가능한 너비 계산
-        float availableWidth = measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right;
         float contentHeight = Zoomable.getInstance().getContentHeight();
         float currentY = 0;
 
@@ -67,9 +74,7 @@ public class PDFLinearLayout extends PDFLayout {
             if (fitChildrenToLayout) {
                 // weight 비율에 따른 높이 계산
                 float childHeight = (defaultHeight * childWeight) / totalWeight;
-                child.setSize(availableWidth, childHeight);
-            } else {
-                child.setSize(availableWidth, null);
+                child.setSize(null, childHeight);
             }
 
             // PDFLayout은 페이지네이션 체크 건너뛰기
@@ -116,6 +121,10 @@ public class PDFLinearLayout extends PDFLayout {
 
 
     private void measureHorizontal() {
+        if (fitChildrenToLayout && width <= 0) {
+            throw new LayoutChildrenFitDeniedException(
+                    "In Orientation.Horizontal, width must be specified to fit the child into"+this.getClass().getName()+".");
+        }
         float availableWidth = measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right;
         float maxHeight = 0;
@@ -127,43 +136,74 @@ public class PDFLinearLayout extends PDFLayout {
             totalWeight += weight;
         }
 
-        // 자식 컴포넌트들의 기본 너비 총합 계산
-        float totalChildrenWidth = 0;
-        if (!fitChildrenToLayout) {
-            for (PDFComponent child : children) {
-                totalChildrenWidth += child.width;
-            }
-        }
-
+        float _height;
         // 자식 컴포넌트들 측정
         for (int i = 0; i < children.size(); i++) {
             PDFComponent child = children.get(i);
+            float childWidth = child.width;
             float childWeight = weights.get(i);
-
-            // 너비 계산: fitChildrenToLayout이 true이거나 총 너비가 레이아웃 너비를 초과할 경우 weight 적용
-            if (fitChildrenToLayout || totalChildrenWidth > availableWidth) {
-                float childWidth = (availableWidth * childWeight) / totalWeight;
-                child.setSize(childWidth, fitChildrenToLayout ? measureHeight : null);
-            } else {
-                child.setSize(child.width, null);
-            }
+            float cellWidth = (availableWidth * childWeight) / totalWeight;
+            child.setSize(
+                    childWidth <= 0 ? cellWidth : null,
+                    fitChildrenToLayout ? measureHeight : null
+            );
 
             child.measure(currentX, 0);
+            float maxW = cellWidth - child.margin.left - child.margin.right;
+            float maxH = measureHeight
+                    - border.size.top - border.size.bottom
+                    - padding.top - padding.bottom
+                    - child.margin.top - child.margin.bottom;
+            childReanchor(child, maxW, maxH);
+
             maxHeight = Math.max(maxHeight, child.getTotalHeight());
             currentX += child.getTotalWidth();
         }
 
+        _height = measureHeight;
         // fitChildrenToLayout이 false일 때 최대 높이로 레이아웃 크기 조정
-        if (!fitChildrenToLayout && maxHeight > height) {
-            updateHeight(maxHeight - height);
+        if (!fitChildrenToLayout && maxHeight > _height) {
+            updateHeight(maxHeight - _height);
 
             // 높이가 변경되었으므로 자식들 재측정
             currentX = 0;
-            for (PDFComponent child : children) {
+            for (int i = 0; i < children.size(); i++) {
+                PDFComponent child = children.get(i);
+                float childWeight = weights.get(i);
+                float cellWidth = (availableWidth * childWeight) / totalWeight;
+
                 child.measure(currentX, 0);
+                float maxW = cellWidth - child.margin.left - child.margin.right;
+                float maxH = measureHeight
+                        - border.size.top - border.size.bottom
+                        - padding.top - padding.bottom
+                        - child.margin.top - child.margin.bottom;
+                childReanchor(child, maxW, maxH);
+
                 currentX += child.getTotalWidth();
             }
         }
+    }
+
+    @Override
+    public void childReanchor(PDFComponent child, float maxW, float maxH) {
+        // anchor 에 따른 X 위치 오류
+        float gapX = maxW - child.measureWidth;
+        float gapY = maxH - child.measureHeight;
+
+        // 앵커에 따른 위치 조정
+        float dx = Anchor.getDeltaPixel(child.anchor.horizontal, gapX);
+        float dy = Anchor.getDeltaPixel(child.anchor.vertical, gapY);
+
+        // 절대 좌표 계산
+        dx += measureX + border.size.left + padding.left;
+        dy += measureY + border.size.top + padding.top;
+
+        float left = child.margin.left;
+        float top = child.margin.top;
+
+        child.measureX = child.relativeX + left + dx;
+        child.measureY = child.relativeY + top + dy;
     }
 
 
@@ -192,14 +232,14 @@ public class PDFLinearLayout extends PDFLayout {
      * 레이아웃에 자식 추가<br>
      * Add children to layout<br>
      * @param component 자식 컴포넌트
-     * @param weight 자식 컴포넌트가 차지할 크기 비율.<br/>
+     * @param weight 자식 컴포넌트가 차지할 크기 비율. 반드시 1.0f보다 커야한다.<br/>
      *               만약 {@link #orientation} 이 {@link Orientation#Horizontal} 라면 width, {@link Orientation#Vertical} 이라면 height 를 넣으면 된다.<br/>
-     *               Ratio of the size of the child component.<br/>
+     *               Ratio of the size of the child component. Must bigger than 1.0f<br/>
      *               If {@link #orientation} is {@link Orientation#Horizontal} then width, {@link Orientation#Vertical} then height.
      * @return 자기자신
      */
-    public PDFLinearLayout addChild(PDFComponent component, float weight){
-        if(weight < 0) weight = 0;
+    public PDFLinearLayout addChild(PDFComponent component, @FloatRange(from = 1.0) float weight){
+        if(weight < 1) weight = 1;
         weights.add(weight);
         super.addChild(component);
         return this;
@@ -279,6 +319,12 @@ public class PDFLinearLayout extends PDFLayout {
     @Override
     public PDFLinearLayout setBorder(Action<Border, Border> action) {
         super.setBorder(action);
+        return this;
+    }
+
+    @Override
+    public PDFLinearLayout setBorder(float size, @ColorInt int color) {
+        super.setBorder(size, color);
         return this;
     }
 

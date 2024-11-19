@@ -41,11 +41,11 @@ public abstract class PDFLayout extends PDFComponent{
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
         float pageHeight = Zoomable.getInstance().getContentHeight();
-        float remainingHeight = getTotalHeight();
+        float remainingHeight = measureHeight;
 
         // 시작 페이지와 끝 페이지 계산
         int startPage = serializer.calculatePageIndex(measureY);
-        int endPage = serializer.calculatePageIndex(measureY, getTotalHeight());
+        int endPage = serializer.calculatePageIndex(measureY, measureHeight);
 
         // 첫 페이지의 Y 좌표 조정
         float y = measureY - startPage * pageHeight;
@@ -63,7 +63,7 @@ public abstract class PDFLayout extends PDFComponent{
             float heightToDraw = Math.min(availableHeight, remainingHeight);
 
             // 현재 페이지에 배경과 테두리 그리기
-            drawPageSection(serializer, content, currentY, heightToDraw,
+            drawPageSection(content, currentY, heightToDraw,
                     currentPage == 0, currentPage == endPage - startPage);
 
             remainingHeight -= heightToDraw;
@@ -73,7 +73,7 @@ public abstract class PDFLayout extends PDFComponent{
         return null;
     }
 
-    private void drawPageSection(BinarySerializer serializer, StringBuilder content,
+    private void drawPageSection(StringBuilder content,
                                  float startY, float height,
                                  boolean isFirstPage, boolean isLastPage) {
 
@@ -107,6 +107,8 @@ public abstract class PDFLayout extends PDFComponent{
                 measureWidth, height);
     }
 
+    public abstract void childReanchor(PDFComponent child, float gapX, float gapY);
+
     /**
      * 레이아웃의 모든 자식 컴포넌트를 부모 크기에 맞출지 설정
      */
@@ -125,30 +127,6 @@ public abstract class PDFLayout extends PDFComponent{
         component.setParent(this);
         children.add(component);
         return this;
-    }
-
-    /**
-     * 자식 컴포넌트 목록 반환
-     */
-    public ArrayList<PDFComponent> getChildren() {
-        return children;
-    }
-
-    /**
-     * 페이지 경계를 체크하고 필요한 경우 분할
-     */
-    protected boolean checkPageBoundary(float y, float height) {
-        float contentHeight = Zoomable.getInstance().getContentHeight();
-        return (y + height) > contentHeight;
-    }
-
-    /**
-     * 자식 컴포넌트의 높이를 부모에 맞추기
-     */
-    protected void fitChildToParent(PDFComponent child, float availableHeight) {
-        if (fitChildrenToLayout) {
-            child.setSize(null, availableHeight - child.margin.top - child.margin.bottom);
-        }
     }
 }
 

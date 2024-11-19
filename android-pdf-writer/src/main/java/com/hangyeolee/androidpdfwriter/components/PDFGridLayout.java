@@ -3,6 +3,7 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Rect;
 import android.graphics.RectF;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.IntRange;
 
 import com.hangyeolee.androidpdfwriter.exceptions.TableCellHaveNotIndexException;
@@ -233,6 +234,11 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     @Override
+    public void childReanchor(PDFComponent child, float gapX, float gapY) {
+
+    }
+
+    @Override
     public StringBuilder draw(BinarySerializer serializer) {
         super.draw(serializer);
 
@@ -397,6 +403,12 @@ public class PDFGridLayout extends PDFLayout{
     @Override
     public PDFGridLayout setBorder(Action<Border, Border> action) {
         super.setBorder(action);
+        return this;
+    }
+
+    @Override
+    public PDFGridLayout setBorder(float size, @ColorInt int color) {
+        super.setBorder(size, color);
         return this;
     }
 

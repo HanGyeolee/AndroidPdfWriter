@@ -5,6 +5,7 @@ import android.graphics.RectF;
 
 import androidx.annotation.NonNull;
 
+import com.hangyeolee.androidpdfwriter.PDFBuilder;
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.font.FontExtractor;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
@@ -161,10 +162,11 @@ public class BinarySerializer {
 
         BinaryFont font;
         BinaryFontDescriptor fontDesc;
-        if(isBase14Font(info.postScriptName)){
+        if(BinaryConverter.isBase14Font(info.postScriptName)){
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, null, null));
             font.setSubtype("Type1");
+            font.setWidths(metrics.charWidths);
             font.setBase14Font();
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
@@ -192,7 +194,7 @@ public class BinarySerializer {
 
             // Font 파일 생성
             BinaryContentStream fontfile2 = manager.createObject(n ->
-                    new BinaryContentStream(n, true, info.stream));
+                    new BinaryContentStream(n, !PDFBuilder.DEBUG, info.stream));
             fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
             fontDesc.setFontFile2(fontfile2);
         }
@@ -204,23 +206,6 @@ public class BinarySerializer {
         resources.addFont(fontId, font);
 
         return fontId;
-    }
-
-    private boolean isBase14Font(String name) {
-        return name.equals("Times-Roman") ||
-                name.equals("Times-Bold") ||
-                name.equals("Times-Italic") ||
-                name.equals("Times-BoldItalic") ||
-                name.equals("Helvetica") ||
-                name.equals("Helvetica-Bold") ||
-                name.equals("Helvetica-Oblique") ||
-                name.equals("Helvetica-BoldOblique") ||
-                name.equals("Courier") ||
-                name.equals("Courier-Bold") ||
-                name.equals("Courier-Oblique") ||
-                name.equals("Courier-BoldOblique") ||
-                name.equals("Symbol") ||
-                name.equals("ZapfDingbats");
     }
 
     /**
@@ -251,8 +236,8 @@ public class BinarySerializer {
     }
 
     private BinaryObject createToUnicode() {
-        // ToUnicode CMap을 스트림 객체로 생성 TODO 압축
-        return manager.createObject(n -> new BinaryContentStream(n, false, TO_UNICODE_CMAP_TEMPLATE));
+        // ToUnicode CMap을 스트림 객체로 생성
+        return manager.createObject(n -> new BinaryContentStream(n, !PDFBuilder.DEBUG, TO_UNICODE_CMAP_TEMPLATE));
     }
 
     public void setQuality(int quality){
