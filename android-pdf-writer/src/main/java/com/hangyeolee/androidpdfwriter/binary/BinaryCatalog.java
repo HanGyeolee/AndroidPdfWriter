@@ -3,7 +3,7 @@ package com.hangyeolee.androidpdfwriter.binary;
 /**
  * Catalog 객체
  */
-class BinaryCatalog extends BinaryObject {
+class BinaryCatalog extends BinaryDictionary {
     public BinaryCatalog(int objectNumber) {
         super(objectNumber);
         dictionary.put("/Type", "/Catalog");

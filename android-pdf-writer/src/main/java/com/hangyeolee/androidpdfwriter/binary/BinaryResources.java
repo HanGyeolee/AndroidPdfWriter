@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Resources 객체
  */
-class BinaryResources extends BinaryObject {
+class BinaryResources extends BinaryDictionary {
     private final Map<String, BinaryFont> fonts = new HashMap<>();
     private final Map<String, BinaryXObject> xObjects = new HashMap<>();
 

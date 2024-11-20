@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * Font 객체
  */
-class BinaryFont extends BinaryObject {
+class BinaryFont extends BinaryDictionary {
     private final List<BinaryObject> descendantFonts = new ArrayList<>();
     public BinaryFont(
             int objectNumber,

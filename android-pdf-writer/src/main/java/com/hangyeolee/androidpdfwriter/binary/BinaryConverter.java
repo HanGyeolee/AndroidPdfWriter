@@ -1,9 +1,15 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
 import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public class BinaryConverter {
+
     public static byte[] toBytes(String input) {
         byte[] bytes = new byte[input.length()];
         for (int i = 0; i < input.length(); i++) {
@@ -28,7 +34,7 @@ public class BinaryConverter {
      * - 0이 아닌 경우: 소수점 아래 유효숫자만 표시
      */
     public static String formatNumber(float number) {
-        return formatNumber(number, 5);
+        return formatNumber(number, 6);
     }
 
     /**

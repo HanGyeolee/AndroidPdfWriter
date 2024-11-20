@@ -213,16 +213,8 @@ public class PDFText extends PDFResourceComponent {
         paint.getTextBounds("f", 0, 1, bounds);
         stemH = (int)Math.ceil(Math.min(bounds.width() * 0.25f, stemV) * scale); // 일반적으로 stemV보다 작음
 
-        // ASCII 문자만 있는지 확인
-        boolean isAsciiOnly = true;
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) > 127) {
-                isAsciiOnly = false;
-                break;
-            }
-        }
 
-        if (isAsciiOnly) {
+        if(BinaryConverter.isBase14Font(info.postScriptName)){
             if(charWidths == null) {
                 // charWidths 계산
                 charWidths = new int[FONTBBOX_TEXT.length()];
@@ -291,6 +283,8 @@ public class PDFText extends PDFResourceComponent {
         // 텍스트 객체 시작
         PDFTextsState.save(content);
 
+        // 텍스트 렌더링 모드 설정
+        content.append("0 Tr\n");
         // 폰트 및 크기 설정
         content.append("/").append(resourceId).append(" ")
                 .append(String.format(Locale.getDefault(),"%s",
@@ -366,19 +360,10 @@ public class PDFText extends PDFResourceComponent {
      * PDF 문자열 이스케이프 처리
      */
     private String escapePDFString(String text) {
-        // ASCII 문자만 있는지 확인
-        boolean isAsciiOnly = true;
-        for (int i = 0; i < text.length(); i++) {
-            if (text.charAt(i) > 127) {
-                isAsciiOnly = false;
-                break;
-            }
-        }
-
         String s = "(" + text.replace("\\", "\\\\")
                 .replace("(", "\\(")
                 .replace(")", "\\)") + ")";
-        if (isAsciiOnly) {
+        if(BinaryConverter.isBase14Font(info.postScriptName)){
             // ASCII only - 괄호 문자열로 처리
             return s;
         } else {
@@ -392,11 +377,11 @@ public class PDFText extends PDFResourceComponent {
                     bytes = text.getBytes(Charset.forName("UTF-16BE"));
                 }
 
-                result.append("<");
+                result.append("[");
                 for (int i = 0; i < bytes.length; i += 2) {
-                    result.append(String.format("%02X%02X", bytes[i] & 0xFF, bytes[i + 1] & 0xFF));
+                    result.append(String.format("<%02X%02X>", bytes[i] & 0xFF, bytes[i + 1] & 0xFF));
                 }
-                result.append(">");
+                result.append("]");
             } catch (Exception ignored) {
                 return s; // fallback - 일반 문자열로 처리
             }

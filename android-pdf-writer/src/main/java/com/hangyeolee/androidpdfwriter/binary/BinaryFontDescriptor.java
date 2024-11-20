@@ -7,7 +7,7 @@ import java.util.Locale;
 /**
  * FontDescriptor 객체
  */
-class BinaryFontDescriptor extends BinaryObject {
+class BinaryFontDescriptor extends BinaryDictionary {
     public BinaryFontDescriptor(int objectNumber) {
         super(objectNumber);
         dictionary.put("/Type", "/FontDescriptor");

@@ -7,7 +7,7 @@ import java.util.Locale;
 /**
  * Page 객체 (단일 페이지)
  */
-class BinaryPage extends BinaryObject {
+class BinaryPage extends BinaryDictionary {
     private BinaryPages parent;
     private BinaryResources resources;
     private StringBuilder contentStream ;

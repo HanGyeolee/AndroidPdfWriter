@@ -60,10 +60,10 @@ class BinaryObjectManager {
 
     private byte[] addObject(BinaryObject obj){
         // 딕셔너리
-        byte[] dictionary = BinaryConverter.toBytes(obj.toDictionaryString());
+        byte[] dictionary = new byte[0];
         // 스트림 데이터가 있다면 쓰기
         byte[] streamData = obj.getStreamData();
-        byte[] data = new byte[0];
+        byte[] data = dictionary;
         int sum = 0;
         if (streamData != null) {
             byte[] streamHeader = BinaryConverter.toBytes("stream\r\n");
@@ -78,6 +78,9 @@ class BinaryObjectManager {
             System.arraycopy(streamData, 0, data, sum, streamData.length);
             sum += streamData.length;
             System.arraycopy(streamFooter, 0, data, sum, streamFooter.length);
+        }
+        if(obj instanceof BinaryDictionary){
+            dictionary = BinaryConverter.toBytes(((BinaryDictionary)obj).toDictionaryString());
         }
 
         // {객체 번호} {세대 번호} obj

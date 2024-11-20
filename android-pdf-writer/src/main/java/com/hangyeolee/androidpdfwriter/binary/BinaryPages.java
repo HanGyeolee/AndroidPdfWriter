@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * Pages 객체 (페이지들의 컨테이너)
  */
-class BinaryPages extends BinaryObject {
+class BinaryPages extends BinaryDictionary {
     private final List<BinaryPage> pages = new ArrayList<>();
 
     public BinaryPages(int objectNumber) {
