@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class PDFBuilder {
+    public static String TAG = "PDFBuilder";
     /**
      * 만약 DEBUG 가 true 라면 모든 stream 의 압축을 진행하지 않는 다.<br/>
      * 즉, Filter FlateDecode 항목을 해제한다.<br/>

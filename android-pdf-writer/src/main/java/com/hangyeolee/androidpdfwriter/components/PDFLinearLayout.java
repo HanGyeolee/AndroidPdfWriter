@@ -5,6 +5,7 @@ import android.graphics.RectF;
 import androidx.annotation.ColorInt;
 import androidx.annotation.FloatRange;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.exceptions.LayoutChildrenFitDeniedException;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
@@ -12,6 +13,8 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
 import java.util.ArrayList;
+import java.util.Locale;
+
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
@@ -216,9 +219,45 @@ public class PDFLinearLayout extends PDFLayout {
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
         super.draw(serializer);
+        StringBuilder content;
+        float pageHeight = Zoomable.getInstance().getContentHeight();
 
         for(int i = 0; i < children.size(); i++) {
-            children.get(i).draw(serializer);
+            PDFComponent child = children.get(i);
+
+            // 현재 컴포넌트가 위치한 페이지 구하기
+            int currentPage = serializer.calculatePageIndex(child.measureY);
+            content = serializer.getPage(currentPage);
+
+            // 현재 페이지 내에서의 좌표 계산
+            float x = Zoomable.getInstance().transform2PDFWidth(
+                    child.measureX
+            );
+            float y = Zoomable.getInstance().transform2PDFHeight(
+                    child.measureY + child.measureHeight
+            );
+
+            // 그래픽스 상태 저장
+            PDFGraphicsState.save(content);
+
+            // 클리핑 영역 설정 - 컴포넌트의 전체 영역
+            // W 클리핑 패스 설정
+            // n 패스를 그리지 않고 클리핑만 적용
+            content.append(String.format(Locale.US,
+                    "%s %s %s %s re W n\r\n",
+                    BinaryConverter.formatNumber(x),
+                    BinaryConverter.formatNumber(y),
+                    BinaryConverter.formatNumber(
+                            child.measureWidth),
+                    BinaryConverter.formatNumber(
+                            child.measureHeight))
+            );
+
+            // 자식 컴포넌트 그리기
+            child.draw(serializer);
+
+            // 그래픽스 상태 복원
+            PDFGraphicsState.restore(content);
         }
         return null;
     }

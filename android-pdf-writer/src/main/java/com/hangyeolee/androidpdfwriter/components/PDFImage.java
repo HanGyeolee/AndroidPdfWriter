@@ -5,9 +5,11 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.text.TextPaint;
+import android.util.Log;
 
 import androidx.annotation.ColorInt;
 
+import com.hangyeolee.androidpdfwriter.PDFBuilder;
 import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
@@ -148,20 +150,22 @@ public class  PDFImage extends PDFResourceComponent{
         float originWidth = origin.getWidth();
         float originHeight = origin.getHeight();
         float _width, _height;
+        float availableWidth = measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right;
+        float availableHeight = measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom;
         if(fit == Fit.COVER || fit == Fit.CONTAIN){
             _width = resizeW;
             _height = resizeH;
         }
         else {
-            _width = measureWidth - border.size.left - padding.left
-                    - border.size.right - padding.right;
-            _height = measureHeight - border.size.top - padding.top
-                    - border.size.bottom - padding.bottom;
+            _width = availableWidth;
+            _height = availableHeight;
         }
 
         // 이미지가 그려질 실제 위치 계산
         float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
-        float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + resizeH);
+        float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + _height);
 
         if(compressEnable) {
             if (_width < originWidth || _height < originHeight) {
@@ -184,6 +188,12 @@ public class  PDFImage extends PDFResourceComponent{
                     );
                 } catch (OutOfMemoryError e) {
                     // 메모리 부족 시 리사이징 실패 처리
+                    Log.e(PDFBuilder.TAG, "OutOfMemoryError: PDFImage. " +
+                            "The original image is used because there is not enough memory required for image reduction resizing.");
+                    if(resize != null){
+                        resize.recycle();
+                        resize = null;
+                    }
                 }
             }
         }
@@ -193,25 +203,13 @@ public class  PDFImage extends PDFResourceComponent{
         PDFGraphicsState.save(content);
         // 지정된 크기에 맞게 늘리기
         content.append(String.format(Locale.getDefault(),
-                "%s 0 0 %s %s %s cm\n",
+                "%s 0 0 %s %s %s cm\r\n",
                 BinaryConverter.formatNumber(_width),
                 BinaryConverter.formatNumber(_height),
                 BinaryConverter.formatNumber(x),
                 BinaryConverter.formatNumber(y))
         );
-        if(fit == Fit.COVER){
-            // 크롭
-            if(originWidth > _width || originHeight > _height){
-                content.append(String.format(Locale.US,
-                        "%s 0 0 %s %s %s cm\n",
-                        BinaryConverter.formatNumber(_width/originWidth),
-                        BinaryConverter.formatNumber(_height/originHeight),
-                        BinaryConverter.formatNumber(-srcX/originWidth),
-                        BinaryConverter.formatNumber(-srcY/originHeight)
-                ));
-            }
-        }
-        content.append("/").append(resourceId).append(" Do\n");
+        content.append("/").append(resourceId).append(" Do\r\n");
 
         PDFGraphicsState.restore(content);
         return null;

@@ -121,6 +121,7 @@ public class PDFBuilderTest {
                             .setOrientation(Orientation.Horizontal)
                             .addChild(PDFH5.build("H5 Image"))
                             .addChild(PDFImage.build(testImage)
+                                    .setCompress(true)
                                     .setFit(Fit.COVER)
                                     .setHeight(50.0f)));
         }
@@ -129,7 +130,7 @@ public class PDFBuilderTest {
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_Cover.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);
