@@ -53,13 +53,14 @@ class BinaryFont extends BinaryObject {
         dictionary.put("/Widths", widths);
     }
 
-    public void setW(int[] widths) {
+    public void setW(Map<Character, Integer> map) {
         StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < widths.length; i++) {
-            sb.append(i).append(" [").append(BinaryConverter.formatNumber(widths[i])).append("] ");
+        for (Map.Entry<Character, Integer> entry : map.entrySet()) {
+            sb.append((entry.getKey() & 0xffff)).append("[").append(entry.getValue()).append("] ");
         }
         sb.append("]");
 
+        dictionary.put("/DW", 1000);
         dictionary.put("/W", sb.toString());
     }
 

@@ -122,7 +122,7 @@ public class PDFBuilderTest {
                             .addChild(PDFH5.build("H5 Image"))
                             .addChild(PDFImage.build(testImage)
                                     .setCompress(true)
-                                    .setFit(Fit.COVER)
+                                    .setFit(Fit.NONE)
                                     .setHeight(520.0f)));
         }
         Log.d(TAG, "PDF Builder setup completed");
@@ -130,7 +130,7 @@ public class PDFBuilderTest {
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_300_520_Cover.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_300_520_None.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);
@@ -166,10 +166,16 @@ public class PDFBuilderTest {
                             .setBackgroundColor(Color.LTGRAY)
                             .setSize(null, 200)
                             .setOrientation(Orientation.Horizontal)
-                            .addChild(PDFH5.build("H5 Image"))
+                            .addChild(PDFH5.build("H5 Image")
+                                    .setPadding(4)
+                                    .setBackgroundColor(Color.WHITE)
+                                    .setSize(60, null)
+                                    .setAnchor(Anchor.Center, Anchor.Center)
+                                    .setTextAlign(TextAlign.End))
                             .addChild(PDFImage.build(testImage)
                                     .setCompress(true)
                                     .setFit(Fit.CONTAIN)
+                                    .setAnchor(Anchor.Start, Anchor.Center)
                                     .setHeight(50.0f)));
         }
         Log.d(TAG, "PDF Builder setup completed");
@@ -177,7 +183,7 @@ public class PDFBuilderTest {
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_Contain.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_None.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);

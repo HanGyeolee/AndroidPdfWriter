@@ -145,7 +145,6 @@ public class PDFLinearLayout extends PDFLayout {
             totalWeight += weight;
         }
 
-        float _height;
         // 자식 컴포넌트들 측정
         for (int i = 0; i < children.size(); i++) {
             PDFComponent child = children.get(i);
@@ -166,14 +165,11 @@ public class PDFLinearLayout extends PDFLayout {
             childReanchor(child, maxW, maxH);
 
             maxHeight = Math.max(maxHeight, child.getTotalHeight());
-            currentX += child.getTotalWidth();
+            currentX += cellWidth;
         }
 
-        _height = measureHeight;
         // fitChildrenToLayout이 false일 때 최대 높이로 레이아웃 크기 조정
-        if (!fitChildrenToLayout && maxHeight > _height) {
-            updateHeight(maxHeight - _height);
-
+        if (!fitChildrenToLayout) {
             // 높이가 변경되었으므로 자식들 재측정
             currentX = 0;
             for (int i = 0; i < children.size(); i++) {
@@ -189,7 +185,7 @@ public class PDFLinearLayout extends PDFLayout {
                         - child.margin.top - child.margin.bottom;
                 childReanchor(child, maxW, maxH);
 
-                currentX += child.getTotalWidth();
+                currentX += cellWidth;
             }
         }
     }

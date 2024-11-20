@@ -231,7 +231,6 @@ public abstract class PDFComponent{
 
         if(parent == null){
             // 루트 컴포넌트인 경우 직접 높이 조정
-            height += heightGap;
             measureHeight = height - verticalMargins;
         }
         else{

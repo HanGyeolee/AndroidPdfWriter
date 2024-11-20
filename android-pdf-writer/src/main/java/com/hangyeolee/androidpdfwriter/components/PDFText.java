@@ -30,8 +30,10 @@ import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 public class PDFText extends PDFResourceComponent {
     private final static String FONTBBOX_TEXT = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
@@ -56,7 +58,7 @@ public class PDFText extends PDFResourceComponent {
     private int xHeight;
     private int stemH;
     private Rect fontBBox;
-    private int[] charWidths;  // 문자별 폭 저장
+    private int[] charWidths = null;  // 문자별 폭 저장
 
     /*
      * Line spacing multiplier for default line spacing.
@@ -211,11 +213,30 @@ public class PDFText extends PDFResourceComponent {
         paint.getTextBounds("f", 0, 1, bounds);
         stemH = (int)Math.ceil(Math.min(bounds.width() * 0.25f, stemV) * scale); // 일반적으로 stemV보다 작음
 
-        // charWidths 계산
-        charWidths = new int[FONTBBOX_TEXT.length()];
-        for (int i = 0; i < FONTBBOX_TEXT.length(); i++) {
-            float charWidth = paint.measureText(FONTBBOX_TEXT, i, i + 1) - 0.5f;
-            charWidths[i] = (int)Math.ceil(charWidth * scale);
+        // ASCII 문자만 있는지 확인
+        boolean isAsciiOnly = true;
+        for (int i = 0; i < text.length(); i++) {
+            if (text.charAt(i) > 127) {
+                isAsciiOnly = false;
+                break;
+            }
+        }
+
+        if (isAsciiOnly) {
+            if(charWidths == null) {
+                // charWidths 계산
+                charWidths = new int[FONTBBOX_TEXT.length()];
+                for (int i = 0; i < FONTBBOX_TEXT.length(); i++) {
+                    float charWidth = paint.measureText(FONTBBOX_TEXT, i, i + 1) - 0.5f;
+                    charWidths[i] = (int) Math.ceil(charWidth * scale);
+                }
+            }
+        } else {
+            //info W 에 길이 추가
+            for (int i = 0; i < text.length(); i++) {
+                float charWidth = paint.measureText(text, i, i + 1) - 0.5f;
+                info.W.put(text.charAt(i), (int) Math.ceil(charWidth * scale));
+            }
         }
 
         // FontBBox 계산
@@ -267,8 +288,6 @@ public class PDFText extends PDFResourceComponent {
 
         if (text == null || layout == null) return null;
 
-        // 그래픽스 상태 저장
-        PDFGraphicsState.save(content);
         // 텍스트 객체 시작
         PDFTextsState.save(content);
 
@@ -293,6 +312,7 @@ public class PDFText extends PDFResourceComponent {
                 BinaryConverter.formatNumber(y))
         );
 
+        float lastAlignX = 0;
         // 여러 줄의 텍스트 처리
         for (int i = 0; i < layout.getLineCount(); i++) {
             // 현재 줄의 시작과 끝 인덱스
@@ -309,11 +329,11 @@ public class PDFText extends PDFResourceComponent {
             switch (align) {
                 case ALIGN_CENTER:
                     alignX = (measureWidth - border.size.left - border.size.right
-                            - padding.left - padding.right - lineWidth) / 2;
+                            - padding.left - padding.right - lineWidth) / 2 - lastAlignX;
                     break;
                 case ALIGN_OPPOSITE:
                     alignX = measureWidth - border.size.left - border.size.right
-                            - padding.left - padding.right - lineWidth;
+                            - padding.left - padding.right - lineWidth - lastAlignX;
                     break;
             }
 
@@ -333,12 +353,11 @@ public class PDFText extends PDFResourceComponent {
             // 텍스트 이스케이프 처리
             String escapedText = escapePDFString(lineText);
             content.append(escapedText).append(" Tj\r\n");
+            lastAlignX = alignX;
         }
 
         // 텍스트 객체 종료
         PDFTextsState.restore(content);
-        // 그래픽스 상태 복원
-        PDFGraphicsState.restore(content);
 
         return null;
     }

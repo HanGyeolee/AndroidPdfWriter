@@ -39,6 +39,8 @@ public class PDFTextTest {
 
     @Before
     public void setUp(){
+        PDFBuilder.DEBUG = true;
+
         Log.d(TAG, "Starting test setup...");
 
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();

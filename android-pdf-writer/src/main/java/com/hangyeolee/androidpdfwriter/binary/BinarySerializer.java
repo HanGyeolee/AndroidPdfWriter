@@ -24,8 +24,8 @@ public class BinarySerializer {
                     /CIDInit/ProcSet findresource begin\r
                     12 dict begin\r
                     begincmap\r
-                    /CIDSystemInfo <</Registry (Adobe)/Ordering (Korea1)/Supplement 0>> def\r
-                    /CMapName/Adobe-Identity-UCS def\r
+                    /CIDSystemInfo <</Registry (Adobe)/Ordering (Identity)/Supplement 0>> def\r
+                    /CMapName/Identity-H def\r
                     /CMapType 2 def\r
                     1 begincodespacerange\r
                     <0000> <FFFF>\r
@@ -164,6 +164,7 @@ public class BinarySerializer {
         if(BinaryConverter.isBase14Font(info.postScriptName)){
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, null, null));
+            font.setBaseFont(info.postScriptName);
             font.setSubtype("Type1");
 
             font.setWidths(BinaryConverter.formatArray(metrics.charWidths));
@@ -176,17 +177,18 @@ public class BinarySerializer {
                 cmap = createToUnicode();
             }
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, "KSC-EUC-H", cmap));
+            font = manager.createObject(n -> new BinaryFont(n, "Identity-H", cmap));
+            font.setBaseFont(info.postScriptName+"-Identity-H");
             font.setSubtype("Type0");
 //            font.setWidths(metrics.charWidths);
 
             BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null, null));
             cidFont.setSubtype("CIDFontType2");
             cidFont.setBaseFont(info.postScriptName);
-            cidFont.dictionary.put("/CMapName", "KSC-EUC-H");
-            cidFont.dictionary.put("/CIDSystemInfo", "<</Registry (Adobe)/Ordering (Korea1)/Supplement 0>>");
+            cidFont.dictionary.put("/CIDSystemInfo", "<</Registry (Adobe)/Ordering (Identity)/Supplement 0>>");
+//            cidFont.dictionary.put("/CMapName", "/Identity-H");
             cidFont.dictionary.put("/CIDToGIDMap", "/Identity");
-            cidFont.setW(metrics.charWidths);
+            cidFont.setW(info.W);
             font.addDescendantFont(cidFont);
 
             // FontDescriptor 객체 생성
@@ -195,11 +197,10 @@ public class BinarySerializer {
 
             // Font 파일 생성
             BinaryContentStream fontfile2 = manager.createObject(n ->
-                    new BinaryContentStream(n, !PDFBuilder.DEBUG, info.stream));
+                    new BinaryContentStream(n, info.stream));
             fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
             fontDesc.setFontFile2(fontfile2);
         }
-        font.setBaseFont(info.postScriptName);
         fontDesc.setMetrics(metrics);
         fontDesc.setFontName(info.postScriptName);
 

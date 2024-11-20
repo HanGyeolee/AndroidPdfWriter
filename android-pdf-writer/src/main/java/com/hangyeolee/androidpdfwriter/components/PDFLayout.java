@@ -39,6 +39,12 @@ public abstract class PDFLayout extends PDFComponent{
     }
 
     @Override
+    protected void updateHeight(float heightGap){
+        height += heightGap;
+        super.updateHeight(heightGap);
+    }
+
+    @Override
     public StringBuilder draw(BinarySerializer serializer) {
         float pageHeight = Zoomable.getInstance().getContentHeight();
         float remainingHeight = measureHeight;

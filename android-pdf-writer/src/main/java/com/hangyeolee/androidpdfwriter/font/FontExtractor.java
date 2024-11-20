@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +31,7 @@ public class FontExtractor {
         public final Typeface typeface;
         public final String encoding;
         public final byte[] stream;
+        public final Map<Character, Integer> W = new HashMap<>();
 
         public FontInfo(
                 String postScriptName, String encoding,

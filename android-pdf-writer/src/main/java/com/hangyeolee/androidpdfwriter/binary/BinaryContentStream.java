@@ -27,18 +27,19 @@ class BinaryContentStream extends BinaryObject {
             dictionary.put("/Length", compressedContent.length);
         }
     }
-    public BinaryContentStream(int objectNumber, boolean doFlate, byte[] stream) {
+    public BinaryContentStream(int objectNumber, byte[] stream) {
         super(objectNumber);
 
-        if(doFlate) {
+        if(PDFBuilder.DEBUG) {
+            this.compressedContent = stream;
+            dictionary.put("/Length", compressedContent.length);
+        } else {
             // 컨텐츠 압축
+            dictionary.put("/Length1", stream.length);
             this.compressedContent = compressContent(stream);
 
             // 딕셔너리에 압축 관련 항목 추가
             dictionary.put("/Filter", "/FlateDecode");
-            dictionary.put("/Length", compressedContent.length);
-        } else {
-            this.compressedContent = stream;
             dictionary.put("/Length", compressedContent.length);
         }
     }

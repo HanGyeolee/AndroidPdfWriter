@@ -11,6 +11,7 @@ import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import java.util.Locale;
 
 public class Border {
+    private static final float half = 257f/512f;
     public RectF size;
     public ColorRect color;
 
@@ -102,7 +103,7 @@ public class Border {
 
             float gap;
             if(allSame()){
-                gap = size.left * 0.5f;
+                gap = size.left * half;
                 setColorInPDF(content, color.left);
                 setLineWidthInPDF(content, BinaryConverter.formatNumber(size.left, 2));
 
@@ -123,60 +124,67 @@ public class Border {
             {
                 // 왼쪽 테두리
                 if (size.left > 0) {
-                    gap = size.left * 0.5f;
+                    gap = size.left * half;
                     setColorInPDF(content, color.left);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.left, 2));
 
+                    String pdfx = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + gap));
                     // 시작점 이동
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + gap)),
+                            pdfx,
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY))));  // y좌표 변환
                     // 선 그리기
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + gap)),
+                            pdfx,
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight))));
                     content.append("S\r\n");  // 선 그리기 실행
                 }
 
                 // 위쪽 테두리
                 if (size.top > 0) {
-                    gap = size.top * 0.5f;
+                    gap = size.top * half;
                     setColorInPDF(content, color.top);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.top, 2));
+
+                    String pdfy = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + gap));
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX)),
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + gap))));
+                            pdfy));
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth)),
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + gap))));
+                            pdfy));
                     content.append("S\r\n");
                 }
 
                 // 오른쪽 테두리
                 if (size.right > 0) {
-                    gap = size.right * 0.5f;
+                    gap = size.right * half;
                     setColorInPDF(content, color.right);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.right, 2));
+
+                    String pdfx = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap));
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap)),
+                            pdfx,
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY))));
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap)),
+                            pdfx,
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight))));
                     content.append("S\r\n");
                 }
 
                 // 아래쪽 테두리
                 if (size.bottom > 0) {
-                    gap = size.bottom * 0.5f;
+                    gap = size.bottom * half;
                     setColorInPDF(content, color.bottom);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.bottom, 2));
+
+                    String pdfy = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap));
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX)),
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap))));
+                            pdfy));
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
                             BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth)),
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap))));
+                            pdfy));
                     content.append("S\r\n");
                 }
             }

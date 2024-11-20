@@ -127,8 +127,8 @@ public class  PDFImage extends PDFResourceComponent{
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
                 break;
             case Fit.NONE:
-                gapX = (this.origin.getWidth() - _width);
-                gapY = (this.origin.getHeight() - _height);
+                gapX = (_width - this.origin.getWidth());
+                gapY = (_height - this.origin.getHeight());
                 // Measure X Anchor and Y Anchor
                 gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
                 gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
@@ -157,6 +157,10 @@ public class  PDFImage extends PDFResourceComponent{
         if(fit == Fit.COVER || fit == Fit.CONTAIN){
             _width = resizeW;
             _height = resizeH;
+        }
+        else if(fit == Fit.NONE) {
+            _width = originWidth;
+            _height = originHeight;
         }
         else {
             _width = availableWidth;
@@ -199,8 +203,6 @@ public class  PDFImage extends PDFResourceComponent{
         }
 
         StringBuilder content = super.draw(serializer);
-        // 그래픽스 상태 저장 (이미지 변환을 위해 필요)
-        PDFGraphicsState.save(content);
         // 지정된 크기에 맞게 늘리기
         content.append(String.format(Locale.getDefault(),
                 "%s 0 0 %s %s %s cm\r\n",
@@ -210,8 +212,6 @@ public class  PDFImage extends PDFResourceComponent{
                 BinaryConverter.formatNumber(y))
         );
         content.append("/").append(resourceId).append(" Do\r\n");
-
-        PDFGraphicsState.restore(content);
         return null;
     }
 
