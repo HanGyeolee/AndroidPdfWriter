@@ -168,12 +168,12 @@ public class  PDFImage extends PDFResourceComponent{
         float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + _height);
 
         if(compressEnable) {
-            if (_width < originWidth || _height < originHeight) {
+            if (_width * 5f < originWidth || _height * 5f < originHeight) {
                 if(resize != null){
                     resize.recycle();
                 }
-                float scaleX = _width / originWidth;
-                float scaleY = _height / originHeight;
+                float scaleX = _width * 5f / originWidth;
+                float scaleY = _height * 5f / originHeight;
                 Matrix matrix = new Matrix();
                 matrix.setScale(scaleX, scaleY);
 
@@ -217,7 +217,7 @@ public class  PDFImage extends PDFResourceComponent{
 
     /**
      * GridLayout 안에 있는 이미지의 크기는 같은 열에 이미지 하나만 있는 경우에 적용된다.<br>
-     * 같은 열에 더 큰 크기의 컴포넌트가 존재한다면, 해당 컴포넌트의 크기에 따라 Fit 된다.<br>
+     * 같은 열에 더 큰 크기의 컴포넌트가 존재한다면, 해당 컴포넌트의 크기에 따라 Fit 된다.<br><br>
      * The size of the image in GridLayout is applied when there is only one image in the same column.<br>
      * If a larger component exists in the same column, it will fit according to the size of that component.
      * @deprecated 이 메소드는 더 이상 사용되지 않습니다.<br/>This method is no longer used.
@@ -233,7 +233,7 @@ public class  PDFImage extends PDFResourceComponent{
         return this;
     }
     /**
-     * Layout 안에 있는 이미지의 가로 길이는 부모의 가로 길이로 무조건 적용된다.<br>
+     * Layout 안에 있는 이미지의 가로 길이는 부모의 가로 길이로 무조건 적용된다.<br><br>
      * The width of the image in the layout is unconditionally applied as the horizontal length of the parent.
      * @param height 세로 크기
      * @return 자기 자신
@@ -244,11 +244,15 @@ public class  PDFImage extends PDFResourceComponent{
     }
 
     /**
-     * 이미지 압축 여부에 대해서 설정한다.<br>
+     * 이미지 압축 여부 설정<br>
+     * 지정한 크기의 5배 보다 원본이 크다면 압축한다.
+     * <p>압축 비율 = '지정한 크기 * 5 / 원본 크기'</p>
      * compressEnable이 false 면 이미지 리소스에 원본으로 저장한다.<br>
      * true 면, 지정한 크기로 원본 이미지를 축소한 뒤 이미지 리소스에 축소한 이미지를 저장한다.<br>
-     * 단, 원본 이미지보다 크게 확대하면 무조건 원본으로 저장한다.<br>
+     * 단, 원본 이미지보다 크게 확대하면 무조건 원본으로 저장한다.<br><br>
      * Sets whether or not the image is compressed.<br>
+     * If the original is larger than 5 times the specified size, compress it.
+     * <p>compression ratio = specified size * 5 / original size</p>
      * If compressEnable is false, save it as the source in the image resource.<br>
      * If true, shrink the original image to the specified size and store the reduced image in the image resource.<br>
      * However, if it is enlarged larger than the original image, it will be saved as the original unconditionally.
@@ -350,7 +354,7 @@ public class  PDFImage extends PDFResourceComponent{
 
     /**
      * 이미지 컴포넌트의 크기는 기본적으로 이미지의 크기를 가진다.<br>
-     * 기본적으로 고정점은 중앙이다.<br>
+     * 기본적으로 고정점은 중앙이다.<br><br>
      * The size of the image component basically has the size of the image.<br>
      * Basically, the anchor is the center.
      * @param bitmap 이미지
@@ -364,7 +368,7 @@ public class  PDFImage extends PDFResourceComponent{
     }
 
     /**
-     * 컴포넌트의 크기를 기준으로 이미지 확대, 축소 조건 설정<br>
+     * 컴포넌트의 크기를 기준으로 이미지 확대, 축소 조건 설정<br><br>
      * Set image enlargement and reduction conditions based on component size
      * @param fit 조건
      * @return 자기자신

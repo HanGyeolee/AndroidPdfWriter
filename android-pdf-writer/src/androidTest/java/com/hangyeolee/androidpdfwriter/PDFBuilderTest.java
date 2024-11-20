@@ -90,7 +90,7 @@ public class PDFBuilderTest {
     }
 
     @Test
-    public void testLinearLayoutSave(){
+    public void testLinearLayoutBiggerSave(){
         PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()
@@ -117,12 +117,59 @@ public class PDFBuilderTest {
                     )
                     .addChild(PDFLinearLayout.build()
                             .setBackgroundColor(Color.LTGRAY)
-                            .setSize(null, 200)
+                            .setSize(null, 300)
                             .setOrientation(Orientation.Horizontal)
                             .addChild(PDFH5.build("H5 Image"))
                             .addChild(PDFImage.build(testImage)
                                     .setCompress(true)
                                     .setFit(Fit.COVER)
+                                    .setHeight(520.0f)));
+        }
+        Log.d(TAG, "PDF Builder setup completed");
+
+        Log.d(TAG, "실행");
+        builder.draw();
+        Log.d(TAG, "builder draw");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_300_520_Cover.pdf");
+        Log.d(TAG, "builder save");
+
+        assertNotNull("Generated PDF URI should not be null", uri);
+    }
+
+    @Test
+    public void testLinearLayoutSmallerSave(){
+        PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
+        {
+            builder.root = PDFLinearLayout.build()
+                    .setOrientation(Orientation.Vertical)
+                    .setBackgroundColor(Color.GRAY)
+                    .addChild(PDFH1.build("H1 Title Long Content")
+                            .setBackgroundColor(Color.YELLOW)
+                            .setTextAlign(TextAlign.Center))
+                    .addChild(PDFLinearLayout.build()
+                            .setOrientation(Orientation.Horizontal)
+                            .setMargin(10, 10, 10, 10)
+                            .setBackgroundColor(Color.WHITE)
+                            .setBorder(4, Color.BLACK)
+                            .addChild(PDFH2.build("H2 Name")
+                                    .setBackgroundColor(Color.RED))
+                            .addChild(PDFH3.build("H3 Glyph")
+                                    .setBorder(border ->
+                                            border.setLeft(4, Color.YELLOW)
+                                                    .setRight(4, Color.CYAN))
+                                    .setBackgroundColor(Color.GREEN))
+                            .addChild(PDFH4.build("H4 Content")
+                                    .setTextColor(Color.WHITE)
+                                    .setBackgroundColor(Color.BLUE))
+                    )
+                    .addChild(PDFLinearLayout.build()
+                            .setBackgroundColor(Color.LTGRAY)
+                            .setSize(null, 200)
+                            .setOrientation(Orientation.Horizontal)
+                            .addChild(PDFH5.build("H5 Image"))
+                            .addChild(PDFImage.build(testImage)
+                                    .setCompress(true)
+                                    .setFit(Fit.CONTAIN)
                                     .setHeight(50.0f)));
         }
         Log.d(TAG, "PDF Builder setup completed");
@@ -130,7 +177,7 @@ public class PDFBuilderTest {
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_Cover.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_Contain.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);
