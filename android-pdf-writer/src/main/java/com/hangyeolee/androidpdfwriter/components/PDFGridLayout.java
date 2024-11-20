@@ -341,7 +341,7 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     @Override
-    public PDFGridLayout setSize(Float width, Float height) {
+    public PDFGridLayout setSize(Number width, Number height) {
         super.setSize(width, height);
         return this;
     }

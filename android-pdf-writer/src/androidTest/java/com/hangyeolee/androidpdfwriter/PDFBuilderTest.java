@@ -19,8 +19,10 @@ import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH2;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFH4;
+import com.hangyeolee.androidpdfwriter.components.PDFH5;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
+import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;
@@ -54,7 +56,7 @@ public class PDFBuilderTest {
         Log.d(TAG, "Context initialized");
 
         InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(
-                com.hangyeolee.androidpdfwriter.test.R.drawable.sample_image);
+                com.hangyeolee.androidpdfwriter.test.R.drawable.test);
         Log.d(TAG, "Image stream opened");
 
         testImage = BitmapFactory.decodeStream(stream);
@@ -62,8 +64,34 @@ public class PDFBuilderTest {
     }
 
     @Test
-    public void testImageSave(){
-        PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85);//.setPagePadding(30, 30);
+    public void testImage(){
+        PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
+        {
+            builder.root = PDFLinearLayout.build()
+                    .setSize(null, 300)
+                    .setBackgroundColor(Color.BLUE)
+                    .setOrientation(Orientation.Vertical)
+                    .addChild(PDFImage.build(testImage)
+                            .setCompress(true)
+                            .setFit(Fit.CONTAIN)
+                            .setAnchor(Anchor.Start, Anchor.Start)
+                            .setBackgroundColor(Color.GRAY)
+                            .setHeight(200.0f));
+        }
+        Log.d(TAG, "PDF Builder setup completed");
+
+        Log.d(TAG, "실행");
+        builder.draw();
+        Log.d(TAG, "builder draw");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_Image.pdf");
+        Log.d(TAG, "builder save");
+
+        assertNotNull("Generated PDF URI should not be null", uri);
+    }
+
+    @Test
+    public void testLinearLayoutSave(){
+        PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build()
                     .setOrientation(Orientation.Vertical)
@@ -79,71 +107,29 @@ public class PDFBuilderTest {
                             .addChild(PDFH2.build("H2 Name")
                                     .setBackgroundColor(Color.RED))
                             .addChild(PDFH3.build("H3 Glyph")
-                                    .setBorder(border -> border.setLeft(4, Color.CYAN))
+                                    .setBorder(border ->
+                                            border.setLeft(4, Color.YELLOW)
+                                            .setRight(4, Color.CYAN))
                                     .setBackgroundColor(Color.GREEN))
                             .addChild(PDFH4.build("H4 Content")
+                                    .setTextColor(Color.WHITE)
                                     .setBackgroundColor(Color.BLUE))
                     )
-                    /*.addChild(PDFImage.build(testImage)
-                            .setFit(Fit.CONTAIN)
-                            .setHeight(200.0f))*/;
-        }
-        Log.d(TAG, "PDF Builder setup completed");
-
-        Log.d(TAG, "실행");
-        builder.draw();
-        Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_Image.pdf");
-        Log.d(TAG, "builder save");
-
-        assertNotNull("Generated PDF URI should not be null", uri);
-    }
-
-    @Test
-    public void testTableSave() {
-        PDFBuilder builder = new PDFBuilder(Paper.A4);
-        builder.setQuality(85);
-        builder.setPagePadding(10, 10);
-        {
-            builder.root = PDFLinearLayout.build()
-                    .setOrientation(Orientation.Vertical)
-                    .setBackgroundColor(Color.BLUE)
-                    .addChild(PDFH1.build("제목")
-                            .setFontFromAsset(context, "Pretendard-Bold.ttf")
-                            .setBackgroundColor(Color.WHITE)
-                            .setTextAlign(TextAlign.Center))
                     .addChild(PDFLinearLayout.build()
+                            .setBackgroundColor(Color.LTGRAY)
+                            .setSize(null, 200)
                             .setOrientation(Orientation.Horizontal)
-                            .setMargin(10, 10, 10, 10)
-                            .setBackgroundColor(Color.WHITE)
-                            .setBorder(border -> border
-                                    .setLeft(4, Color.BLACK)
-                                    .setTop(4, Color.RED)
-                                    .setRight(4, Color.GREEN)
-                                    .setBottom(4, Color.MAGENTA)
-                            )
-                            .addChild(PDFH3.build("번호")
-                                    .setFontFromAsset(context, "Pretendard-Bold.ttf"))
-                            .addChild(PDFH3.build("이름")
-                                    .setFontFromAsset(context, "Pretendard-Bold.ttf")
-                                    .setBackgroundColor(Color.YELLOW)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(PDFH3.build("내용")
-                                    .setFontFromAsset(context, "Pretendard-Bold.ttf")
-                                    .setBackgroundColor(Color.BLACK)
-                                    .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                    )
-                    .addChild(PDFImage.build(testImage)
-                            .setFit(Fit.CONTAIN)
-                            .setHeight(200.0f));
+                            .addChild(PDFH5.build("H5 Image"))
+                            .addChild(PDFImage.build(testImage)
+                                    .setFit(Fit.COVER)
+                                    .setHeight(50.0f)));
         }
         Log.d(TAG, "PDF Builder setup completed");
 
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_Table.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);

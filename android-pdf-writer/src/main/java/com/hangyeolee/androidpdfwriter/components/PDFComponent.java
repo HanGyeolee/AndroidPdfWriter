@@ -274,14 +274,14 @@ public abstract class PDFComponent{
      * @param height 세로 크기
      * @return 컴포넌트 자기자신
      */
-    public PDFComponent setSize(Float width, Float height){
+    public PDFComponent setSize(Number width, Number height){
         if(width != null){
-            if(width < 0) width = 0f;
-            this.width = (width);
+            if(width.floatValue() < 0) width = 0f;
+            this.width = (width.floatValue());
         }
         if(height != null){
-            if(height < 0) height = 0f;
-            this.height = (height);
+            if(height.floatValue() < 0) height = 0f;
+            this.height = (height.floatValue());
         }
         return this;
     }

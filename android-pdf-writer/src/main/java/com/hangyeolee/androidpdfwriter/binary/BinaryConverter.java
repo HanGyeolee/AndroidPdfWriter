@@ -1,5 +1,6 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
+import java.lang.reflect.Array;
 import java.util.Locale;
 
 public class BinaryConverter {
@@ -9,6 +10,16 @@ public class BinaryConverter {
             bytes[i] = (byte)(input.charAt(i) & 0xFF);
         }
         return bytes;
+    }
+
+    public static String formatArray(int[] array) {
+        if (array == null || array.length == 0) return "[]";
+        StringBuilder sb = new StringBuilder("[");
+        for (int value : array) {
+            sb.append(formatNumber(value)).append(" ");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     /**

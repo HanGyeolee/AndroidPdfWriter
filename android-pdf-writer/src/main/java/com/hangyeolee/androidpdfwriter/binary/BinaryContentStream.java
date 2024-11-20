@@ -1,5 +1,7 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
+import com.hangyeolee.androidpdfwriter.PDFBuilder;
+
 import java.io.ByteArrayOutputStream;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -10,18 +12,18 @@ import java.util.zip.DeflaterOutputStream;
 class BinaryContentStream extends BinaryObject {
     private final byte[] compressedContent;
 
-    public BinaryContentStream(int objectNumber, boolean doFlate, String content) {
+    public BinaryContentStream(int objectNumber, String content) {
         super(objectNumber);
 
-        if(doFlate) {
+        if(PDFBuilder.DEBUG) {
+            this.compressedContent = BinaryConverter.toBytes(content);
+            dictionary.put("/Length", compressedContent.length);
+        } else {
             // 컨텐츠 압축
             this.compressedContent = compressContent(content);
 
             // 딕셔너리에 압축 관련 항목 추가
             dictionary.put("/Filter", "/FlateDecode");
-            dictionary.put("/Length", compressedContent.length);
-        } else {
-            this.compressedContent = BinaryConverter.toBytes(content);
             dictionary.put("/Length", compressedContent.length);
         }
     }

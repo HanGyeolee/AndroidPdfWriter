@@ -119,7 +119,7 @@ public class PDFBuilder {
         if(root != null) {
             float width = Zoomable.getInstance().getContentWidth();
 
-            root.setSize(width, 0.0f).measure();
+            root.setSize(width, null).measure();
             page = new BinarySerializer(root);
             page.setQuality(quality);
             page.draw();

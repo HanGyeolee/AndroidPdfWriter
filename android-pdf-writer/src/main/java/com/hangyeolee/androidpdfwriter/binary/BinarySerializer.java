@@ -12,7 +12,6 @@ import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
@@ -25,7 +24,7 @@ public class BinarySerializer {
                     /CIDInit/ProcSet findresource begin\r
                     12 dict begin\r
                     begincmap\r
-                    /CIDSystemInfo <</Registry (Adobe)/Ordering (Identity)/Supplement 0>> def\r
+                    /CIDSystemInfo <</Registry (Adobe)/Ordering (Korea1)/Supplement 0>> def\r
                     /CMapName/Adobe-Identity-UCS def\r
                     /CMapType 2 def\r
                     1 begincodespacerange\r
@@ -166,7 +165,8 @@ public class BinarySerializer {
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, null, null));
             font.setSubtype("Type1");
-            font.setWidths(metrics.charWidths);
+
+            font.setWidths(BinaryConverter.formatArray(metrics.charWidths));
             font.setBase14Font();
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
@@ -176,16 +176,17 @@ public class BinarySerializer {
                 cmap = createToUnicode();
             }
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, "Identity-H", cmap));
+            font = manager.createObject(n -> new BinaryFont(n, "KSC-EUC-H", cmap));
             font.setSubtype("Type0");
 //            font.setWidths(metrics.charWidths);
 
             BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null, null));
             cidFont.setSubtype("CIDFontType2");
             cidFont.setBaseFont(info.postScriptName);
+            cidFont.dictionary.put("/CMapName", "KSC-EUC-H");
+            cidFont.dictionary.put("/CIDSystemInfo", "<</Registry (Adobe)/Ordering (Korea1)/Supplement 0>>");
+            cidFont.dictionary.put("/CIDToGIDMap", "/Identity");
             cidFont.setW(metrics.charWidths);
-            cidFont.dictionary.put("/CIDSystemInfo",
-                    "<</Registry (Adobe)/Ordering (Identity)/Supplement 0>>");
             font.addDescendantFont(cidFont);
 
             // FontDescriptor 객체 생성
@@ -237,7 +238,7 @@ public class BinarySerializer {
 
     private BinaryObject createToUnicode() {
         // ToUnicode CMap을 스트림 객체로 생성
-        return manager.createObject(n -> new BinaryContentStream(n, !PDFBuilder.DEBUG, TO_UNICODE_CMAP_TEMPLATE));
+        return manager.createObject(n -> new BinaryContentStream(n, TO_UNICODE_CMAP_TEMPLATE));
     }
 
     public void setQuality(int quality){

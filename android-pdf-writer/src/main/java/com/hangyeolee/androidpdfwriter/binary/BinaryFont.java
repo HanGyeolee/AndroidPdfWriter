@@ -3,6 +3,8 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import androidx.annotation.Nullable;
 
+import com.hangyeolee.androidpdfwriter.PDFBuilder;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,13 +48,9 @@ class BinaryFont extends BinaryObject {
         dictionary.put("/BaseFont", "/" + name);
     }
 
-    public void setWidths(int[] widths) {
-        StringBuilder sb = new StringBuilder("[");
-        for (float width : widths) {
-            sb.append(BinaryConverter.formatNumber(width)).append(" ");
-        }
-        sb.append("]");
-        dictionary.put("/Widths", sb.toString());
+    public void setWidths(String widths) {
+        dictionary.put("/FontMatrix", "[0.001 0 0 0.001 0 0]");
+        dictionary.put("/Widths", widths);
     }
 
     public void setW(int[] widths) {
@@ -61,6 +59,7 @@ class BinaryFont extends BinaryObject {
             sb.append(i).append(" [").append(BinaryConverter.formatNumber(widths[i])).append("] ");
         }
         sb.append("]");
+
         dictionary.put("/W", sb.toString());
     }
 

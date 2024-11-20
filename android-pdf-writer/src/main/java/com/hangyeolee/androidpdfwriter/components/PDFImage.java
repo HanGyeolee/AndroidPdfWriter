@@ -1,12 +1,14 @@
 package com.hangyeolee.androidpdfwriter.components;
 
 import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.text.TextPaint;
 
 import androidx.annotation.ColorInt;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -19,11 +21,14 @@ import java.util.Locale;
 
 public class  PDFImage extends PDFResourceComponent{
     Bitmap origin = null;
+    Bitmap resize = null;
 
     float resizeW;
     float resizeH;
     float gapX;
     float gapY;
+
+    boolean compressEnable = false;
 
     @Override
     public void measure(float x, float y) {
@@ -131,52 +136,81 @@ public class  PDFImage extends PDFResourceComponent{
 
     @Override
     public void registerResources(BinarySerializer page) {
-        if (origin != null) {
+        if(resize != null){
+            resourceId = page.registerImage(resize);
+        } else if (origin != null) {
             resourceId = page.registerImage(origin);
         }
     }
 
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
-        StringBuilder content = super.draw(serializer);
-
-        float originalWidth = origin.getWidth();
-        float originalHeight = origin.getHeight();
-        float _width = measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right;
-        float _height = measureHeight - border.size.top - padding.top
-                - border.size.bottom - padding.bottom;
+        float originWidth = origin.getWidth();
+        float originHeight = origin.getHeight();
+        float _width, _height;
+        if(fit == Fit.COVER || fit == Fit.CONTAIN){
+            _width = resizeW;
+            _height = resizeH;
+        }
+        else {
+            _width = measureWidth - border.size.left - padding.left
+                    - border.size.right - padding.right;
+            _height = measureHeight - border.size.top - padding.top
+                    - border.size.bottom - padding.bottom;
+        }
 
         // 이미지가 그려질 실제 위치 계산
         float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
         float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + resizeH);
 
+        if(compressEnable) {
+            if (_width < originWidth || _height < originHeight) {
+                if(resize != null){
+                    resize.recycle();
+                }
+                float scaleX = _width / originWidth;
+                float scaleY = _height / originHeight;
+                Matrix matrix = new Matrix();
+                matrix.setScale(scaleX, scaleY);
+
+                try {
+                    resize = Bitmap.createBitmap(
+                            origin,
+                            0, 0,
+                            origin.getWidth(),
+                            origin.getHeight(),
+                            matrix,
+                            true
+                    );
+                } catch (OutOfMemoryError e) {
+                    // 메모리 부족 시 리사이징 실패 처리
+                }
+            }
+        }
+
+        StringBuilder content = super.draw(serializer);
         // 그래픽스 상태 저장 (이미지 변환을 위해 필요)
         PDFGraphicsState.save(content);
-        float scaleX = 1;
-        float scaleY = 1;
-
-        switch (fit) {
-            case Fit.FILL:
-                // 1. 먼저 원하는 크기로 스케일 조정
-                scaleX = _width / originalWidth;
-                scaleY = _height / originalHeight;
-                break;
-
-            case Fit.COVER:
-            case Fit.CONTAIN:
-                // 1. 비율 유지하며 스케일 계산
-                scaleX = resizeW / originalWidth;
-                scaleY = resizeH / originalHeight;
-                break;
-
-            default:
-                break;
-        }
         // 지정된 크기에 맞게 늘리기
         content.append(String.format(Locale.getDefault(),
-                "%.2f 0 0 %.2f %.2f %.2f cm\n",
-                scaleX, scaleY, x, y));
+                "%s 0 0 %s %s %s cm\n",
+                BinaryConverter.formatNumber(_width),
+                BinaryConverter.formatNumber(_height),
+                BinaryConverter.formatNumber(x),
+                BinaryConverter.formatNumber(y))
+        );
+        if(fit == Fit.COVER){
+            // 크롭
+            if(originWidth > _width || originHeight > _height){
+                content.append(String.format(Locale.US,
+                        "%s 0 0 %s %s %s cm\n",
+                        BinaryConverter.formatNumber(_width/originWidth),
+                        BinaryConverter.formatNumber(_height/originHeight),
+                        BinaryConverter.formatNumber(-srcX/originWidth),
+                        BinaryConverter.formatNumber(-srcY/originHeight)
+                ));
+            }
+        }
         content.append("/").append(resourceId).append(" Do\n");
 
         PDFGraphicsState.restore(content);
@@ -196,7 +230,7 @@ public class  PDFImage extends PDFResourceComponent{
      */
     @Override
     @Deprecated
-    public PDFImage setSize(Float width, Float height) {
+    public PDFImage setSize(Number width, Number height) {
         super.setSize(width, height);
         return this;
     }
@@ -208,6 +242,23 @@ public class  PDFImage extends PDFResourceComponent{
      */
     public PDFImage setHeight(Float height) {
         super.setSize(null, height);
+        return this;
+    }
+
+    /**
+     * 이미지 압축 여부에 대해서 설정한다.<br>
+     * compressEnable이 false 면 이미지 리소스에 원본으로 저장한다.<br>
+     * true 면, 지정한 크기로 원본 이미지를 축소한 뒤 이미지 리소스에 축소한 이미지를 저장한다.<br>
+     * 단, 원본 이미지보다 크게 확대하면 무조건 원본으로 저장한다.<br>
+     * Sets whether or not the image is compressed.<br>
+     * If compressEnable is false, save it as the source in the image resource.<br>
+     * If true, shrink the original image to the specified size and store the reduced image in the image resource.<br>
+     * However, if it is enlarged larger than the original image, it will be saved as the original unconditionally.
+     * @param compressEnable 압축 허용 여부.<br>
+     * @return 자기자신
+     */
+    public PDFImage setCompress(boolean compressEnable) {
+        this.compressEnable = compressEnable;
         return this;
     }
     @Override

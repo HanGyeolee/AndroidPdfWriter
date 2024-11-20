@@ -87,6 +87,12 @@ public class PDFLinearLayout extends PDFLayout {
             for(;;) {
                 // 자식 컴포넌트 위치 측정
                 child.measure(0, currentY);
+                float maxW = measureWidth - child.margin.left - child.margin.right;
+                float maxH = measureHeight - currentY
+                        - border.size.top - border.size.bottom
+                        - padding.top - padding.bottom
+                        - child.margin.top - child.margin.bottom;
+                childReanchor(child, maxW, maxH);
 
                 // 페이지 경계 확인 및 조정
                 float childEndY = currentY + child.getTotalHeight();
@@ -257,7 +263,7 @@ public class PDFLinearLayout extends PDFLayout {
     }
 
     @Override
-    public PDFLinearLayout setSize(Float width, Float height) {
+    public PDFLinearLayout setSize(Number width, Number height) {
         super.setSize(width, height);
         return this;
     }

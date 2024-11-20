@@ -2,8 +2,6 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.RectF;
 
-import com.hangyeolee.androidpdfwriter.PDFBuilder;
-
 import java.util.Locale;
 
 /**
@@ -38,7 +36,7 @@ class BinaryPage extends BinaryObject {
     public void finalizeContent(BinaryObjectManager manager) {
         if (contentStream != null && contentStream.length() > 0) {
             BinaryObject contents = manager.createObject(n ->
-                    new BinaryContentStream(n, !PDFBuilder.DEBUG, contentStream.toString()));
+                    new BinaryContentStream(n, contentStream.toString()));
             dictionary.put("/Contents", contents);
             contentStream.setLength(0);
             contentStream = null;

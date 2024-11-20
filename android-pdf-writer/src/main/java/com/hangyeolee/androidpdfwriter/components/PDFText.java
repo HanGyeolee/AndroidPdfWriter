@@ -386,7 +386,7 @@ public class PDFText extends PDFResourceComponent {
     }
 
     @Override
-    public PDFText setSize(Float width, Float height) {
+    public PDFText setSize(Number width, Number height) {
         super.setSize(width, height);
         return this;
     }
