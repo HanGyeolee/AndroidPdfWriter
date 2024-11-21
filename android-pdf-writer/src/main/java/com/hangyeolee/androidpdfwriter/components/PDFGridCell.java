@@ -51,20 +51,25 @@ public class PDFGridCell extends PDFLayout{
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-
-        // Grid에서 할당 받은 영역 내에서 하위 구성 요소 배치
-        children.measure(0, 0);
-        float maxW = measureWidth
-                - children.margin.left - children.margin.right;
-        float maxH = measureHeight
-                - children.margin.top - children.margin.bottom;
-        childReanchor(children, maxW, maxH);
+        if(children != null) {
+            // Grid에서 할당 받은 영역 내에서 하위 구성 요소 배치
+            children.measure(0, 0);
+            float maxW = measureWidth
+                    - children.margin.left - children.margin.right;
+            float maxH = measureHeight
+                    - children.margin.top - children.margin.bottom;
+            childReanchor(children, maxW, maxH);
+        }
     }
 
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
         super.draw(serializer);
-        return children.draw(serializer);
+        if(children != null) {
+            return children.draw(serializer);
+        } else {
+            return null;
+        }
     }
 
     /**
