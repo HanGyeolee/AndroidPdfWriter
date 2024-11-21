@@ -3,25 +3,17 @@ package com.hangyeolee.androidpdfwriter.components;
 import android.graphics.Color;
 
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.ArrayList;
 
 public abstract class PDFLayout extends PDFComponent{
-    protected ArrayList<PDFComponent> children;
-    protected boolean fitChildrenToLayout = false;  // 자식 컴포넌트 높이 맞춤 옵션
+    protected boolean fitChildrenToLayout = false;  // 하위 구성 요소 높이 맞춤 옵션
 
     public PDFLayout(){
         super();
-        children = new ArrayList<>();
-    }
-    public PDFLayout(int length){
-        super();
-        children = new ArrayList<>(length);
-        for(int i = 0; i < length; i++){
-            children.add(PDFEmpty.build().setParent(this));
-        }
     }
 
     @Override
@@ -113,25 +105,31 @@ public abstract class PDFLayout extends PDFComponent{
                 measureWidth, height);
     }
 
-    public abstract void childReanchor(PDFComponent child, float gapX, float gapY);
+    public void childReanchor(PDFComponent child, float maxW, float maxH) {
+        // anchor 에 따른 X 위치 오류
+        float gapX = maxW - child.measureWidth;
+        float gapY = maxH - child.measureHeight;
 
-    /**
-     * 레이아웃의 모든 자식 컴포넌트를 부모 크기에 맞출지 설정
-     */
-    public PDFLayout setFitChildrenToLayout(boolean fit) {
-        this.fitChildrenToLayout = fit;
-        return this;
+        // 앵커에 따른 위치 조정
+        float dx = Anchor.getDeltaPixel(child.anchor.horizontal, gapX);
+        float dy = Anchor.getDeltaPixel(child.anchor.vertical, gapY);
+
+        // 절대 좌표 계산
+        dx += measureX;
+        dy += measureY;
+
+        float left = child.margin.left;
+        float top = child.margin.top;
+
+        child.measureX = child.relativeX + left + dx;
+        child.measureY = child.relativeY + top + dy;
     }
 
     /**
-     * 레이아웃에 자식 추가<br>
-     * Add children to layout
-     * @param component 자식 컴포넌트
-     * @return 자기자신
+     * 레이아웃의 모든 하위 구성 요소를 부모 크기에 맞출지 설정
      */
-    public PDFLayout addChild(PDFComponent component) {
-        component.setParent(this);
-        children.add(component);
+    public PDFLayout setFitChildrenToLayout(boolean fit) {
+        this.fitChildrenToLayout = fit;
         return this;
     }
 }

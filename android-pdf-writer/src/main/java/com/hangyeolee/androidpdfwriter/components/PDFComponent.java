@@ -21,8 +21,8 @@ public abstract class PDFComponent{
     PDFComponent parent = null;
 
     // 컴포넌트 스타일링
-    final RectF margin = new RectF(0,0,0,0);
-    final RectF padding = new RectF(0,0,0,0);
+    final RectF margin = new RectF();
+    final RectF padding = new RectF();
     final Border border = new Border();
     final Anchor anchor = new Anchor();
     Paint bufferPaint = null;
@@ -98,7 +98,7 @@ public abstract class PDFComponent{
             measureHeight = (height - top - bottom);
         }
         else{
-            // 자식 컴포넌트인 경우
+            // 하위 구성 요소인 경우
             // 부모의 사용 가능한 최대 크기 계산
             float maxW = parent.measureWidth
                     - parent.border.size.left - parent.border.size.right

@@ -67,10 +67,9 @@ public class PDFBuilderTest {
     public void testImage(){
         PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
         {
-            builder.root = PDFLinearLayout.build()
+            builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setSize(null, 300)
                     .setBackgroundColor(Color.BLUE)
-                    .setOrientation(Orientation.Vertical)
                     .addChild(PDFImage.build(testImage)
                             .setCompress(true)
                             .setFit(Fit.CONTAIN)
@@ -93,14 +92,12 @@ public class PDFBuilderTest {
     public void testLinearLayoutBiggerSave(){
         PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
         {
-            builder.root = PDFLinearLayout.build()
-                    .setOrientation(Orientation.Vertical)
+            builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.GRAY)
                     .addChild(PDFH1.build("H1 Title Long Content")
                             .setBackgroundColor(Color.YELLOW)
                             .setTextAlign(TextAlign.Center))
-                    .addChild(PDFLinearLayout.build()
-                            .setOrientation(Orientation.Horizontal)
+                    .addChild(PDFLinearLayout.build(Orientation.Horizontal)
                             .setMargin(10, 10, 10, 10)
                             .setBackgroundColor(Color.WHITE)
                             .setBorder(4, Color.BLACK)
@@ -115,10 +112,9 @@ public class PDFBuilderTest {
                                     .setTextColor(Color.WHITE)
                                     .setBackgroundColor(Color.BLUE))
                     )
-                    .addChild(PDFLinearLayout.build()
+                    .addChild(PDFLinearLayout.build(Orientation.Horizontal)
                             .setBackgroundColor(Color.LTGRAY)
                             .setSize(null, 300)
-                            .setOrientation(Orientation.Horizontal)
                             .addChild(PDFH5.build("H5 Image"))
                             .addChild(PDFImage.build(testImage)
                                     .setCompress(true)
@@ -140,14 +136,12 @@ public class PDFBuilderTest {
     public void testLinearLayoutSmallerSave(){
         PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
         {
-            builder.root = PDFLinearLayout.build()
-                    .setOrientation(Orientation.Vertical)
+            builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.GRAY)
                     .addChild(PDFH1.build("H1 Title Long Content")
                             .setBackgroundColor(Color.YELLOW)
                             .setTextAlign(TextAlign.Center))
-                    .addChild(PDFLinearLayout.build()
-                            .setOrientation(Orientation.Horizontal)
+                    .addChild(PDFLinearLayout.build(Orientation.Horizontal)
                             .setMargin(10, 10, 10, 10)
                             .setBackgroundColor(Color.WHITE)
                             .setBorder(4, Color.BLACK)
@@ -162,10 +156,9 @@ public class PDFBuilderTest {
                                     .setTextColor(Color.WHITE)
                                     .setBackgroundColor(Color.BLUE))
                     )
-                    .addChild(PDFLinearLayout.build()
+                    .addChild(PDFLinearLayout.build(Orientation.Horizontal)
                             .setBackgroundColor(Color.LTGRAY)
                             .setSize(null, 200)
-                            .setOrientation(Orientation.Horizontal)
                             .addChild(PDFH5.build("H5 Image")
                                     .setPadding(4)
                                     .setBackgroundColor(Color.WHITE)

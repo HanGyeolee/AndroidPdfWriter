@@ -1,40 +1,41 @@
 package com.hangyeolee.androidpdfwriter.components;
 
-import android.graphics.Rect;
 import android.graphics.RectF;
 
 import androidx.annotation.ColorInt;
-import androidx.annotation.IntRange;
 
-import com.hangyeolee.androidpdfwriter.exceptions.TableCellHaveNotIndexException;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.exceptions.CellOutOfGridLayoutException;
+import com.hangyeolee.androidpdfwriter.exceptions.LayoutSizeException;
+import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
+import com.hangyeolee.androidpdfwriter.utils.Orientation;
 
 import java.util.ArrayList;
-import com.hangyeolee.androidpdfwriter.listener.Action;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class PDFGridLayout extends PDFLayout{
-    int rows, columns;
+    private final ArrayList<PDFGridCell> cells = new ArrayList<>();
+    private final Map<Integer, Set<Integer>> occupancyGrid = new HashMap<>();
 
-    ArrayList<Integer> span;
+    @Orientation.OrientationInt
+    private int orientation = Orientation.Horizontal;
+    private final ArrayList<Float> weights = new ArrayList<>();
+    private int count = 1;
 
-    final float[] gaps;
-    final RectF childMargin = new RectF(0,0,0,0);
+    private int currentRow = 0;
+    private int currentColumn = 0;
+    private int maxRow = 0;
+    private int maxColumn = 0;
 
-    public PDFGridLayout(int rows, int columns){
-        super();
-        if(rows < 1) rows = 1;
-        if(columns < 1) columns = 1;
-        this.rows = rows;
-        this.columns = columns;
-        int length = rows*columns;
-        children = new ArrayList<>(length);
-        span = new ArrayList<>(length);
-        gaps = new float[rows];
-        for(int i = 0; i < length; i++){
-            children.add(PDFEmpty.build().setParent(this));
-            span.add(i);
+    public PDFGridLayout(int count) {
+        if(count <= 0) throw new LayoutSizeException();
+        this.count = count;
+        for(int i = 0; i < count; i++){
+            this.weights.add(1.0f);
         }
     }
 
@@ -42,302 +43,334 @@ public class PDFGridLayout extends PDFLayout{
     public void measure(float x, float y) {
         super.measure(x, y);
 
-        int i, j;
-        float totalHeight = 0;
-        float gapWidth = 0;
-        int index;
-
-        int zero_count = 0;
-        float lastWidth =  (measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right);
-        {
-            // 가로 길이 자동 조절
-            for (i = 0; i < gaps.length; i++) {
-                if (gaps[i] > lastWidth) gaps[i] = 0;
-                lastWidth -= childMargin.left + childMargin.right;
-                if (lastWidth < 0) gaps[i] = 0;
-                if (gaps[i] == 0) {
-                    zero_count += 1;
-                } else {
-                    lastWidth -= gaps[i];
-                }
-            }
-            for (i = 0; i < gaps.length; i++) {
-                if (gaps[i] == 0) {
-                    gaps[i] = lastWidth / zero_count;
-                    lastWidth -= lastWidth / zero_count;
-                    zero_count -= 1;
-                }
-            }
+        for(int i = 0; i < cells.size(); i++){
+            cells.get(i).measure(0,0);
         }
 
-        float[] maxHeights = new float[columns];
-        int columnSpanCount;
-        // Cell 당 높이 계산
-        for(i = 0; i < columns; i++){
-            float totalWidth = 0;
-            for(j = 0; j < rows; j++){
-                index = i*rows + j;
-                gapWidth = gaps[j];
-                if(index == span.get(index)) {
-                    columnSpanCount = 1;
-                    // 가로 span
-                    for(int xx = j+1; xx < rows; xx++){
-                        if(index == span.get(i*rows + xx)){
-                            gapWidth += gaps[xx] + childMargin.left + childMargin.right;
-                        }else break;
-                    }
-                    // 세로 span 개수
-                    for(int yy = i+1; yy < columns; yy++){
-                        if(index == span.get((yy)*rows + j)){
-                            columnSpanCount++;
-                        }else break;
-                    }
-
-                    children.get(index).width = gapWidth;
-                    // 자식 컴포넌트의 Margin 무시
-                    children.get(i).margin.set(childMargin);
-                    if(columnSpanCount == 1) {
-                        children.get(index).measure(totalWidth, totalHeight);
-                        if (maxHeights[i] < children.get(index).measureHeight) {
-                            maxHeights[i] = children.get(index).measureHeight;
-                        }
-                    }
-                    totalWidth += gapWidth + childMargin.left + childMargin.right;
-                }else{
-                    index = span.get(index);
-                    int origin_x = index % rows;
-                    if(origin_x == j) {
-                        int origin_y = index / rows;
-                        // 가로 span
-                        for(int xx = j+1; xx < rows; xx++){
-                            if(index == span.get(origin_y*rows + xx)){
-                                gapWidth += gaps[xx] + childMargin.left + childMargin.right;
-                            }else break;
-                        }
-                        totalWidth += gapWidth + childMargin.left + childMargin.right;
-                    }
-                }
-            }
-            totalHeight += maxHeights[i] + childMargin.top + childMargin.bottom;
-            measureHeight = (totalHeight);
+        // weight 총합 계산
+        float totalWeight = 0;
+        for (int i = 0; i < count; i++) {
+            totalWeight += weights.get(i);
         }
 
-        {
-            totalHeight = 0;
-            float maxHeight;
-            float maxSpanHeight = 0;
-            float lastTotalHeight = 0;
-            boolean repeatIfor = false;
-            for (i = 0; i < columns; i++) {
-                float totalWidth = 0;
-                maxSpanHeight = 0;
-                // 세로 Span 존재 탐지
-                for (j = 0; j < rows; j++) {
-                    index = i * rows + j;
-                    maxHeight = maxHeights[i];
-                    for (int yy = i + 1; yy < columns; yy++) {
-                        if (index == span.get((yy) * rows + j)) {
-                            maxHeight += maxHeights[yy] + childMargin.top + childMargin.bottom;
-                        } else break;
-                    }
-                    if (maxHeight > maxSpanHeight) maxSpanHeight = maxHeight;
-                }
-
-                // 페이지 넘기는 Grid Cell 이 있는 경우 다음 페이지로
-                float zoomHeight = Zoomable.getInstance().getPageRect().height();
-                float lastHeight = totalHeight + measureY;
-                while (lastHeight > zoomHeight) {
-                    lastHeight -= zoomHeight;
-                }
-                lastTotalHeight = totalHeight;
-                if (lastHeight < zoomHeight && zoomHeight < lastHeight + maxSpanHeight + childMargin.top + childMargin.bottom) {
-                    float gap = zoomHeight - lastHeight;
-                    if (i == 0) {
-                        margin.top += (gap);
-                        updateHeight(gap);
-                        float d = 0;
-                        if (parent != null)
-                            d += parent.measureY + parent.border.size.top + parent.padding.top;
-                        measureY = relativeY + margin.top + d;
-                    } else
-                        totalHeight += gap;
-                }
-
-                for (j = 0; j < rows; j++) {
-                    index = i * rows + j;
-                    gapWidth = gaps[j];
-                    if (index == span.get(index)) {
-                        columnSpanCount = 1;
-                        //Span 계산
-                        maxHeight = maxHeights[i];
-                        for (int xx = j + 1; xx < rows; xx++) {
-                            if (index == span.get(i * rows + xx)) {
-                                gapWidth += gaps[xx] + childMargin.left + childMargin.right;
-                            } else break;
-                        }
-                        for (int yy = i + 1; yy < columns; yy++) {
-                            if (index == span.get((yy) * rows + j)) {
-                                columnSpanCount++;
-                                maxHeight += maxHeights[yy] + childMargin.top + childMargin.bottom;
-                            } else break;
-                        }
-
-                        children.get(index).width = gapWidth;
-
-                        //measure
-                        children.get(index).measure(totalWidth, totalHeight);
-
-                        //Span 이후 span 된 컴포넌트의 높이가 주어진 높이보다 클 경우
-                        if (children.get(index).height > maxHeight) {
-                            float gapHeight = children.get(index).height - maxHeight;
-
-                            zero_count = columnSpanCount;
-                            for (int yy = i; yy < i + columnSpanCount; yy++) {
-                                maxHeights[yy] += gapHeight / zero_count;
-                                gapHeight -= gapHeight / zero_count;
-                                zero_count -= 1;
-                            }
-                            repeatIfor = true;
-                            break;
-                        }
-
-                        //children.get(index).force(gapWidth, maxHeight, childMargin);
-                        totalWidth += gapWidth + childMargin.left + childMargin.right;
-                    } else {
-                        index = span.get(index);
-                        int origin_x = index % rows;
-                        if (origin_x == j) {
-                            int origin_y = index / rows;
-                            // 가로 span
-                            for (int xx = j + 1; xx < rows; xx++) {
-                                if (index == span.get(origin_y * rows + xx)) {
-                                    gapWidth += gaps[xx] + childMargin.left + childMargin.right;
-                                } else break;
-                            }
-                            totalWidth += gapWidth + childMargin.left + childMargin.right;
-                        }
-                    }
-                }
-
-                if (repeatIfor) {
-                    i--;
-                    totalHeight = lastTotalHeight;
-                    repeatIfor = false;
-                    continue;
-                }
-
-                totalHeight += maxHeights[i] + childMargin.top + childMargin.bottom;
-            }
-            measureHeight = (totalHeight + border.size.top + border.size.bottom + padding.top + padding.bottom);
+        if(orientation == Orientation.Vertical) {
+            measureVertical(totalWeight);
+        } else {
+            measureHorizontal(totalWeight);
         }
     }
 
-    @Override
-    public void childReanchor(PDFComponent child, float gapX, float gapY) {
+    private void measureVertical(float totalWeight){
+        for (int i = 0; i < cells.size(); i++) {
+            PDFGridCell cell = cells.get(i);
+            int position = cell.getPosition();
+            int column = position/count;
+            int row = position % count;
+        }
+    }
+    private void measureHorizontal(float totalWeight){
+        // 각 열의 너비 계산 (weight 기반)
+        float availableWidth = measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right;
+        float[] columnWidths = new float[count];
+        for (int i = 0; i < count; i++) {
+            columnWidths[i] = (availableWidth * weights.get(i)) / totalWeight;
+        }
 
+        // 각 행의 높이를 계산하기 위한 맵
+        // key: row 번호, value: 해당 행의 최대 높이
+        Map<Integer, Float> rowHeights = new HashMap<>();
+
+        // 1단계: 각 행의 최대 높이 계산
+        for (PDFGridCell cell : cells) {
+            int position = cell.getPosition();
+            int row = position / count;
+            int column = position % count;
+
+            // cell의 너비 계산 (columnSpan 고려)
+            float cellWidth = 0;
+            for (int i = column; i < column + cell.columnSpan; i++) {
+                cellWidth += columnWidths[i];
+            }
+
+            // cell 측정을 통해 높이 구하기
+            cell.setSize(cellWidth, null);
+            cell.measure(0, 0);
+
+            // rowSpan을 고려하여 각 행의 필요한 높이 계산
+            float heightPerRow = cell.measureHeight / cell.rowSpan;
+            for (int i = row; i < row + cell.rowSpan; i++) {
+                Float height = rowHeights.get(i);
+                if(height == null){
+                    height = 0.0f;
+                }
+                if(heightPerRow > height){
+                    rowHeights.put(i, heightPerRow);
+                }
+            }
+        }
+
+        for (int i = 0; i < cells.size(); i++) {
+            PDFGridCell cell = cells.get(i);
+            cell.setParent(this);
+            int position = cell.getPosition();
+            int row = position/count;
+            int column = position % count;
+
+            // X 좌표 계산 (column 위치에 따라)
+            float relativeX = 0;
+            for (int j = 0; j < column; j++) {
+                relativeX += columnWidths[j];
+            }
+
+            // Y 좌표 계산 (row 위치에 따라)
+            float relativeY = 0;
+            for (int j = 0; j < row; j++) {
+                Float height = rowHeights.get(j);
+                if(height == null) height = 0.0f;
+                relativeY += height;
+            }
+
+            // cell 너비 계산
+            float cellWidth = 0;
+            for (int j = column; j < column + cell.columnSpan; j++) {
+                cellWidth += columnWidths[j];
+            }
+
+            // cell 높이 계산 (rowSpan 고려)
+            float cellHeight = 0;
+            for (int j = row; j < row + cell.rowSpan; j++) {
+                Float height = rowHeights.get(j);
+                if(height == null) height = 0.0f;
+                cellHeight += height;
+            }
+
+            // 최종 크기 설정 및 측정
+            cell.setSize(cellWidth, cellHeight);
+            cell.measure(relativeX, relativeY);
+        }
     }
 
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
         super.draw(serializer);
 
-        for(int i = 0; i < children.size(); i++) {
-            // Span에 의해 늘어난 만큼 관련 없는 부분은 draw 하지 않는 다.
-            if(i == span.get(i)) {
-                children.get(i).draw(serializer);
-            }
-        }
-
         return null;
     }
 
     /**
-     * 자식 컴포넌트가 차지하는 가로 길이 설정
-     * @param xIndex 설정할 Row
-     * @param width 가로 길이
+     * 레이아웃에 자식 추가<br>
+     * Add children to layout<br>
+     * @param cell 하위 셀 요소
      * @return 자기자신
      */
-    public PDFGridLayout setChildWidth(int xIndex, float width){
-        if(width < 0) width = 0;
-        if(xIndex < gaps.length)
-            gaps[xIndex] = width;
+    public PDFGridLayout addCell(PDFGridCell cell){
+        int position = getCellPosition(cell);
+        cell.setPosition(position);
+        cells.add(cell);
         return this;
     }
 
-    public PDFGridLayout setChildSpan(int x, int y, @IntRange(from = 1) int rowSpan, @IntRange(from = 1) int columnSpan)
-            throws ArrayIndexOutOfBoundsException{
-        int index = y*rows + x;
-        if(index < children.size() && (y+columnSpan-1)*rows + x+rowSpan-1 < children.size()) {
-            int spanIdx;
-            for(int i = 0; i < columnSpan; i++){
-                for(int j = 0; j < rowSpan; j++){
-                    spanIdx = (y+i)*rows + x+j;
-                    span.set(spanIdx, index);
+    /**
+     * 구획에 자식 추가<br>특정 행과 열에 강제적으로 자식 구성 요소를 배치합니다.<br>
+     * 셀의 범위에 의해서 다른 구성 요소와 겹쳐질 수 있습니다.<br>
+     * Add children to layout<br>Forced to place child components in specific rows and columns.<br>
+     * They can be overlaid with other components by the Span in the cell.<br>
+     * @param cell 하위 셀 요소
+     * @param row 격자 요소에서의 행
+     * @param column 격자 요소에서의 열
+     * @return 자기자신
+     */
+    public PDFGridLayout addCell(PDFGridCell cell, int row, int column){
+        int position = getCellPosition(cell, row, column);
+        cell.setPosition(position);
+        cells.add(cell);
+        return this;
+    }
+
+    /**
+     * 이전에 설정한 가중치 값들을 지우고, 지정한 가중치로 변경합니다.<br>
+     * {@link #count}보다 많은 가중치는 무시됩니다. {@link #count}보다 적은 가중치를 입력하면 나머지를 1.0f으로 변경합니다.<br>
+     * Clear the previously set weights values and change them to the specified weights.<br>
+     * Weights greater than the number of {@link #count} are ignored. If you enter weights less than the number of {@link #count}, change the rest to 1.0f.<br>
+     * @param weights 가중치
+     * @return
+     */
+    public PDFGridLayout setWeights(float... weights){
+        this.weights.clear();
+        for(float weight : weights){
+            this.weights.add(weight);
+        }
+        while(count > this.weights.size()){
+            this.weights.add(1.0f);
+        }
+        return this;
+    }
+
+
+    protected boolean checkOccupancyGridV(int row, int column, int rowSpan, int columnSpan){
+        if(row + rowSpan > maxRow) return false;
+        for(int j = column; j < column + columnSpan; j++) {
+            Set<Integer> rows = occupancyGrid.get(j);
+            if (rows != null) {
+                int max = row + rowSpan;
+                for (int i = row; i < max; i++) {
+                    if (rows.contains(i)) return false;
                 }
             }
         }
-        else {
-            throw new ArrayIndexOutOfBoundsException("Span Size is Out of Bounds");
+        // 무조건 가능
+        return true;
+    }
+    protected boolean checkOccupancyGridH(int row, int column, int rowSpan, int columnSpan) {
+        if (column + columnSpan > maxColumn) return false;
+        for(int j = row; j < row + rowSpan; j++) {
+            Set<Integer> columns = occupancyGrid.get(j);
+            if (columns != null) {
+                int max = column + columnSpan;
+                for (int i = column; i < max; i++) {
+                    if (columns.contains(i)) return false;
+                }
+            }
         }
-        return this;
+        // 무조건 가능
+        return true;
     }
-
-
-    public PDFGridLayout setChildMargin(Rect margin) {
-        this.childMargin.set(margin);
-        return this;
+    protected void updateOccupancyGridV(int position, int rowSpan){
+        int column = position / count;
+        int row = position % count;
+        Set<Integer> rows = occupancyGrid.get(column);
+        if(rows == null){
+            rows = new HashSet<>();
+            occupancyGrid.put(column, rows);
+        }
+        int max = row + rowSpan;
+        for(int i = row; i < max; i++){
+            rows.add(i);
+        }
     }
-
-    public PDFGridLayout setChildMargin(int left, int top, int right, int bottom) {
-        this.childMargin.set(left, top, right, bottom);
-        return this;
-    }
-
-    public PDFGridLayout setChildMargin(int all) {
-        return setChildMargin(all, all, all, all);
-    }
-
-    public PDFGridLayout setChildMargin(int horizontal, int vertical) {
-        return setChildMargin(horizontal, vertical, horizontal, vertical);
-    }
-
-    @Override
-    @Deprecated
-    public PDFGridLayout addChild(PDFComponent component) throws TableCellHaveNotIndexException {
-        throw new TableCellHaveNotIndexException();
+    protected void updateOccupancyGridH(int position, int columnSpan){
+        int row = position / count;
+        int column = position % count;
+        Set<Integer> columns = occupancyGrid.get(row);
+        if(columns == null){
+            columns = new HashSet<>();
+            occupancyGrid.put(row, columns);
+        }
+        int max = column + columnSpan;
+        for(int i = column; i < max; i++){
+            columns.add(i);
+        }
     }
 
     /**
-     * 레이아웃에 자식 추가
-     * @param component 자식 컴포넌트
-     * @param x x위치, 0부터
-     * @param y y위치, 0부터
-     * @return 자기자신
+     * 격자 구획에 셀을 자동으로 배치합니다.
+     * @param cell 자식 셀
+     * @return
      */
-    public PDFGridLayout addChild(int x, int y, PDFComponent component)
-            throws ArrayIndexOutOfBoundsException{
-        return addChild(x, y, 1, 1, component);
+    protected int getCellPosition(PDFGridCell cell){
+        int position;
+        if(orientation == Orientation.Vertical){
+            if(checkOccupancyGridV(currentRow, currentColumn, cell.rowSpan, cell.columnSpan)){
+                position = currentRow + count * currentColumn;
+                currentRow += cell.columnSpan - 1;
+                if(currentRow == maxRow){
+                    currentColumn += currentRow / count;
+                    currentRow = currentRow % count;
+                    maxColumn = currentColumn;
+                }
+            }
+            else{
+                // 현재 위치에 넣을 수 없음.
+                currentRow++;
+                if(currentRow == maxRow){
+                    currentColumn += currentRow / count;
+                    currentRow = currentRow % count;
+                    maxColumn = currentColumn;
+                }
+                position = getCellPosition(cell);
+            }
+            updateOccupancyGridV(position, cell.rowSpan);
+        }
+        else {
+            if(checkOccupancyGridH(currentRow, currentColumn, cell.rowSpan, cell.columnSpan)){
+                position = currentColumn + count * currentRow;
+                currentColumn += cell.columnSpan - 1;
+                if(currentColumn == maxColumn){
+                    currentRow += currentColumn / count;
+                    currentColumn = currentColumn % count;
+                    maxRow = currentRow;
+                }
+            }
+            else{
+                // 현재 위치에 넣을 수 없음.
+                currentColumn++;
+                if(currentColumn == maxColumn){
+                    currentRow += currentColumn / count;
+                    currentColumn = currentColumn % count;
+                    maxRow = currentRow;
+                }
+                position = getCellPosition(cell);
+            }
+            updateOccupancyGridH(position, cell.columnSpan);
+        }
+
+        return position;
     }
 
     /**
-     * 레이아웃에 자식 추가
-     * @param component 자식 컴포넌트
-     * @param x x위치, 0부터
-     * @param y y위치, 0부터
-     * @return 자기자신
+     * 격자 구획에 셀을 강제로 배치합니다.
+     * @param cell 자식 셀
+     * @param row 행
+     * @param column 열
+     * @return
      */
-    public PDFGridLayout addChild(int x, int y, @IntRange(from = 1) int rowSpan, @IntRange(from = 1) int columnSpan, PDFComponent component)
-            throws ArrayIndexOutOfBoundsException{
-        int index = y*rows + x;
-        component.setParent(this);
-        if(index < children.size() && (y+columnSpan-1)*rows + x+rowSpan-1 < children.size()) {
-            children.set(index, component);
+    private int getCellPosition(PDFGridCell cell, int row, int column){
+        int position;
+        if(orientation == Orientation.Vertical){
+            position = row + count * column;
+            row += cell.rowSpan - 1;
+            if(row == maxRow){
+                column += row / count;
+                if(column > maxColumn)
+                    maxColumn = column;
+            } else if (row > maxRow) {
+                throw new CellOutOfGridLayoutException(
+                        "The span of the cells exceeded the layout range.");
+            }
         }
         else {
-            throw new ArrayIndexOutOfBoundsException();
+            position = column + count * row;
+            column += cell.columnSpan - 1;
+            if(column == maxColumn){
+                row += column / count;
+                if(row > maxRow)
+                    maxRow = row;
+            } else if (column > maxColumn)  {
+                throw new CellOutOfGridLayoutException(
+                        "The span of the cells exceeded the layout range.");
+            }
         }
-        return setChildSpan(x,y,rowSpan,columnSpan);
+        return position;
+    }
+
+    /**
+     * 레이아웃의 방향 설정<br>
+     * Setting the orientation of the layout
+     * @return 자기자신
+     */
+    protected PDFGridLayout setHorizontal(){
+        this.orientation = Orientation.Horizontal;
+        maxColumn = count;
+        return this;
+    }
+    protected PDFGridLayout setVertical(float height){
+        if(height <= 0)
+            throw new LayoutSizeException("Vertical GridLayout must have a height.");
+        this.height = height;
+        this.orientation = Orientation.Vertical;
+        maxRow = count;
+        return this;
     }
 
     @Override
@@ -417,12 +450,12 @@ public class PDFGridLayout extends PDFLayout{
         super.setAnchor(horizontal, vertical);
         return this;
     }
-
     @Override
     protected PDFGridLayout setParent(PDFComponent parent) {
         super.setParent(parent);
         return this;
     }
 
-    public static PDFGridLayout build(int rows, int columns){return new PDFGridLayout(rows, columns);}
+    public static PDFGridLayout horizontal(int columnCount){return new PDFGridLayout(columnCount).setHorizontal();}
+    public static PDFGridLayout vertical(int rowCount, float height){return new PDFGridLayout(rowCount).setVertical(height);}
 }

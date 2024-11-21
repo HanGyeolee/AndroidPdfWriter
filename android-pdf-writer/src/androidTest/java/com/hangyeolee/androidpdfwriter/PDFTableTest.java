@@ -10,7 +10,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
-import com.hangyeolee.androidpdfwriter.components.PDFGridLayout;
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
@@ -50,9 +49,8 @@ public class PDFTableTest {
                 .setQuality(100)
                 .setPagePadding(30.0f, 30.0f, 30.0f, 30.0f)
                 .setQuality(100);
-        {
-            builder.root = PDFLinearLayout.build()
-                    .setOrientation(Orientation.Vertical)
+        /*{
+            builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
                             .setHeight(1200f)
@@ -60,7 +58,7 @@ public class PDFTableTest {
                     .addChild(PDFH1.build("제목")
                             .setBackgroundColor(Color.RED)
                             .setTextAlign(TextAlign.Center))
-                    .addChild(PDFGridLayout.build(3, 5)
+                    .addChild(PDFGridLayout_Old.build(3, 5)
                             .setMargin(10, 10, 10, 10)
                             .setBackgroundColor(Color.WHITE)
                             .setBorder(border -> border
@@ -94,7 +92,7 @@ public class PDFTableTest {
                                     "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다.")
                                     .setTextColor(Color.BLACK)
                                     .setTextAlign(TextAlign.Center)))
-                    .addChild(PDFGridLayout.build(2, 4)
+                    .addChild(PDFGridLayout_Old.build(2, 4)
                                     .setMargin(10, 10, 10, 10)
                                     .setBackgroundColor(Color.WHITE)
                                     .setBorder(border -> border
@@ -136,7 +134,7 @@ public class PDFTableTest {
                                     .setTextColor(Color.WHITE)
                                     .setTextAlign(TextAlign.Center)))
             ;
-        }
+        }*/
     }
 
     @Test

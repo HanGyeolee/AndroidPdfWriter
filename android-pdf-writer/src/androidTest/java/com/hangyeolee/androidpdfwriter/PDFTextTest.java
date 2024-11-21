@@ -52,8 +52,7 @@ public class PDFTextTest {
         PDFBuilder builder = new PDFBuilder(Paper.A4);
         builder.setQuality(85);
         builder.setPagePadding(10, 10);
-        builder.root = PDFLinearLayout.build()
-                .setOrientation(Orientation.Vertical)
+        builder.root = PDFLinearLayout.build(Orientation.Vertical)
                 .setBackgroundColor(Color.TRANSPARENT)
                 .addChild(PDFH1.build("Title")
                         //.setFontFromAsset(context, "Pretendard-Bold.ttf")
@@ -74,8 +73,7 @@ public class PDFTextTest {
         PDFBuilder builder = new PDFBuilder(Paper.A4);
         builder.setQuality(85);
         builder.setPagePadding(10, 10);
-        builder.root = PDFLinearLayout.build()
-                .setOrientation(Orientation.Vertical)
+        builder.root = PDFLinearLayout.build(Orientation.Vertical)
                 .setBackgroundColor(Color.TRANSPARENT)
                 .addChild(PDFH1.build("제목")
                         .setFontFromAsset(context, "Pretendard-Bold.ttf")

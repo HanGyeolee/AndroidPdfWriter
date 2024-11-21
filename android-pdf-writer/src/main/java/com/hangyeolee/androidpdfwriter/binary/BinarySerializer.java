@@ -198,7 +198,7 @@ public class BinarySerializer {
 
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
-            fontDesc.setFontName(CIDName);//info.postScriptName);
+            fontDesc.setFontName(CIDName);//info.postScriptName); // +"+fontId"
             cidFont.setFontDescriptor(fontDesc);
 
             // Font Subsetting
