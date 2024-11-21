@@ -32,6 +32,17 @@ public class  PDFImage extends PDFResourceComponent{
 
     boolean compressEnable = false;
 
+    protected PDFImage(Bitmap bitmap){
+        bufferPaint = new Paint();
+        bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
+        setImage(bitmap);
+    }
+    protected PDFImage(Bitmap bitmap, @Fit.FitInt int fit){
+        bufferPaint = new Paint();
+        bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
+        setImage(bitmap).setFit(fit);
+    }
+
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
@@ -263,6 +274,7 @@ public class  PDFImage extends PDFResourceComponent{
         this.compressEnable = compressEnable;
         return this;
     }
+
     @Override
     public PDFImage setBackgroundColor(int color) {
         super.setBackgroundColor(color);
@@ -341,17 +353,6 @@ public class  PDFImage extends PDFResourceComponent{
         return this;
     }
 
-    public PDFImage(Bitmap bitmap){
-        bufferPaint = new Paint();
-        bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
-        setImage(bitmap);
-    }
-    public PDFImage(Bitmap bitmap, @Fit.FitInt int fit){
-        bufferPaint = new Paint();
-        bufferPaint.setFlags(TextPaint.FILTER_BITMAP_FLAG | TextPaint.LINEAR_TEXT_FLAG | TextPaint.ANTI_ALIAS_FLAG);
-        setImage(bitmap).setFit(fit);
-    }
-
     /**
      * 이미지 컴포넌트의 크기는 기본적으로 이미지의 크기를 가진다.<br>
      * 기본적으로 고정점은 중앙이다.<br><br>
@@ -386,4 +387,5 @@ public class  PDFImage extends PDFResourceComponent{
     }
 
     public static PDFImage build(Bitmap bitmap){return new PDFImage(bitmap);}
+    public static PDFImage build(Bitmap bitmap, @Fit.FitInt int fit){return new PDFImage(bitmap, fit);}
 }

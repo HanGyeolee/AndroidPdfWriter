@@ -108,19 +108,6 @@ public class BinarySerializer {
         return currentPage.getContents();
     }
 
-    // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
-    public int calculatePageIndex(float measureY, float componentHeight) {
-        if (measureY < 0) return 0;
-        float pageHeight = Zoomable.getInstance().getContentHeight();
-        return (int) Math.floor((measureY + componentHeight) / pageHeight);
-    }
-
-    // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
-    public int calculatePageIndex(float measureY) {
-        float pageHeight = Zoomable.getInstance().getContentHeight();
-        return (int) Math.floor((measureY) / pageHeight);
-    }
-
     public StringBuilder getPage(int index){
         if(index < pages.getPageSize()) {
             // 생성된 페이지로 전환

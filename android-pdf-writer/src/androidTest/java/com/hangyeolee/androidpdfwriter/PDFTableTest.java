@@ -10,6 +10,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
+import com.hangyeolee.androidpdfwriter.components.PDFGridCell;
+import com.hangyeolee.androidpdfwriter.components.PDFGridLayout;
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
@@ -40,6 +42,8 @@ public class PDFTableTest {
      */
     @Before
     public void setUp() {
+        PDFBuilder.DEBUG = true;
+
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(com.hangyeolee.androidpdfwriter.test.R.drawable.test);
         Bitmap b = BitmapFactory.decodeStream(stream);
@@ -49,16 +53,16 @@ public class PDFTableTest {
                 .setQuality(100)
                 .setPagePadding(30.0f, 30.0f, 30.0f, 30.0f)
                 .setQuality(100);
-        /*{
+        {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.build(b)
-                            .setHeight(1200f)
+                            .setHeight(120f)
                             .setFit(Fit.CONTAIN))
-                    .addChild(PDFH1.build("제목")
+                    .addChild(PDFH1.build("Title")
                             .setBackgroundColor(Color.RED)
                             .setTextAlign(TextAlign.Center))
-                    .addChild(PDFGridLayout_Old.build(3, 5)
+                    .addChild(PDFGridLayout.horizontal(3)
                             .setMargin(10, 10, 10, 10)
                             .setBackgroundColor(Color.WHITE)
                             .setBorder(border -> border
@@ -67,32 +71,44 @@ public class PDFTableTest {
                                     .setRight(4, Color.GREEN)
                                     .setBottom(4, Color.MAGENTA)
                             )
-                            .addChild(0, 0, PDFH3.build("번호"))
-                            .addChild(1, 0, PDFH3.build("이름")
+                            .addCell(PDFH3.build("Number").wrapGridCell())
+                            .addCell(PDFH3.build("Name")
                                     .setBackgroundColor(Color.YELLOW)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(2, 0, PDFH3.build("내용")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell())
+                            .addCell(PDFH3.build("Content")
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(0, 1, PDFH3.build("001"))
-                            .addChild(1, 2, PDFH3.build("홍길동")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell())
+                            .addCell(1, 0, PDFH3.build("001")
+                                    .setBackgroundColor(Color.GREEN)
+                                    .wrapGridCell()
+                                    .setBackgroundColor(Color.BLACK))
+                            .addCell(2, 1, PDFH3.build("Hong Gil-Dong")
                                     .setBackgroundColor(Color.YELLOW)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(2, 3, PDFH3.build("어떤 내용이 담겨있다.")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell()
+                                    .setBackgroundColor(Color.BLACK))
+                            .addCell(3, 2, PDFH3.build("Some content had been existed.")
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(1, 4, PDFImage.build(b)
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell()
+                                    .setBackgroundColor(Color.GREEN))
+                            .addCell(4, 1, PDFImage.build(b)
+                                    .setCompress(true)
                                     .setBackgroundColor(Color.RED)
                                     .setFit(Fit.FILL)
-                                    .setHeight(50.0f))
-                            .addChild(2, 4, PDFH3.build(
-                                    "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다." +
-                                    "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다.")
+                                    .setHeight(50.0f)
+                                    .wrapGridCell())
+                            .addCell(4, 2,  PDFH3.build(
+                                    "It's a very, very long content, and the vertical height of the table layout is the same." +
+                                    "It's a very, very long content, and the vertical height of the table layout is the same.")
                                     .setTextColor(Color.BLACK)
-                                    .setTextAlign(TextAlign.Center)))
-                    .addChild(PDFGridLayout_Old.build(2, 4)
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell()))
+                    .addChild(PDFGridLayout.horizontal(2)
                                     .setMargin(10, 10, 10, 10)
                                     .setBackgroundColor(Color.WHITE)
                                     .setBorder(border -> border
@@ -101,45 +117,53 @@ public class PDFTableTest {
                                             .setRight(4, Color.GREEN)
                                             .setBottom(4, Color.MAGENTA)
                                     )
-                            .addChild(0, 0, PDFH3.build(
-                                            "Span 이 없는 내용입니다.")
+                            .addCell(0, 0, PDFH3.build(
+                                            "It's a content without Span.")
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(0, 1, PDFH3.build(
-                                            "Span 이 없는 내용입니다.")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell())
+                            .addCell(1, 0, PDFH3.build(
+                                            "It's a content without Span.")
                                     .setBackgroundColor(Color.WHITE)
                                     .setTextColor(Color.BLACK)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(1, 0, 1, 2, PDFH3.build(
-                                            "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다." +
-                                            "또한 Span 이 적용되어 있으며, 잘하면 페이지를 넘어갈 수 도 있습니다.")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell())
+                            .addCell(0, 1, PDFH3.build(
+                                            "It's a very long content. According to this content, the vertical height of Table layout is the same." +
+                                            "It also has Span applied, and if you do well, you can also go over the page.")
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(0, 2, 1, 2, PDFH3.build(
-                                            "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다." +
-                                                    "또한 Span 이 적용되어 있으며, 잘하면 페이지를 넘어갈 수 도 있습니다.")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell()
+                                    .setRowSpan(2))
+                            .addCell(2, 0, PDFH3.build(
+                                            "It's a very long content. According to this content, the vertical height of Table layout is the same." +
+                                                    "It also has Span applied, and if you do well, you can also go over the page.")
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(1, 2, 1, 1, PDFH3.build(
-                                            "Span 이 없는 내용입니다.")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell()
+                                    .setRowSpan(2))
+                            .addCell(2, 1, PDFH3.build(
+                                            "It's a content without Span.")
                                     .setBackgroundColor(Color.GRAY)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center))
-                            .addChild(1, 3,1, 1, PDFH3.build(
-                                            "Span 이 없는 내용입니다.")
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell())
+                            .addCell(3, 1, PDFH3.build(
+                                            "It's a content without Span.")
                                     .setBackgroundColor(Color.RED)
                                     .setTextColor(Color.WHITE)
-                                    .setTextAlign(TextAlign.Center)))
+                                    .setTextAlign(TextAlign.Center)
+                                    .wrapGridCell()))
             ;
-        }*/
+        }
     }
 
     @Test
     public void testTableSave() {
         builder.draw();
-        builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
+        builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "test_GridLayout.pdf");
     }
 }

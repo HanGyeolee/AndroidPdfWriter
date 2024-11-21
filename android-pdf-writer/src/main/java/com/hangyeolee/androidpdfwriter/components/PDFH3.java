@@ -8,14 +8,15 @@ import com.hangyeolee.androidpdfwriter.font.PDFFont;
 public class PDFH3 extends PDFText{
     public static float fontSize = 18.72f;
 
-    public PDFH3(String text){
+    protected PDFH3(String text){
         super(text, PDFFont.HELVETICA_BOLD);
-        this.bufferPaint.setTextSize(fontSize);
+        setFontsize(fontSize);
     }
-    public PDFH3(String text, TextPaint paint){
+    protected PDFH3(String text, TextPaint paint){
         super(text, paint, PDFFont.HELVETICA_BOLD);
     }
 
 
     public static PDFH3 build(String text){return new PDFH3(text);}
+    public static PDFH3 build(String text, TextPaint paint){return new PDFH3(text, paint);}
 }

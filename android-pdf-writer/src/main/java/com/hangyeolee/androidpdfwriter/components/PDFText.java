@@ -81,6 +81,16 @@ public class PDFText extends PDFResourceComponent {
 
     float updatedHeight;
 
+    protected PDFText(String text){
+        this.setText(text).setTextPaint(null).setFont(PDFFont.HELVETICA);
+    }
+    protected PDFText(String text, @NonNull @PDFFont.ID String fontName){
+        this.setText(text).setTextPaint(null).setFont(fontName);
+    }
+    protected PDFText(String text, TextPaint paint, @NonNull @PDFFont.ID String fontName){
+        this.setText(text).setTextPaint(paint).setFont(fontName);
+    }
+
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
@@ -276,35 +286,24 @@ public class PDFText extends PDFResourceComponent {
 
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
-        StringBuilder content = super.draw(serializer);
+        super.draw(serializer);
 
         if (text == null || layout == null) return null;
+        float pageHeight = Zoomable.getInstance().getContentHeight();
 
-        // 텍스트 객체 시작
-        PDFTextsState.save(content);
+        // 시작 페이지와 끝 페이지 계산
+        int startPage = calculatePageIndex(measureY, measureHeight);
 
-        // 텍스트 렌더링 모드 설정
-        content.append("0 Tr\n");
-        // 폰트 및 크기 설정
-        content.append("/").append(resourceId).append(" ")
-                .append(String.format(Locale.getDefault(),"%s",
-                        BinaryConverter.formatNumber(bufferPaint.getTextSize(), 2)
-                ))
-                .append(" Tf\r\n");
+        // 첫 페이지의 Y 좌표 조정
+        float currentY = measureY - startPage * pageHeight;
+        if(currentY < 0) currentY = 0;
 
-        // 텍스트 색상 설정
-        PDFGraphicsState.addFillColor(content, bufferPaint.getColor());
-
+        // 페이지별로 분할하여 그리기
+        int currentPage = 0;
+        StringBuilder content = serializer.getPage(startPage + currentPage);
         float lineHeight = layout.getLineBaseline(0) - layout.getLineTop(0);
-        // 베이스라인 위치 계산
-        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left);
-        float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + lineHeight);
-
-        // 텍스트 위치로 이동
-        content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",
-                BinaryConverter.formatNumber(x),
-                BinaryConverter.formatNumber(y))
-        );
+        currentY += lineHeight;
+        drawBaseline(content, currentY);
 
         float lastAlignX = 0;
         // 여러 줄의 텍스트 처리
@@ -334,10 +333,23 @@ public class PDFText extends PDFResourceComponent {
             // 첫 줄이 아닌 경우 새로운 줄로 이동
             if (i > 0) {
                 lineHeight = layout.getLineBottom(i) - layout.getLineTop(i);
-                content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",
-                        BinaryConverter.formatNumber(alignX),
-                        BinaryConverter.formatNumber(-lineHeight)
-                ));
+                currentY += lineHeight;
+                if(currentY > pageHeight){
+                    // 다음 페이지로 이동 전 텍스트 객체 종료
+                    PDFTextsState.restore(content);
+
+                    currentY = 0; // 다음 페이지에서는 최상단부터 시작
+                    currentPage++;
+
+                    // 다음 페이지
+                    content = serializer.getPage(startPage + currentPage);
+                    drawBaseline(content, currentY);
+                } else {
+                    content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",
+                            BinaryConverter.formatNumber(alignX),
+                            BinaryConverter.formatNumber(-lineHeight)
+                    ));
+                }
             } else if (alignX > 0) {
                 content.append(String.format(Locale.getDefault(),"%s 0 Td\r\n",
                         BinaryConverter.formatNumber(alignX)
@@ -354,6 +366,33 @@ public class PDFText extends PDFResourceComponent {
         PDFTextsState.restore(content);
 
         return null;
+    }
+
+    private void drawBaseline(StringBuilder content, float currentY){
+        // 텍스트 객체 시작
+        PDFTextsState.save(content);
+
+        // 텍스트 렌더링 모드 설정
+        content.append("0 Tr\n");
+        // 폰트 및 크기 설정
+        content.append("/").append(resourceId).append(" ")
+                .append(String.format(Locale.getDefault(),"%s",
+                        BinaryConverter.formatNumber(bufferPaint.getTextSize(), 2)
+                ))
+                .append(" Tf\r\n");
+
+        // 텍스트 색상 설정
+        PDFGraphicsState.addFillColor(content, bufferPaint.getColor());
+
+        // 베이스라인 위치 계산
+        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left);
+        float y = Zoomable.getInstance().transform2PDFHeight(currentY + border.size.top + padding.top);
+
+        // 텍스트 위치로 이동
+        content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",
+                BinaryConverter.formatNumber(x),
+                BinaryConverter.formatNumber(y))
+        );
     }
 
     /**
@@ -473,31 +512,6 @@ public class PDFText extends PDFResourceComponent {
         return this;
     }
 
-    /**
-     * 기본 폰트로 helvetica 를 사용.<br/>
-     * Use helvetica as the default font
-     * @param text 글자
-     */
-    @Deprecated
-    public PDFText(String text){
-        this(text, PDFFont.HELVETICA);
-    }
-    /**
-     * 기본 폰트로 helvetica 를 사용.<br/>
-     * Use helvetica as the default font
-     * @param text 글자
-     * @param paint 스타일
-     */
-    @Deprecated
-    public PDFText(String text, TextPaint paint){
-        this(text, paint, PDFFont.HELVETICA);
-    }
-    public PDFText(String text, @NonNull @PDFFont.ID String fontName){
-        this.setText(text).setTextPaint(null).setFont(fontName);
-    }
-    public PDFText(String text, TextPaint paint, @NonNull @PDFFont.ID String fontName){
-        this.setText(text).setTextPaint(paint).setFont(fontName);
-    }
     public PDFText setText(String text){
         lastText = this.text;
         this.text = text;
@@ -590,6 +604,25 @@ public class PDFText extends PDFResourceComponent {
         return this;
     }
 
+    /**
+     * {@link PDFFont}로 {@link PDFFont#HELVETICA}를 사용.<br/>
+     * Use {@link PDFFont#HELVETICA} as the default {@link PDFFont}
+     * @param text 글자
+     */
     public static PDFText build(String text){return new PDFText(text);}
-
+    /**
+     * {@link PDFFont}를 지정하여 문장 요소를 만듭니다..<br/>
+     * Create a text component by specifying the {@link PDFFont}.
+     * @param text 글자
+     * @param fontName 기본 폰트
+     */
+    public static PDFText build(String text, @NonNull @PDFFont.ID String fontName){return new PDFText(text, fontName);}
+    /**
+     * {@link PDFFont}와 {@link TextPaint}를 지정하여 문장 요소를 만듭니다..<br/>
+     * Create a text component by {@link TextPaint} and specifying the {@link PDFFont}.
+     * @param text 글자
+     * @param paint 글자 스타일
+     * @param fontName 기본 폰트
+     */
+    public static PDFText build(String text, TextPaint paint, @NonNull @PDFFont.ID String fontName){return new PDFText(text, paint, fontName);}
 }

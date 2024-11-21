@@ -20,6 +20,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFH2;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFH4;
 import com.hangyeolee.androidpdfwriter.components.PDFH5;
+import com.hangyeolee.androidpdfwriter.components.PDFH6;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
@@ -133,7 +134,7 @@ public class PDFBuilderTest {
     }
 
     @Test
-    public void testLinearLayoutSmallerSave(){
+    public void testLinearLayoutOver(){
         PDFBuilder builder = new PDFBuilder(Paper.A4).setQuality(85).setPagePadding(30, 30);
         {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
@@ -169,14 +170,50 @@ public class PDFBuilderTest {
                                     .setCompress(true)
                                     .setFit(Fit.CONTAIN)
                                     .setAnchor(Anchor.Start, Anchor.Center)
-                                    .setHeight(50.0f)));
+                                    .setHeight(50.0f)))
+                    .addChild(PDFH1.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH2.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH3.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH4.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH5.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH6.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH1.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH2.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH3.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH4.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH5.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH6.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH1.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH2.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH3.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH4.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH5.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH6.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH1.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH2.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH3.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH4.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH5.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH6.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH1.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH2.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH3.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH4.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH5.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH6.build("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))
+                    .addChild(PDFH1.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH2.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH3.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH4.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH5.build("abcdefghijklmnopqrstuvwxyz"))
+                    .addChild(PDFH6.build("abcdefghijklmnopqrstuvwxyz"));
         }
         Log.d(TAG, "PDF Builder setup completed");
 
         Log.d(TAG, "실행");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_None.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_LinearLayout_Over.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);

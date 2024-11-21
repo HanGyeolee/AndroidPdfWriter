@@ -5,6 +5,7 @@ import android.graphics.RectF;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.exceptions.CellNotInGridLayoutException;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -20,10 +21,10 @@ public class PDFGridCell extends PDFLayout{
      * 빌 셀을 생성합니다.<br>
      * Create empty cell
      */
-    public PDFGridCell(){
+    protected PDFGridCell(){
         this(PDFEmpty.build());
     }
-    public PDFGridCell(int rowSpan, int columnSpan){
+    protected PDFGridCell(int rowSpan, int columnSpan){
         this(PDFEmpty.build(), rowSpan, columnSpan);
     }
 
@@ -31,22 +32,20 @@ public class PDFGridCell extends PDFLayout{
      * 하위 구성 요소를 가지고 있는 셀을 생성합니다.
      * @param content 하위 구성 요소
      */
-    public PDFGridCell(@NonNull PDFComponent content){
+    protected PDFGridCell(@NonNull PDFComponent content){
         super();
-        content.setParent(this);
-        children = content;
+        setChild(content);
     }
 
     /**
      * 하위 구성 요소를 가지고 있는 셀을 생성합니다.
      * @param content 하위 구성 요소
      */
-    public PDFGridCell(@NonNull PDFComponent content, int rowSpan, int columnSpan){
+    protected PDFGridCell(@NonNull PDFComponent content, int rowSpan, int columnSpan){
         super();
         if(rowSpan > 1) this.rowSpan = rowSpan;
         if(columnSpan > 1) this.columnSpan = columnSpan;
-        content.setParent(this);
-        children = content;
+        setChild(content);
     }
 
     @Override
@@ -60,6 +59,12 @@ public class PDFGridCell extends PDFLayout{
         float maxH = measureHeight
                 - children.margin.top - children.margin.bottom;
         childReanchor(children, maxW, maxH);
+    }
+
+    @Override
+    public StringBuilder draw(BinarySerializer serializer) {
+        super.draw(serializer);
+        return children.draw(serializer);
     }
 
     /**
@@ -80,9 +85,9 @@ public class PDFGridCell extends PDFLayout{
     }
 
     /**
-     * Cell의 위치 강제 조정<br>
+     * 셀의 위치 강제 조정<br>
      * Force Cell's Position Adjustment
-     * @param position
+     * @param position 셀의 위치
      */
     public void setPosition(int position){
         this.position = position;
@@ -98,12 +103,30 @@ public class PDFGridCell extends PDFLayout{
     @Override
     public PDFGridCell setSize(Number width, Number height) {
         super.setSize(width, height);
+        if(children != null){
+            children.setSize(width, height);
+        }
         return this;
     }
 
     @Override
     public PDFGridCell setBackgroundColor(int color) {
         super.setBackgroundColor(color);
+        return this;
+    }
+
+    public PDFGridCell setChild(@NonNull PDFComponent content){
+        content.setParent(this);
+        children = content;
+        return this;
+    }
+
+    public PDFGridCell setColumnSpan(int columnSpan){
+        this.columnSpan = columnSpan;
+        return this;
+    }
+    public PDFGridCell setRowSpan(int rowSpan){
+        this.rowSpan = rowSpan;
         return this;
     }
 
@@ -218,4 +241,7 @@ public class PDFGridCell extends PDFLayout{
         super.setAnchor(horizontal, vertical);
         return this;
     }
+
+    public static PDFGridCell build(){return new PDFGridCell();}
+    public static PDFGridCell build(int rowSpan, int columnSpan){return new PDFGridCell(rowSpan, columnSpan);}
 }

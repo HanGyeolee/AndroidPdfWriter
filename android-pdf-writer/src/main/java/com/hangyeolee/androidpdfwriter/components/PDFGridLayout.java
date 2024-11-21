@@ -4,16 +4,19 @@ import android.graphics.RectF;
 
 import androidx.annotation.ColorInt;
 
+import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.exceptions.CellOutOfGridLayoutException;
 import com.hangyeolee.androidpdfwriter.exceptions.LayoutSizeException;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,7 +34,7 @@ public class PDFGridLayout extends PDFLayout{
     private int maxRow = 0;
     private int maxColumn = 0;
 
-    public PDFGridLayout(int count) {
+    protected PDFGridLayout(int count) {
         if(count <= 0) throw new LayoutSizeException();
         this.count = count;
         for(int i = 0; i < count; i++){
@@ -61,13 +64,47 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     private void measureVertical(float totalWeight){
+        // 행의 높이 계산 (weight 기반)
+        float availableHeight = measureHeight - border.size.top - padding.top
+                - border.size.bottom - padding.bottom;
+        float availableWidth = measureWidth - border.size.left - padding.left
+                - border.size.right - padding.right;
+        float[] rowHeights = new float[count];
+        for (int i = 0; i < count; i++) {
+            rowHeights[i] = (availableHeight * weights.get(i)) / totalWeight;
+        }
+
         for (int i = 0; i < cells.size(); i++) {
             PDFGridCell cell = cells.get(i);
+            cell.setParent(this);
             int position = cell.getPosition();
             int column = position/count;
             int row = position % count;
+
+            // X 좌표 계산 (column 위치에 따라)
+            float relativeX = availableWidth * column/maxColumn;
+
+            // Y 좌표 계산 (row 위치에 따라)
+            float relativeY = 0;
+            for (int j = 0; j < row; j++) {
+                relativeY += rowHeights[j];
+            }
+
+            // cell 너비 계산
+            float cellWidth = availableWidth * cell.columnSpan/maxColumn;
+
+            // cell 높이 계산 (rowSpan 고려)
+            float cellHeight = 0;
+            for (int j = row; j < row + cell.rowSpan; j++) {
+                cellHeight += rowHeights[j];
+            }
+
+            // 최종 크기 설정 및 측정
+            cell.setSize(cellWidth, cellHeight);
+            cell.measure(relativeX, relativeY);
         }
     }
+
     private void measureHorizontal(float totalWeight){
         // 각 열의 너비 계산 (weight 기반)
         float availableWidth = measureWidth - border.size.left - padding.left
@@ -131,12 +168,6 @@ public class PDFGridLayout extends PDFLayout{
                 relativeY += height;
             }
 
-            // cell 너비 계산
-            float cellWidth = 0;
-            for (int j = column; j < column + cell.columnSpan; j++) {
-                cellWidth += columnWidths[j];
-            }
-
             // cell 높이 계산 (rowSpan 고려)
             float cellHeight = 0;
             for (int j = row; j < row + cell.rowSpan; j++) {
@@ -146,7 +177,7 @@ public class PDFGridLayout extends PDFLayout{
             }
 
             // 최종 크기 설정 및 측정
-            cell.setSize(cellWidth, cellHeight);
+            cell.setSize(null, cellHeight);
             cell.measure(relativeX, relativeY);
         }
     }
@@ -154,7 +185,50 @@ public class PDFGridLayout extends PDFLayout{
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
         super.draw(serializer);
+        float pageHeight = Zoomable.getInstance().getContentHeight();
 
+        StringBuilder content;
+        for(int i = 0; i < cells.size(); i++) {
+            PDFComponent child = cells.get(i);
+
+            // 현재 컴포넌트가 위치한 페이지 구하기
+            int currentPage = calculatePageIndex(child.measureY, child.measureHeight);
+            content = serializer.getPage(currentPage);
+
+            // 첫 페이지의 Y 좌표 조정
+            float currentY = child.measureY - currentPage * pageHeight;
+            if(currentY < 0) currentY = 0;
+
+            // 현재 페이지 내에서의 좌표 계산
+            float x = Zoomable.getInstance().transform2PDFWidth(
+                    child.measureX
+            );
+            float y = Zoomable.getInstance().transform2PDFHeight(
+                    currentY + child.measureHeight
+            );
+
+            // 그래픽스 상태 저장
+            PDFGraphicsState.save(content);
+
+            // 클리핑 영역 설정 - 컴포넌트의 전체 영역
+            // W 클리핑 패스 설정
+            // n 패스를 그리지 않고 클리핑만 적용
+            content.append(String.format(Locale.US,
+                    "%s %s %s %s re W n\r\n",
+                    BinaryConverter.formatNumber(x),
+                    BinaryConverter.formatNumber(y),
+                    BinaryConverter.formatNumber(
+                            child.measureWidth),
+                    BinaryConverter.formatNumber(
+                            child.measureHeight))
+            );
+
+            // 하위 구성 요소 그리기
+            child.draw(serializer);
+
+            // 그래픽스 상태 복원
+            PDFGraphicsState.restore(content);
+        }
         return null;
     }
 
@@ -165,7 +239,13 @@ public class PDFGridLayout extends PDFLayout{
      * @return 자기자신
      */
     public PDFGridLayout addCell(PDFGridCell cell){
-        int position = getCellPosition(cell);
+        int position;
+        if(orientation == Orientation.Vertical){
+            position = getCellPositionV(cell);
+        }
+        else {
+            position = getCellPositionH(cell);
+        }
         cell.setPosition(position);
         cells.add(cell);
         return this;
@@ -181,7 +261,7 @@ public class PDFGridLayout extends PDFLayout{
      * @param column 격자 요소에서의 열
      * @return 자기자신
      */
-    public PDFGridLayout addCell(PDFGridCell cell, int row, int column){
+    public PDFGridLayout addCell(int row, int column, PDFGridCell cell){
         int position = getCellPosition(cell, row, column);
         cell.setPosition(position);
         cells.add(cell);
@@ -268,52 +348,53 @@ public class PDFGridLayout extends PDFLayout{
      * @param cell 자식 셀
      * @return
      */
-    protected int getCellPosition(PDFGridCell cell){
+    protected int getCellPositionV(PDFGridCell cell){
         int position;
-        if(orientation == Orientation.Vertical){
-            if(checkOccupancyGridV(currentRow, currentColumn, cell.rowSpan, cell.columnSpan)){
-                position = currentRow + count * currentColumn;
-                currentRow += cell.columnSpan - 1;
-                if(currentRow == maxRow){
-                    currentColumn += currentRow / count;
-                    currentRow = currentRow % count;
-                    maxColumn = currentColumn;
-                }
+        if(checkOccupancyGridV(currentRow, currentColumn, cell.rowSpan, cell.columnSpan)){
+            position = currentRow + count * currentColumn;
+            currentRow += cell.columnSpan - 1;
+            if(currentRow == maxRow){
+                currentColumn += currentRow / count;
+                currentRow = currentRow % count;
+                maxColumn = currentColumn;
             }
-            else{
-                // 현재 위치에 넣을 수 없음.
-                currentRow++;
-                if(currentRow == maxRow){
-                    currentColumn += currentRow / count;
-                    currentRow = currentRow % count;
-                    maxColumn = currentColumn;
-                }
-                position = getCellPosition(cell);
-            }
-            updateOccupancyGridV(position, cell.rowSpan);
         }
-        else {
-            if(checkOccupancyGridH(currentRow, currentColumn, cell.rowSpan, cell.columnSpan)){
-                position = currentColumn + count * currentRow;
-                currentColumn += cell.columnSpan - 1;
-                if(currentColumn == maxColumn){
-                    currentRow += currentColumn / count;
-                    currentColumn = currentColumn % count;
-                    maxRow = currentRow;
-                }
+        else{
+            // 현재 위치에 넣을 수 없음.
+            currentRow++;
+            if(currentRow == maxRow){
+                currentColumn += currentRow / count;
+                currentRow = currentRow % count;
+                maxColumn = currentColumn;
             }
-            else{
-                // 현재 위치에 넣을 수 없음.
-                currentColumn++;
-                if(currentColumn == maxColumn){
-                    currentRow += currentColumn / count;
-                    currentColumn = currentColumn % count;
-                    maxRow = currentRow;
-                }
-                position = getCellPosition(cell);
-            }
-            updateOccupancyGridH(position, cell.columnSpan);
+            position = getCellPositionV(cell);
         }
+        updateOccupancyGridV(position, cell.rowSpan);
+
+        return position;
+    }
+    protected int getCellPositionH(PDFGridCell cell){
+        int position;
+        if(checkOccupancyGridH(currentRow, currentColumn, cell.rowSpan, cell.columnSpan)){
+            position = currentColumn + count * currentRow;
+            currentColumn += cell.columnSpan - 1;
+            if(currentColumn == maxColumn){
+                currentRow += currentColumn / count;
+                currentColumn = currentColumn % count;
+                maxRow = currentRow;
+            }
+        }
+        else{
+            // 현재 위치에 넣을 수 없음.
+            currentColumn++;
+            if(currentColumn == maxColumn){
+                currentRow += currentColumn / count;
+                currentColumn = currentColumn % count;
+                maxRow = currentRow;
+            }
+            position = getCellPositionH(cell);
+        }
+        updateOccupancyGridH(position, cell.columnSpan);
 
         return position;
     }
@@ -327,6 +408,8 @@ public class PDFGridLayout extends PDFLayout{
      */
     private int getCellPosition(PDFGridCell cell, int row, int column){
         int position;
+        if(row > maxRow) maxRow = row;
+        if(column > maxColumn) maxColumn = column;
         if(orientation == Orientation.Vertical){
             position = row + count * column;
             row += cell.rowSpan - 1;

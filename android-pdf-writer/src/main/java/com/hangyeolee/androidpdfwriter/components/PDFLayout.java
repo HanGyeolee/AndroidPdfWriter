@@ -42,8 +42,8 @@ public abstract class PDFLayout extends PDFComponent{
         float remainingHeight = measureHeight;
 
         // 시작 페이지와 끝 페이지 계산
-        int startPage = serializer.calculatePageIndex(measureY);
-        int endPage = serializer.calculatePageIndex(measureY, measureHeight);
+        int startPage = calculatePageIndex(measureY);
+        int endPage = calculatePageIndex(measureY, measureHeight);
 
         // 첫 페이지의 Y 좌표 조정
         float y = measureY - startPage * pageHeight;
@@ -115,8 +115,8 @@ public abstract class PDFLayout extends PDFComponent{
         float dy = Anchor.getDeltaPixel(child.anchor.vertical, gapY);
 
         // 절대 좌표 계산
-        dx += measureX;
-        dy += measureY;
+        dx += measureX + border.size.left + padding.left;
+        dy += measureY + border.size.top + padding.top;
 
         float left = child.margin.left;
         float top = child.margin.top;

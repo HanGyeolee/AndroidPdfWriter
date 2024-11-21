@@ -9,14 +9,15 @@ public class PDFH4 extends PDFText{
     public static float fontSize = 16f;
 
 
-    public PDFH4(String text){
+    protected PDFH4(String text){
         super(text, PDFFont.HELVETICA_BOLD);
-        this.bufferPaint.setTextSize(fontSize);
+        setFontsize(fontSize);
     }
-    public PDFH4(String text, TextPaint paint){
+    protected PDFH4(String text, TextPaint paint){
         super(text, paint, PDFFont.HELVETICA_BOLD);
     }
 
 
     public static PDFH4 build(String text){return new PDFH4(text);}
+    public static PDFH4 build(String text, TextPaint paint){return new PDFH4(text, paint);}
 }

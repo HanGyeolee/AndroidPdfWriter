@@ -24,23 +24,9 @@ public class PDFLinearLayout extends PDFLayout {
     int orientation = Orientation.Vertical;
     private final ArrayList<Float> weights = new ArrayList<>();
 
-    public PDFLinearLayout(){
+    protected PDFLinearLayout(){
         super();
         children = new ArrayList<>();
-    }
-    public PDFLinearLayout(int length){
-        this(length, 1.0f);
-    }
-    public PDFLinearLayout(int length, float defaultWeight){
-        super();
-        children = new ArrayList<>(length);
-        for(int i = 0; i < length; i++){
-            children.add(PDFEmpty.build().setParent(this));
-        }
-        // Initialize weights for empty components
-        for (int i = 0; i < length; i++) {
-            weights.add(defaultWeight);
-        }
     }
 
     @Override
@@ -96,7 +82,10 @@ public class PDFLinearLayout extends PDFLayout {
             for(;;) {
                 // 하위 구성 요소 위치 측정
                 child.measure(0, currentY);
-                float maxW = measureWidth - child.margin.left - child.margin.right;
+                float maxW = measureWidth
+                        - border.size.left - border.size.right
+                        - padding.left - padding.right
+                        - child.margin.left - child.margin.right;
                 float maxH = measureHeight - currentY
                         - border.size.top - border.size.bottom
                         - padding.top - padding.bottom
@@ -104,9 +93,8 @@ public class PDFLinearLayout extends PDFLayout {
                 childReanchor(child, maxW, maxH);
 
                 // 페이지 경계 확인 및 조정
-                float childEndY = currentY + child.getTotalHeight();
-                int currentPage = (int) (currentY / contentHeight);
-                int endPage = (int) (childEndY / contentHeight);
+                int currentPage = calculatePageIndex(currentY);
+                int endPage = calculatePageIndex(currentY, child.getTotalHeight());
 
                 if (currentPage != endPage) {
                     stack++;
@@ -138,6 +126,8 @@ public class PDFLinearLayout extends PDFLayout {
             throw new LayoutChildrenFitDeniedException(
                     "In Orientation.Horizontal, width must be specified to fit the child into"+this.getClass().getName()+".");
         }
+        // 테두리와 패딩을 제외한 실제 사용 가능한 너비 계산
+        float contentHeight = Zoomable.getInstance().getContentHeight();
         float availableWidth = measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right;
         float maxHeight = 0;
@@ -151,6 +141,7 @@ public class PDFLinearLayout extends PDFLayout {
 
         // 하위 구성 요소들 측정
         for (int i = 0; i < children.size(); i++) {
+            int stack = 0;
             PDFComponent child = children.get(i);
             float childWidth = child.width;
             float childWeight = weights.get(i);
@@ -160,13 +151,42 @@ public class PDFLinearLayout extends PDFLayout {
                     fitChildrenToLayout ? measureHeight : null
             );
 
-            child.measure(currentX, 0);
-            float maxW = cellWidth - child.margin.left - child.margin.right;
-            float maxH = measureHeight
-                    - border.size.top - border.size.bottom
-                    - padding.top - padding.bottom
-                    - child.margin.top - child.margin.bottom;
-            childReanchor(child, maxW, maxH);
+
+            float currentY = 0;
+            for(;;) {
+                // 하위 구성 요소 위치 측정
+                child.measure(currentX, currentY);
+                float maxW = cellWidth - child.margin.left - child.margin.right;
+                float maxH = measureHeight
+                        - border.size.top - border.size.bottom
+                        - padding.top - padding.bottom
+                        - child.margin.top - child.margin.bottom;
+                childReanchor(child, maxW, maxH);
+
+                // 페이지 경계 확인 및 조정
+                int currentPage = calculatePageIndex(child.measureY);
+                int endPage = calculatePageIndex(child.measureY, child.getTotalHeight());
+
+                if (currentPage != endPage) {
+                    stack++;
+                    if(stack > 2) {
+                        // 스택 오버 플로우 체크
+                        // 페이지 경계를 두 번 이상 넘어서게 되면
+                        // 하위 구성 요소가 페이지보다 크기가 크다고 판단.
+                        throw new StackOverflowError("Height of child component Too Large");
+                    }
+
+                    // 다음 페이지 시작점으로 이동
+                    float newY = (endPage) * contentHeight;
+                    float yDiff = newY - currentY;
+                    child.updateHeight(yDiff);
+
+                    // 변경된 위치로 다시 해당 컴포넌트 재 연산
+                    currentY = newY;
+                }else {
+                    break;
+                }
+            }
 
             maxHeight = Math.max(maxHeight, child.getTotalHeight());
             currentX += cellWidth;
@@ -198,22 +218,26 @@ public class PDFLinearLayout extends PDFLayout {
     @Override
     public StringBuilder draw(BinarySerializer serializer) {
         super.draw(serializer);
-        StringBuilder content;
         float pageHeight = Zoomable.getInstance().getContentHeight();
 
+        StringBuilder content;
         for(int i = 0; i < children.size(); i++) {
             PDFComponent child = children.get(i);
 
             // 현재 컴포넌트가 위치한 페이지 구하기
-            int currentPage = serializer.calculatePageIndex(child.measureY);
+            int currentPage = calculatePageIndex(child.measureY, child.measureHeight);
             content = serializer.getPage(currentPage);
+
+            // 첫 페이지의 Y 좌표 조정
+            float currentY = child.measureY - currentPage * pageHeight;
+            if(currentY < 0) currentY = 0;
 
             // 현재 페이지 내에서의 좌표 계산
             float x = Zoomable.getInstance().transform2PDFWidth(
                     child.measureX
             );
             float y = Zoomable.getInstance().transform2PDFHeight(
-                    child.measureY + child.measureHeight
+                    currentY+ child.measureHeight
             );
 
             // 그래픽스 상태 저장

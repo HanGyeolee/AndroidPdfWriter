@@ -194,7 +194,7 @@ public abstract class PDFComponent{
         float componentHeight = getTotalHeight();
 
         // 페이지 체크
-        int requiredPage = serializer.calculatePageIndex(measureY, componentHeight);
+        int requiredPage = calculatePageIndex(measureY, componentHeight);
         StringBuilder content = serializer.getPage(requiredPage);
 
         // 배경 그리기
@@ -434,6 +434,26 @@ public abstract class PDFComponent{
     protected PDFComponent setParent(PDFComponent parent){
         this.parent = parent;
         return this;
+    }
+
+    public PDFGridCell wrapGridCell(){
+        return new PDFGridCell(this);
+    }
+    public PDFGridCell wrapGridCell(int rowSpan, int columnSpan){
+        return new PDFGridCell(this, rowSpan, columnSpan);
+    }
+
+    // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
+    public int calculatePageIndex(float measureY, float componentHeight) {
+        if (measureY < 0) return 0;
+        float pageHeight = Zoomable.getInstance().getContentHeight();
+        return (int) Math.floor((measureY + componentHeight) / pageHeight);
+    }
+
+    // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
+    public int calculatePageIndex(float measureY) {
+        float pageHeight = Zoomable.getInstance().getContentHeight();
+        return (int) Math.floor((measureY) / pageHeight);
     }
 
     @Override
