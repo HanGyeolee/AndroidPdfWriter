@@ -125,6 +125,14 @@ public abstract class PDFLayout extends PDFComponent{
         child.measureY = child.relativeY + top + dy;
     }
 
+    protected float pageEdgeCheck(PDFComponent child, float newY, float currentY){
+        // 다음 페이지 시작점으로 이동
+        float yDiff = newY - currentY;
+        child.updateHeight(yDiff);
+        // 변경된 위치로 다시 해당 컴포넌트 재 연산
+        return newY - child.parent.measureY;
+    }
+
     /**
      * 레이아웃의 모든 하위 구성 요소를 부모 크기에 맞출지 설정
      */

@@ -61,7 +61,6 @@ public class PDFLinearLayout extends PDFLayout {
         float defaultHeight = measureHeight;
         // 하위 구성 요소 측정 및 페이지 분할 처리
         for (int i = 0; i < children.size(); i++) {
-            int stack = 0;
             PDFComponent child = children.get(i);
             float childWeight = weights.get(i);
 
@@ -73,47 +72,55 @@ public class PDFLinearLayout extends PDFLayout {
             }
 
             // PDFLayout은 페이지네이션 체크 건너뛰기
-            if (child instanceof PDFLayout) {
-                child.measure(0, currentY);
-                currentY += child.getTotalHeight();
-                continue;
-            }
+            if (child instanceof PDFImage){
+                int stack = 0;
+                for (; ; ) {
+                    // 하위 구성 요소 위치 측정
+                    child.measure(0, currentY);
+                    float maxW = measureWidth
+                            - border.size.left - border.size.right
+                            - padding.left - padding.right
+                            - child.margin.left - child.margin.right;
+                    float maxH = measureHeight - currentY
+                            - border.size.top - border.size.bottom
+                            - padding.top - padding.bottom
+                            - child.margin.top - child.margin.bottom;
+                    childReanchor(child, maxW, maxH);
 
-            for(;;) {
+                    // 페이지 경계 확인 및 조정
+                    int currentPage = calculatePageIndex(child.measureY);
+                    int endPage = calculatePageIndex(child.measureY, child.getTotalHeight());
+
+                    if (currentPage != endPage) {
+                        stack++;
+                        if (stack > 2) {
+                            // 스택 오버 플로우 체크
+                            // 페이지 경계를 두 번 이상 넘어서게 되면
+                            // 하위 구성 요소가 페이지보다 크기가 크다고 판단.
+                            throw new StackOverflowError("Height of child component Too Large");
+                        }
+
+                        // 다음 페이지 시작점으로 이동
+                        float newY = (endPage) * contentHeight;
+                        // 변경된 위치로 다시 해당 컴포넌트 재 연산
+                        currentY = pageEdgeCheck(child, newY, child.measureY);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
                 // 하위 구성 요소 위치 측정
                 child.measure(0, currentY);
-                float maxW = measureWidth
-                        - border.size.left - border.size.right
-                        - padding.left - padding.right
-                        - child.margin.left - child.margin.right;
-                float maxH = measureHeight - currentY
-                        - border.size.top - border.size.bottom
-                        - padding.top - padding.bottom
-                        - child.margin.top - child.margin.bottom;
-                childReanchor(child, maxW, maxH);
-
-                // 페이지 경계 확인 및 조정
-                int currentPage = calculatePageIndex(currentY);
-                int endPage = calculatePageIndex(currentY, child.getTotalHeight());
-
-                if (currentPage != endPage) {
-                    stack++;
-                    if(stack > 2) {
-                        // 스택 오버 플로우 체크
-                        // 페이지 경계를 두 번 이상 넘어서게 되면
-                        // 하위 구성 요소가 페이지보다 크기가 크다고 판단.
-                        throw new StackOverflowError("Height of child component Too Large");
-                    }
-
-                    // 다음 페이지 시작점으로 이동
-                    float newY = (endPage) * contentHeight;
-                    float yDiff = newY - currentY;
-                    child.updateHeight(yDiff);
-
-                    // 변경된 위치로 다시 해당 컴포넌트 재 연산
-                    currentY = newY;
-                }else {
-                    break;
+                if (!(child instanceof PDFLayout)) {
+                    float maxW = measureWidth
+                            - border.size.left - border.size.right
+                            - padding.left - padding.right
+                            - child.margin.left - child.margin.right;
+                    float maxH = measureHeight - currentY
+                            - border.size.top - border.size.bottom
+                            - padding.top - padding.bottom
+                            - child.margin.top - child.margin.bottom;
+                    childReanchor(child, maxW, maxH);
                 }
             }
 
@@ -141,7 +148,6 @@ public class PDFLinearLayout extends PDFLayout {
 
         // 하위 구성 요소들 측정
         for (int i = 0; i < children.size(); i++) {
-            int stack = 0;
             PDFComponent child = children.get(i);
             float childWidth = child.width;
             float childWeight = weights.get(i);
@@ -151,40 +157,51 @@ public class PDFLinearLayout extends PDFLayout {
                     fitChildrenToLayout ? measureHeight : null
             );
 
+            if (child instanceof PDFImage){
+                int stack = 0;
+                float currentY = 0;
+                for (; ; ) {
+                    // 하위 구성 요소 위치 측정
+                    child.measure(currentX, currentY);
+                    float maxW = cellWidth - child.margin.left - child.margin.right;
+                    float maxH = measureHeight
+                            - border.size.top - border.size.bottom
+                            - padding.top - padding.bottom
+                            - child.margin.top - child.margin.bottom;
+                    childReanchor(child, maxW, maxH);
 
-            float currentY = 0;
-            for(;;) {
-                // 하위 구성 요소 위치 측정
-                child.measure(currentX, currentY);
-                float maxW = cellWidth - child.margin.left - child.margin.right;
-                float maxH = measureHeight
-                        - border.size.top - border.size.bottom
-                        - padding.top - padding.bottom
-                        - child.margin.top - child.margin.bottom;
-                childReanchor(child, maxW, maxH);
+                    // 페이지 경계 확인 및 조정
+                    int currentPage = calculatePageIndex(child.measureY);
+                    int endPage = calculatePageIndex(child.measureY, child.getTotalHeight());
 
-                // 페이지 경계 확인 및 조정
-                int currentPage = calculatePageIndex(child.measureY);
-                int endPage = calculatePageIndex(child.measureY, child.getTotalHeight());
+                    if (currentPage != endPage) {
+                        stack++;
+                        if (stack > 2) {
+                            // 스택 오버 플로우 체크
+                            // 페이지 경계를 두 번 이상 넘어서게 되면
+                            // 하위 구성 요소가 페이지보다 크기가 크다고 판단.
+                            throw new StackOverflowError("Height of child component Too Large");
+                        }
 
-                if (currentPage != endPage) {
-                    stack++;
-                    if(stack > 2) {
-                        // 스택 오버 플로우 체크
-                        // 페이지 경계를 두 번 이상 넘어서게 되면
-                        // 하위 구성 요소가 페이지보다 크기가 크다고 판단.
-                        throw new StackOverflowError("Height of child component Too Large");
+                        // 다음 페이지 시작점으로 이동
+                        float newY = (endPage) * contentHeight;
+                        // 변경된 위치로 다시 해당 컴포넌트 재 연산
+                        currentY = pageEdgeCheck(child, newY, child.measureY);
+                    } else {
+                        break;
                     }
-
-                    // 다음 페이지 시작점으로 이동
-                    float newY = (endPage) * contentHeight;
-                    float yDiff = newY - currentY;
-                    child.updateHeight(yDiff);
-
-                    // 변경된 위치로 다시 해당 컴포넌트 재 연산
-                    currentY = newY;
-                }else {
-                    break;
+                }
+            }else {
+                // 하위 구성 요소 위치 측정
+                child.measure(currentX, 0);
+                // PDFLayout은 페이지네이션 체크 건너뛰기
+                if (!(child instanceof PDFLayout)) {
+                    float maxW = cellWidth - child.margin.left - child.margin.right;
+                    float maxH = measureHeight
+                            - border.size.top - border.size.bottom
+                            - padding.top - padding.bottom
+                            - child.margin.top - child.margin.bottom;
+                    childReanchor(child, maxW, maxH);
                 }
             }
 

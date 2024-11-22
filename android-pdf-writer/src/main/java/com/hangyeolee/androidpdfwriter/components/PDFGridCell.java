@@ -9,6 +9,7 @@ import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.exceptions.CellNotInGridLayoutException;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 public class PDFGridCell extends PDFLayout{
     PDFComponent children;
@@ -52,13 +53,52 @@ public class PDFGridCell extends PDFLayout{
     public void measure(float x, float y) {
         super.measure(x, y);
         if(children != null) {
+            // 테두리와 패딩을 제외한 실제 사용 가능한 너비 계산
+            float contentHeight = Zoomable.getInstance().getContentHeight();
             // Grid에서 할당 받은 영역 내에서 하위 구성 요소 배치
-            children.measure(0, 0);
-            float maxW = measureWidth
-                    - children.margin.left - children.margin.right;
-            float maxH = measureHeight
-                    - children.margin.top - children.margin.bottom;
-            childReanchor(children, maxW, maxH);
+            if (children instanceof PDFImage) {
+                int stack = 0;
+                float currentY = 0;
+                for (; ; ) {
+                    children.measure(0, currentY);
+                    float maxW = measureWidth
+                            - children.margin.left - children.margin.right;
+                    float maxH = measureHeight
+                            - children.margin.top - children.margin.bottom;
+                    childReanchor(children, maxW, maxH);
+
+                    // 페이지 경계 확인 및 조정
+                    int currentPage = calculatePageIndex(children.measureY);
+                    int endPage = calculatePageIndex(children.measureY, children.getTotalHeight());
+
+                    if (currentPage != endPage) {
+                        stack++;
+                        if (stack > 2) {
+                            // 스택 오버 플로우 체크
+                            // 페이지 경계를 두 번 이상 넘어서게 되면
+                            // 하위 구성 요소가 페이지보다 크기가 크다고 판단.
+                            throw new StackOverflowError("Height of child component Too Large");
+                        }
+
+                        // 다음 페이지 시작점으로 이동
+                        float newY = (endPage) * contentHeight;
+                        // 변경된 위치로 다시 해당 컴포넌트 재 연산
+                        currentY = pageEdgeCheck(children, newY, children.measureY);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                // 하위 구성 요소 위치 측정
+                children.measure(0, 0);
+                if (!(children instanceof PDFLayout)) {
+                    float maxW = measureWidth
+                            - children.margin.left - children.margin.right;
+                    float maxH = measureHeight
+                            - children.margin.top - children.margin.bottom;
+                    childReanchor(children, maxW, maxH);
+                }
+            }
         }
     }
 

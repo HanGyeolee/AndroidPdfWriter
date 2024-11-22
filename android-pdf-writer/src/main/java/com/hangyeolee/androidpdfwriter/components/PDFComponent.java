@@ -445,7 +445,6 @@ public abstract class PDFComponent{
 
     // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
     public int calculatePageIndex(float measureY, float componentHeight) {
-        if (measureY < 0) return 0;
         float pageHeight = Zoomable.getInstance().getContentHeight();
         return (int) Math.floor((measureY + componentHeight) / pageHeight);
     }

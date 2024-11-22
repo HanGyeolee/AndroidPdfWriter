@@ -36,6 +36,13 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 public class PDFText extends PDFResourceComponent {
+    public final static String Lorem =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor " +
+            "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud " +
+            "exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute " +
+            "irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla " +
+            "pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui " +
+            "officia deserunt mollit anim id est laborum. ";
     private final static String FONTBBOX_TEXT = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
             "[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" +
             "\u007f\u0080\u0081\u0082\u0083\u0084\u0085\u0086\u0087\u0088\u0089\u008a\u008b\u008c" +
@@ -122,13 +129,12 @@ public class PDFText extends PDFResourceComponent {
                     }
                 }
 
+                if (width > 0) {
+                    break;
+                }
                 for (int i = 0; i < layout.getLineCount(); i++) {
                     float w = layout.getLineWidth(i);
                     if (w > maxWidth) maxWidth = w;
-                }
-
-                if (width > 0) {
-                    break;
                 }
                 if (maxWidth == _width) {
                     maxWidth += margin.right + margin.left + border.size.right + border.size.left
@@ -145,10 +151,6 @@ public class PDFText extends PDFResourceComponent {
                     width = maxWidth;
                     check = true;
                 }
-                if (height <= 0){
-                    height = layout.getHeight();
-                    check = true;
-                }
                 if(check){
                     super.measure(x, y);
                 }
@@ -159,8 +161,8 @@ public class PDFText extends PDFResourceComponent {
             lastWidth = _width;
             lastAlign = align;
 
-            updatedHeight = layout.getHeight();
-            height =  (updatedHeight + border.size.top + padding.top
+            updatedHeight = measureTextHeight();
+            height = (updatedHeight + border.size.top + padding.top
                     + border.size.bottom + padding.bottom + margin.top + margin.bottom);
             float _height = getTotalHeight();
             /*
@@ -172,6 +174,35 @@ public class PDFText extends PDFResourceComponent {
                 _height = getTotalHeight();
             }
         }
+    }
+
+    protected float measureTextHeight(){
+        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float maxGap = 0;
+        float currentY = measureY;
+        int i = 0;
+        float lastBaseLine = layout.getLineBaseline(i);
+
+        float lineHeight;
+        for (i = 0; i < layout.getLineCount(); i++) {
+            if(i > 0) {
+                lineHeight = layout.getLineBaseline(i) - lastBaseLine;
+                lastBaseLine = layout.getLineBaseline(i);
+            }else{
+                lineHeight = lastBaseLine - layout.getLineTop(i);
+            }
+            // 시작 페이지와 끝 페이지 계산
+            int startPage = calculatePageIndex(currentY);
+            int endPage = calculatePageIndex(currentY, lineHeight);
+            float gap = 0;
+            if(startPage != endPage){
+                gap = endPage * pageHeight - currentY;
+                maxGap += gap;
+                currentY += gap;
+            }
+            currentY += lineHeight;
+        }
+        return layout.getHeight() + maxGap;
     }
 
     @Override
@@ -291,18 +322,21 @@ public class PDFText extends PDFResourceComponent {
         if (text == null || layout == null) return null;
         float pageHeight = Zoomable.getInstance().getContentHeight();
 
+
+        // 페이지별로 분할하여 그리기
+        int currentPage = 0;
+        float lastBaseLine = layout.getLineBaseline(0);
+        float lineHeight = lastBaseLine - layout.getLineTop(0);
+
         // 시작 페이지와 끝 페이지 계산
-        int startPage = calculatePageIndex(measureY, measureHeight);
+        int startPage = calculatePageIndex(measureY, lineHeight);
 
         // 첫 페이지의 Y 좌표 조정
         float currentY = measureY - startPage * pageHeight;
         if(currentY < 0) currentY = 0;
-
-        // 페이지별로 분할하여 그리기
-        int currentPage = 0;
-        StringBuilder content = serializer.getPage(startPage + currentPage);
-        float lineHeight = layout.getLineBaseline(0) - layout.getLineTop(0);
         currentY += lineHeight;
+
+        StringBuilder content = serializer.getPage(startPage + currentPage);
         drawBaseline(content, currentY);
 
         float lastAlignX = 0;
@@ -332,7 +366,8 @@ public class PDFText extends PDFResourceComponent {
 
             // 첫 줄이 아닌 경우 새로운 줄로 이동
             if (i > 0) {
-                lineHeight = layout.getLineBottom(i) - layout.getLineTop(i);
+                lineHeight = layout.getLineBaseline(i) - lastBaseLine;
+                lastBaseLine = layout.getLineBaseline(i);
                 currentY += lineHeight;
                 if(currentY > pageHeight){
                     // 다음 페이지로 이동 전 텍스트 객체 종료
@@ -343,6 +378,7 @@ public class PDFText extends PDFResourceComponent {
 
                     // 다음 페이지
                     content = serializer.getPage(startPage + currentPage);
+                    currentY += lineHeight;
                     drawBaseline(content, currentY);
                 } else {
                     content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",
@@ -359,7 +395,7 @@ public class PDFText extends PDFResourceComponent {
             // 텍스트 이스케이프 처리
             String escapedText = escapePDFString(lineText);
             content.append(escapedText).append(" Tj\r\n");
-            lastAlignX = alignX;
+            lastAlignX += alignX;
         }
 
         // 텍스트 객체 종료

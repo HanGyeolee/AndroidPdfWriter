@@ -46,10 +46,6 @@ public class PDFGridLayout extends PDFLayout{
     public void measure(float x, float y) {
         super.measure(x, y);
 
-        for(int i = 0; i < cells.size(); i++){
-            cells.get(i).measure(0,0);
-        }
-
         // weight 총합 계산
         float totalWeight = 0;
         for (int i = 0; i < count; i++) {
@@ -147,7 +143,6 @@ public class PDFGridLayout extends PDFLayout{
             }
         }
 
-        // TODO Cell 의 높이 및 위치가 비정상적인 값을 가짐.
         for (int i = 0; i < cells.size(); i++) {
             PDFGridCell cell = cells.get(i);
             cell.setParent(this);
