@@ -5,6 +5,7 @@ A easy to create PDF file library for Android.
 - [한국어 README.md](./README-ko.md)
 
 ## Table of Contents
+0. [v1.1.0-beta](#v1.1.0-beta)
 1. [Setup](#setup)
    1. [Gradle Setup](#gradle-setup)
    2. [Maven Setup](#maven-setup)
@@ -13,6 +14,14 @@ A easy to create PDF file library for Android.
 4. [Description](#description)
 5. [License](#license)
 
+## v1.1.0-beta
+The existing version draws the components shown on each page on a bitmap.
+The disadvantage of this method is that the app could bounce due to out of memory from the moment the canvas size exceeded five pages.
+
+Starting with version 1.1.0, all components are converted to PDF binary format.
+That is, the capacity of the output PDF file is reduced by optimizing text and images in binary format.
+### Warning
+>The Fit setting of the image may not work properly within the layout.
 
 ## Setup
 ### Gradle Setup

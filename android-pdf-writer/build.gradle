@@ -32,7 +32,7 @@ android {
         namespace "com.hangyeolee.androidpdfwriter"
         minSdkVersion 14
         targetSdk 34
-        versionCode 3
+        versionCode 4
         versionName PUBLISH_VERSION
 
         testApplicationId "com.hangyeolee.androidpdfwriter.test"
