@@ -17,7 +17,6 @@ import androidx.annotation.RawRes;
 import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.exceptions.FontNotFoundException;
-import com.hangyeolee.androidpdfwriter.utils.FontExtractor;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.font.PDFFont;
 import com.hangyeolee.androidpdfwriter.utils.Fit;

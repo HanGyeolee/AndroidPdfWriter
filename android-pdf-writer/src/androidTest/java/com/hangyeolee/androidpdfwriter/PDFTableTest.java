@@ -49,13 +49,14 @@ public class PDFTableTest {
 
         builder = new PDFBuilder(Paper.A4);
         builder.setPagePadding(30, 30)
-                .setQuality(100)
+                .setQuality(90)
                 .setPagePadding(30.0f, 30.0f, 30.0f, 30.0f)
-                .setQuality(100);
+                .setQuality(90);
         {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
+                            .setCompress(true)
                             .setHeight(100f)
                             .setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("Title")
@@ -96,8 +97,9 @@ public class PDFTableTest {
                                     .wrapGridCell()
                                     .setBackgroundColor(Color.GREEN))
                             .addCell(4, 1, PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
-                                    .setBackgroundColor(Color.RED)
-                                    .setFit(Fit.NONE)
+                                    .setCompress(true)
+                                    .setHeight(100)
+                                    .setFit(Fit.CONTAIN)
                                     .wrapGridCell())
                             .addCell(4, 2,  PDFH3.build(
                                     "It's a very, very long content, and the vertical height of the table layout is the same." +

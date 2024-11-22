@@ -5,8 +5,9 @@ import android.graphics.RectF;
 
 import androidx.annotation.NonNull;
 
+import com.hangyeolee.androidpdfwriter.components.BitmapExtractor;
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
-import com.hangyeolee.androidpdfwriter.utils.FontExtractor;
+import com.hangyeolee.androidpdfwriter.components.FontExtractor;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
@@ -42,7 +43,7 @@ public class BinarySerializer {
     * */
 
     private final BinaryObjectManager manager;
-    private final Map<Bitmap, String> imageResourceMap = new HashMap<>();
+    private final Map<BitmapExtractor.BitmapInfo, String> imageResourceMap = new HashMap<>();
     private final Map<FontExtractor.FontInfo, String> fontResourceMap = new HashMap<>();
     private int nextImageNumber = 1;
     private int nextFontNumber = 1;
@@ -208,23 +209,23 @@ public class BinarySerializer {
     /**
      * 이미지를 PDF 리소스로 등록
      */
-    public String registerImage(android.graphics.Bitmap bitmap) {
+    public String registerImage(@NonNull BitmapExtractor.BitmapInfo info) {
         if(resources == null){
             // 페이지 리소스 생성
             resources = manager.createObject(BinaryResources::new);
         }
 
         // 이미 등록된 이미지인지 확인
-        String imageId = imageResourceMap.get(bitmap);
+        String imageId = imageResourceMap.get(info);
         if (imageId != null) {
             return imageId;
         }
 
         imageId = "Im" + nextImageNumber++;
-        imageResourceMap.put(bitmap, imageId);
+        imageResourceMap.put(info, imageId);
 
         // 이미지 객체 생성
-        BinaryImage image = manager.createObject(n -> new BinaryImage(n, bitmap, quality));
+        BinaryImage image = manager.createObject(n -> new BinaryImage(n, info.resize, quality));
 
         // Resources에 이미지 추가
         resources.addXObject(imageId, image);
@@ -250,4 +251,5 @@ public class BinarySerializer {
         else if (quality > 100) quality = 100;
         this.quality = quality;
     }
+    public int getQuality(){return quality;}
 }

@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.utils;
+package com.hangyeolee.androidpdfwriter.components;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -47,12 +47,12 @@ public class FontExtractor {
         }
     }
 
-    public static class NameTableRecord {
+    private static class NameTableRecord {
         public String name;
         public String encoding;
     }
 
-    public static FontInfo loadFromDefault(@NonNull @PDFFont.ID String fontName){
+    protected static FontInfo loadFromDefault(@NonNull @PDFFont.ID String fontName){
         if (fontCache.containsKey(fontName)) {
             return fontCache.get(fontName);
         }
@@ -62,7 +62,7 @@ public class FontExtractor {
     }
 
     // Assets 폴더에서 폰트 로드
-    public static FontInfo loadFromAsset(@NonNull Context context, @NonNull String assetPath) {
+    protected static FontInfo loadFromAsset(@NonNull Context context, @NonNull String assetPath) {
         if (fontCache.containsKey(assetPath)) {
             return fontCache.get(assetPath);
         }
@@ -105,7 +105,7 @@ public class FontExtractor {
     }
 
     // 파일 시스템에서 폰트 로드
-    public static FontInfo loadFromFile(@NonNull String path) {
+    protected static FontInfo loadFromFile(@NonNull String path) {
         if (fontCache.containsKey(path)) {
             return fontCache.get(path);
         }
@@ -148,7 +148,7 @@ public class FontExtractor {
 
     // Raw 리소스에서 폰트 로드
     @SuppressLint("ResourceType")
-    public static FontInfo loadFromResource(@NonNull Context context, @RawRes int resourceId) {
+    protected static FontInfo loadFromResource(@NonNull Context context, @RawRes int resourceId) {
         String key = String.valueOf(resourceId);
         if (fontCache.containsKey(key)) {
             return fontCache.get(key);

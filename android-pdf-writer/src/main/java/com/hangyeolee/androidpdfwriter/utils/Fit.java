@@ -5,6 +5,8 @@ import androidx.annotation.IntDef;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import com.hangyeolee.androidpdfwriter.components.PDFImage;
+
 public class Fit {
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({FILL, CONTAIN, COVER, NONE, SCALE_DOWN})
@@ -42,8 +44,10 @@ public class Fit {
 
     /**
      * 대체 콘텐츠의 크기를 조절하지 않습니다.<br>
-     * Do not size alternative content.
-     *
+     * {@link PDFImage#setCompress(boolean)} 에 <b>true</b> 를 넣어 압축을 시도해도, 이미지 압축을 하지 않습니다.<br>
+     * Do not size alternative content.<br>
+     * If you try to compress by insert <b>true</b> to {@link PDFImage#setCompress(boolean)}, the image will not be compressed.
+     * @see PDFImage#setCompress(boolean)
      * @author  HanGyeol Choi
      */
     public static final int NONE = 3;
