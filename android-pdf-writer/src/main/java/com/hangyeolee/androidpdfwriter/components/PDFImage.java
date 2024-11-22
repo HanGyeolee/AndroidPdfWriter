@@ -1,5 +1,6 @@
 package com.hangyeolee.androidpdfwriter.components;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -8,11 +9,14 @@ import android.text.TextPaint;
 import android.util.Log;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.annotation.RawRes;
 
 import com.hangyeolee.androidpdfwriter.PDFBuilder;
 import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
+import com.hangyeolee.androidpdfwriter.utils.BitmapExtractor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 
@@ -151,13 +155,13 @@ public class  PDFImage extends PDFResourceComponent{
     public void registerResources(BinarySerializer page) {
         if(resize != null){
             resourceId = page.registerImage(resize);
-        } else if (origin != null) {
+        } else {
             resourceId = page.registerImage(origin);
         }
     }
 
     @Override
-    public StringBuilder draw(BinarySerializer serializer) {
+    public void draw(BinarySerializer serializer) {
         float originWidth = origin.getWidth();
         float originHeight = origin.getHeight();
         float _width, _height;
@@ -183,7 +187,7 @@ public class  PDFImage extends PDFResourceComponent{
         float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + _height);
 
         if(compressEnable) {
-            if (_width * 5f < originWidth || _height * 5f < originHeight) {
+            if (_width * 5f < originWidth && _height * 5f < originHeight) {
                 if(resize != null){
                     resize.recycle();
                 }
@@ -213,8 +217,10 @@ public class  PDFImage extends PDFResourceComponent{
             }
         }
 
-        StringBuilder content = super.draw(serializer);
-        // 지정된 크기에 맞게 늘리기
+        super.draw(serializer);
+        int currentPage = calculatePageIndex(measureY, measureHeight);
+        StringBuilder content = serializer.getPage(currentPage);
+                // 지정된 크기에 맞게 늘리기
         content.append(String.format(Locale.getDefault(),
                 "%s 0 0 %s %s %s cm\r\n",
                 BinaryConverter.formatNumber(_width),
@@ -223,7 +229,6 @@ public class  PDFImage extends PDFResourceComponent{
                 BinaryConverter.formatNumber(y))
         );
         content.append("/").append(resourceId).append(" Do\r\n");
-        return null;
     }
 
     /**
@@ -386,6 +391,44 @@ public class  PDFImage extends PDFResourceComponent{
         super.finalize();
     }
 
+    public static PDFImage fromAsset(@NonNull Context context, @NonNull String assetPath){
+        return new PDFImage(BitmapExtractor.loadFromAsset(context, assetPath));
+    }
+    public static PDFImage fromFile(@NonNull String path){
+        return new PDFImage(BitmapExtractor.loadFromFile(path));
+    }
+    public static PDFImage fromResource(@NonNull Context context, @RawRes int resourceId){
+        return new PDFImage(BitmapExtractor.loadFromResource(context, resourceId));
+    }
+    public static PDFImage fromAsset(@NonNull Context context, @NonNull String assetPath, @Fit.FitInt int fit){
+        return new PDFImage(BitmapExtractor.loadFromAsset(context, assetPath), fit);
+    }
+    public static PDFImage fromFile(@NonNull String path, @Fit.FitInt int fit){
+        return new PDFImage(BitmapExtractor.loadFromFile(path), fit);
+    }
+    public static PDFImage fromResource(@NonNull Context context, @RawRes int resourceId, @Fit.FitInt int fit){
+        return new PDFImage(BitmapExtractor.loadFromResource(context, resourceId), fit);
+    }
+
+    /**
+     * @deprecated 추후 업데이트에서 삭제될 예정입니다.
+     * @see PDFImage#fromAsset(Context, String)
+     * @see PDFImage#fromFile(String)
+     * @see PDFImage#fromResource(Context, int)
+     * @param bitmap 이미지
+     * @return 자기 자신
+     */
+    @Deprecated
     public static PDFImage build(Bitmap bitmap){return new PDFImage(bitmap);}
+    /**
+     * @deprecated 추후 업데이트에서 삭제될 예정입니다.
+     * @see PDFImage#fromAsset(Context, String, int)
+     * @see PDFImage#fromFile(String, int)
+     * @see PDFImage#fromResource(Context, int, int)
+     * @param bitmap 이미지
+     * @param fit 정합 조건
+     * @return 자기 자신
+     */
+    @Deprecated
     public static PDFImage build(Bitmap bitmap, @Fit.FitInt int fit){return new PDFImage(bitmap, fit);}
 }

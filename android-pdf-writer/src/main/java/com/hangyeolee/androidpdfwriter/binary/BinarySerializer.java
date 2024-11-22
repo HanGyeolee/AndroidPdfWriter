@@ -6,7 +6,7 @@ import android.graphics.RectF;
 import androidx.annotation.NonNull;
 
 import com.hangyeolee.androidpdfwriter.components.PDFLayout;
-import com.hangyeolee.androidpdfwriter.font.FontExtractor;
+import com.hangyeolee.androidpdfwriter.utils.FontExtractor;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 

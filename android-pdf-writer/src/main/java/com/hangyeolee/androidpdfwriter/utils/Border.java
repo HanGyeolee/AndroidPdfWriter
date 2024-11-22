@@ -60,8 +60,8 @@ public class Border {
 
     public void copy(@Nullable Border b){
         if(b != null){
-            size = b.size;
-            color = b.color;
+            size = new RectF(b.size);
+            color = new ColorRect(b.color);
         }
     }
 

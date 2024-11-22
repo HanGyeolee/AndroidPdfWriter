@@ -17,7 +17,7 @@ import androidx.annotation.RawRes;
 import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.exceptions.FontNotFoundException;
-import com.hangyeolee.androidpdfwriter.font.FontExtractor;
+import com.hangyeolee.androidpdfwriter.utils.FontExtractor;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.font.PDFFont;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
@@ -30,10 +30,8 @@ import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.stream.IntStream;
 
 public class PDFText extends PDFResourceComponent {
     public final static String Lorem =
@@ -316,10 +314,10 @@ public class PDFText extends PDFResourceComponent {
     }
 
     @Override
-    public StringBuilder draw(BinarySerializer serializer) {
+    public void draw(BinarySerializer serializer) {
         super.draw(serializer);
 
-        if (text == null || layout == null) return null;
+        if (text == null || layout == null) return;
         float pageHeight = Zoomable.getInstance().getContentHeight();
 
 
@@ -400,8 +398,6 @@ public class PDFText extends PDFResourceComponent {
 
         // 텍스트 객체 종료
         PDFTextsState.restore(content);
-
-        return null;
     }
 
     private void drawBaseline(StringBuilder content, float currentY){

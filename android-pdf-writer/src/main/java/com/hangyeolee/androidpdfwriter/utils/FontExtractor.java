@@ -1,4 +1,4 @@
-package com.hangyeolee.androidpdfwriter.font;
+package com.hangyeolee.androidpdfwriter.utils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -9,6 +9,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.RawRes;
 
+import com.hangyeolee.androidpdfwriter.font.EncodingWindow;
+import com.hangyeolee.androidpdfwriter.font.PDFFont;
+import com.hangyeolee.androidpdfwriter.font.TTFPlatform;
+import com.hangyeolee.androidpdfwriter.font.TTFSystem;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -16,14 +21,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
 public class FontExtractor {
     private static final String TAG = "FontExtractor";
 
-    // 캐시: 경로/리소스ID -> {폰트이름, Typeface} 매핑
+    // 캐시: 경로/리소스ID -> {폰트이름, 폰트 정보} 매핑
     private static final Map<String, FontInfo> fontCache = new HashMap<>();
 
     public static class FontInfo {
@@ -58,7 +62,7 @@ public class FontExtractor {
     }
 
     // Assets 폴더에서 폰트 로드
-    public static FontInfo loadFromAsset(@androidx.annotation.NonNull Context context, @androidx.annotation.NonNull String assetPath) {
+    public static FontInfo loadFromAsset(@NonNull Context context, @NonNull String assetPath) {
         if (fontCache.containsKey(assetPath)) {
             return fontCache.get(assetPath);
         }
@@ -101,7 +105,7 @@ public class FontExtractor {
     }
 
     // 파일 시스템에서 폰트 로드
-    public static FontInfo loadFromFile(@androidx.annotation.NonNull String path) {
+    public static FontInfo loadFromFile(@NonNull String path) {
         if (fontCache.containsKey(path)) {
             return fontCache.get(path);
         }
@@ -144,7 +148,7 @@ public class FontExtractor {
 
     // Raw 리소스에서 폰트 로드
     @SuppressLint("ResourceType")
-    public static FontInfo loadFromResource(@androidx.annotation.NonNull Context context, @RawRes int resourceId) {
+    public static FontInfo loadFromResource(@NonNull Context context, @RawRes int resourceId) {
         String key = String.valueOf(resourceId);
         if (fontCache.containsKey(key)) {
             return fontCache.get(key);
@@ -204,12 +208,7 @@ public class FontExtractor {
         }
     }
 
-    public static FontInfo loadFromCache(String Key){
-        if (fontCache.containsKey(Key)) {
-            return fontCache.get(Key);
-        }
-        return null;
-    }
+
 
     private static NameTableRecord  extractPostScriptName(InputStream is) throws IOException {
         try {

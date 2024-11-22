@@ -179,53 +179,49 @@ public class PDFGridLayout extends PDFLayout{
     }
 
     @Override
-    public StringBuilder draw(BinarySerializer serializer) {
+    public void draw(BinarySerializer serializer) {
         super.draw(serializer);
-        float pageHeight = Zoomable.getInstance().getContentHeight();
 
-        StringBuilder content;
         for(int i = 0; i < cells.size(); i++) {
             PDFComponent child = cells.get(i);
 
-            // 현재 컴포넌트가 위치한 페이지 구하기
-            int currentPage = calculatePageIndex(child.measureY, child.measureHeight);
-            content = serializer.getPage(currentPage);
+            pagenationDrawStart(serializer, child,
+                    (content, component, x, y, width, height, currentPage, startPage, endPage) -> {
+                        // 현재 페이지 내에서의 좌표 계산
+                        float pdfX = Zoomable.getInstance().transform2PDFWidth(
+                                x
+                        );
+                        float pdfY = Zoomable.getInstance().transform2PDFHeight(
+                                y + height
+                        );
 
-            // 첫 페이지의 Y 좌표 조정
-            float currentY = child.measureY - currentPage * pageHeight;
-            if(currentY < 0) currentY = 0;
+                        // 그래픽스 상태 저장
+                        PDFGraphicsState.save(content);
 
-            // 현재 페이지 내에서의 좌표 계산
-            float x = Zoomable.getInstance().transform2PDFWidth(
-                    child.measureX
-            );
-            float y = Zoomable.getInstance().transform2PDFHeight(
-                    currentY + child.measureHeight
-            );
-
-            // 그래픽스 상태 저장
-            PDFGraphicsState.save(content);
-
-            // 클리핑 영역 설정 - 컴포넌트의 전체 영역
-            // W 클리핑 패스 설정
-            // n 패스를 그리지 않고 클리핑만 적용
-            content.append(String.format(Locale.US,
-                    "%s %s %s %s re W n\r\n",
-                    BinaryConverter.formatNumber(x),
-                    BinaryConverter.formatNumber(y),
-                    BinaryConverter.formatNumber(
-                            child.measureWidth),
-                    BinaryConverter.formatNumber(
-                            child.measureHeight))
+                        // 클리핑 영역 설정 - 컴포넌트의 전체 영역
+                        // W 클리핑 패스 설정
+                        // n 패스를 그리지 않고 클리핑만 적용
+                        content.append(String.format(Locale.getDefault(),
+                                "%s %s %s %s re W n\r\n",
+                                BinaryConverter.formatNumber(pdfX),
+                                BinaryConverter.formatNumber(pdfY),
+                                BinaryConverter.formatNumber(
+                                        width),
+                                BinaryConverter.formatNumber(
+                                        height))
+                        );
+                    }
             );
 
             // 하위 구성 요소 그리기
             child.draw(serializer);
 
-            // 그래픽스 상태 복원
-            PDFGraphicsState.restore(content);
+            pagenationDrawEnd(serializer, child, content -> {
+                // 그래픽스 상태 복원
+                PDFGraphicsState.restore(content);
+                return null;
+            });
         }
-        return null;
     }
 
     /**
@@ -259,6 +255,10 @@ public class PDFGridLayout extends PDFLayout{
      */
     public PDFGridLayout addCell(int row, int column, PDFGridCell cell){
         int position = getCellPosition(cell, row, column);
+        if(orientation == Orientation.Vertical)
+            updateOccupancyGridV(position, cell.rowSpan);
+        else
+            updateOccupancyGridH(position, cell.rowSpan);
         cell.setPosition(position);
         cells.add(cell);
         return this;

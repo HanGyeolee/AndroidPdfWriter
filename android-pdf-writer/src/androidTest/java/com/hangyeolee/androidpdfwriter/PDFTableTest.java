@@ -14,6 +14,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFGridCell;
 import com.hangyeolee.androidpdfwriter.components.PDFGridLayout;
 import com.hangyeolee.androidpdfwriter.components.PDFH1;
 import com.hangyeolee.androidpdfwriter.components.PDFH3;
+import com.hangyeolee.androidpdfwriter.components.PDFH4;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
@@ -45,8 +46,6 @@ public class PDFTableTest {
         PDFBuilder.DEBUG = true;
 
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(com.hangyeolee.androidpdfwriter.test.R.drawable.test);
-        Bitmap b = BitmapFactory.decodeStream(stream);
 
         builder = new PDFBuilder(Paper.A4);
         builder.setPagePadding(30, 30)
@@ -56,8 +55,8 @@ public class PDFTableTest {
         {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)
-                    .addChild(PDFImage.build(b)
-                            .setHeight(120f)
+                    .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
+                            .setHeight(100f)
                             .setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("Title")
                             .setBackgroundColor(Color.RED)
@@ -96,11 +95,9 @@ public class PDFTableTest {
                                     .setTextAlign(TextAlign.Center)
                                     .wrapGridCell()
                                     .setBackgroundColor(Color.GREEN))
-                            .addCell(4, 1, PDFImage.build(b)
-                                    .setCompress(true)
+                            .addCell(4, 1, PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                                     .setBackgroundColor(Color.RED)
-                                    .setFit(Fit.FILL)
-                                    .setHeight(50.0f)
+                                    .setFit(Fit.NONE)
                                     .wrapGridCell())
                             .addCell(4, 2,  PDFH3.build(
                                     "It's a very, very long content, and the vertical height of the table layout is the same." +
@@ -138,7 +135,7 @@ public class PDFTableTest {
                                     .wrapGridCell()
                                     .setRowSpan(2))
                             .addCell(2, 0, PDFH3.build(
-                                            "It's a very long content. According to this content, the vertical height of Table layout is the same." +
+                                            "PDFH3 It's a very long content. According to this content, the vertical height of Table layout is the same." +
                                                     "It also has Span applied, and if you do well, you can also go over the page.")
                                     .setBackgroundColor(Color.BLACK)
                                     .setTextColor(Color.WHITE)
@@ -146,13 +143,13 @@ public class PDFTableTest {
                                     .wrapGridCell()
                                     .setRowSpan(2))
                             .addCell(2, 1, PDFH3.build(
-                                            "It's a content without Span.")
+                                            "PDFH3 It's a content without Span.")
                                     .setBackgroundColor(Color.GRAY)
                                     .setTextColor(Color.WHITE)
                                     .setTextAlign(TextAlign.Center)
                                     .wrapGridCell())
                             .addCell(3, 1, PDFH3.build(
-                                            "It's a content without Span.")
+                                            "PDFH3 It's a content without Span.")
                                     .setBackgroundColor(Color.RED)
                                     .setTextColor(Color.WHITE)
                                     .setTextAlign(TextAlign.Center)

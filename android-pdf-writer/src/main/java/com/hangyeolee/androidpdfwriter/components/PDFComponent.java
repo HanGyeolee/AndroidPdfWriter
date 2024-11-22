@@ -136,37 +136,10 @@ public abstract class PDFComponent{
     }
 
     /**
-     * PDF 컨텐츠 스트림에 색상 설정
-     */
-    protected void setColorInPDF(StringBuilder content, @ColorInt int color) {
-        float alpha = Color.alpha(color) / 255f;
-
-        // RGB 색상 설정
-        if (alpha == 1.0f) {
-            // 선 색상
-            PDFGraphicsState.addStrokeColor(content, color);
-            // 채움 색상
-            PDFGraphicsState.addFillColor(content, color);
-        } else {
-            // 알파값이 있는 경우 ExtGState 사용
-            // Note: ExtGState는 리소스로 등록되어야 함
-            //content.append("/GS1 gs\n"); // 알파값이 설정된 그래픽스 상태 사용
-            content.append(String.format(Locale.getDefault(),"/GS%s gs\r\n",
-                    BinaryConverter.formatNumber(alpha, 2)
-            )); // 알파값에 해당하는 ExtGState 사용
-            // 선 색상
-            PDFGraphicsState.addStrokeColor(content, color);
-            // 채움 색상
-            PDFGraphicsState.addFillColor(content, color);
-        }
-    }
-
-    /**
      * PDF 컨텐츠 스트림에 사각형 그리기
      */
-    protected void drawRectInPDF(StringBuilder content,
-                                 float x, float y, float width, float height,
-                                 boolean fill, boolean stroke) {
+    protected void drawBackground(StringBuilder content,
+                                  float x, float y, float width, float height) {
         // PDF 좌표계로 변환 (좌하단 기준)
         float pdfX = Zoomable.getInstance().transform2PDFWidth(x);
         float pdfY = Zoomable.getInstance().transform2PDFHeight(y + height);
@@ -176,48 +149,100 @@ public abstract class PDFComponent{
                 BinaryConverter.formatNumber(width),
                 BinaryConverter.formatNumber(height)
         ));
-
-        if (fill && stroke) {
-            content.append("B\r\n"); // 채우기 및 테두리
-        } else if (fill) {
-            content.append("f\r\n"); // 채우기만
-        } else if (stroke) {
-            content.append("S\r\n"); // 테두리만
-        }
+        content.append("f\r\n"); // 채우기만
     }
 
     /**
      * 컴포넌트의 리소스를 등록하고 PDF 오브젝트를 생성
+     *
      * @param serializer BinaryPage 인스턴스
      */
-    public StringBuilder draw(BinarySerializer serializer){
-        float componentHeight = getTotalHeight();
+    public void draw(BinarySerializer serializer){
+        pagenationDrawStart(serializer, this, this::drawBackgroundNBorder);
+    }
 
-        // 페이지 체크
-        int requiredPage = calculatePageIndex(measureY, componentHeight);
-        StringBuilder content = serializer.getPage(requiredPage);
-
+    protected void drawBackgroundNBorder(StringBuilder content, PDFComponent component,
+                                         float x, float y, float width, float height,
+                                         int currentPage, int startPage, int endPage) {
         // 배경 그리기
-        if (backgroundColor != Color.TRANSPARENT && measureWidth > 0 && measureHeight > 0) {
+        if (component.backgroundColor != Color.TRANSPARENT && measureWidth > 0) {
             // 그래픽스 상태 저장
             PDFGraphicsState.save(content);
 
-            setColorInPDF(content, backgroundColor);
-            drawRectInPDF(content,
-                    measureX,
-                    measureY,
-                    measureWidth,
-                    measureHeight,
-                    true, false);
+            // 선 색상
+            PDFGraphicsState.addStrokeColor(content, component.backgroundColor);
+            // 채움 색상
+            PDFGraphicsState.addFillColor(content, component.backgroundColor);
+
+            drawBackground(content, x, y, width, height);
 
             // 그래픽스 상태 복원
             PDFGraphicsState.restore(content);
         }
 
-        //--------------테두리 그리기-------------//
-        border.draw(content, measureX, measureY, measureWidth, measureHeight);
-        return content;
+        // 테두리 그리기 - 페이지 경계에서 적절히 분할
+        Border sectionBorder = new Border();
+        sectionBorder.copy(component.border);
+
+        // 페이지 경계에서 테두리 처리
+        if (currentPage != 0) {
+            sectionBorder.setTop(0, Color.TRANSPARENT);
+        }
+        if (currentPage != endPage - startPage) {
+            sectionBorder.setBottom(0, Color.TRANSPARENT);
+        }
+
+        sectionBorder.draw(content, x, y,
+                width, height);
     }
+
+
+    protected void pagenationDrawStart(
+            BinarySerializer serializer, PDFComponent component, PDFLayout.Pagenation pagenation
+    ){
+        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float remainingHeight = component.measureHeight;
+
+        // 시작 페이지와 끝 페이지 계산
+        int startPage = calculatePageIndex(component.measureY);
+        int endPage = calculatePageIndex(component.measureY, component.measureHeight);
+
+        // 첫 페이지의 Y 좌표 조정
+        float currentY = component.measureY - startPage * pageHeight;
+        if(currentY < 0) currentY = 0;
+
+        // 페이지별로 분할하여 그리기
+        int currentPage = 0;
+        while (remainingHeight > 0) {
+            StringBuilder content = serializer.getPage(startPage + currentPage);
+
+            // 현재 페이지에 그릴 수 있는 높이 계산
+            float availableHeight = pageHeight - (currentY % pageHeight);
+            float heightToDraw = Math.min(availableHeight, remainingHeight);
+
+            // 그리기 작업
+            pagenation.draw(content, component,
+                    component.measureX, currentY,
+                    component.measureWidth, heightToDraw,
+                    currentPage, startPage, endPage);
+
+            remainingHeight -= heightToDraw;
+            currentY = 0; // 다음 페이지에서는 최상단부터 시작
+            currentPage++;
+        }
+    }
+
+    protected void pagenationDrawEnd(BinarySerializer serializer, PDFComponent component, Action<StringBuilder, Void> drawEnd){
+        // 시작 페이지와 끝 페이지 계산
+        int startPage = calculatePageIndex(component.measureY);
+        int endPage = calculatePageIndex(component.measureY, component.measureHeight);
+
+        for(int p = 0; p <= endPage - startPage; p++) {
+            StringBuilder content = serializer.getPage(startPage + p);
+            drawEnd.invoke(content);
+        }
+    }
+
 
     /**
      * 하위 컴포넌트로 상위 컴포넌트 업데이트 <br>
@@ -395,7 +420,7 @@ public abstract class PDFComponent{
      * @param action 테두리 변경 함수
      */
     public PDFComponent setBorder(Action<Border, Border> action){
-        border.copy(action.invoke(border));
+        action.invoke(border);
         return this;
     }
 
@@ -458,5 +483,10 @@ public abstract class PDFComponent{
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
+    }
+
+    protected interface Pagenation{
+        void draw(StringBuilder content, PDFComponent component, float x, float y, float width, float height,
+                  int currentPage, int startPage, int endPage);
     }
 }

@@ -55,15 +55,8 @@ public class PDFBuilderTest {
 
         Log.d(TAG, "Starting test setup...");
 
-        context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        context = InstrumentationRegistry.getInstrumentation().getContext();
         Log.d(TAG, "Context initialized");
-
-        InputStream stream = InstrumentationRegistry.getInstrumentation().getContext().getResources().openRawResource(
-                com.hangyeolee.androidpdfwriter.test.R.drawable.test);
-        Log.d(TAG, "Image stream opened");
-
-        testImage = BitmapFactory.decodeStream(stream);
-        Log.d(TAG, "Bitmap decoded: " + (testImage != null));
     }
 
     @Test
@@ -73,7 +66,7 @@ public class PDFBuilderTest {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setSize(null, 300)
                     .setBackgroundColor(Color.BLUE)
-                    .addChild(PDFImage.build(testImage)
+                    .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                             .setCompress(true)
                             .setFit(Fit.CONTAIN)
                             .setAnchor(Anchor.Start, Anchor.Start)
@@ -119,7 +112,7 @@ public class PDFBuilderTest {
                             .setBackgroundColor(Color.LTGRAY)
                             .setSize(null, 300)
                             .addChild(PDFH5.build("H5 Image"))
-                            .addChild(PDFImage.build(testImage)
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                                     .setCompress(true)
                                     .setFit(Fit.NONE)
                                     .setHeight(520.0f)));
@@ -168,7 +161,7 @@ public class PDFBuilderTest {
                                     .setSize(60, null)
                                     .setAnchor(Anchor.Center, Anchor.Center)
                                     .setTextAlign(TextAlign.End))
-                            .addChild(PDFImage.build(testImage)
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                                     .setCompress(true)
                                     .setFit(Fit.CONTAIN)
                                     .setAnchor(Anchor.Start, Anchor.Center)
@@ -254,7 +247,7 @@ public class PDFBuilderTest {
                                     .setSize(60, null)
                                     .setAnchor(Anchor.Center, Anchor.Center)
                                     .setTextAlign(TextAlign.End))
-                            .addChild(PDFImage.build(testImage)
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                                     .setCompress(true)
                                     .setFit(Fit.CONTAIN)
                                     .setAnchor(Anchor.Start, Anchor.Center)
@@ -289,7 +282,7 @@ public class PDFBuilderTest {
                                     .setSize(60, null)
                                     .setAnchor(Anchor.Center, Anchor.Center)
                                     .setTextAlign(TextAlign.End))
-                            .addChild(PDFImage.build(testImage)
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                                     .setCompress(true)
                                     .setFit(Fit.CONTAIN)
                                     .setAnchor(Anchor.Start, Anchor.Center)

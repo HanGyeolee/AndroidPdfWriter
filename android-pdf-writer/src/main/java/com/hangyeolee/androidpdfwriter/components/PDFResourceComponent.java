@@ -9,9 +9,9 @@ public abstract class PDFResourceComponent extends PDFComponent {
     int fit = Fit.NONE;
 
     @Override
-    public StringBuilder draw(BinarySerializer page) {
+    public void draw(BinarySerializer page) {
         registerResources(page);
-        return super.draw(page);
+        super.draw(page);
     }
 
     public PDFResourceComponent setFit(@Fit.FitInt int fit){

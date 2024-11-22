@@ -6,7 +6,6 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.exceptions.CellNotInGridLayoutException;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
@@ -103,12 +102,10 @@ public class PDFGridCell extends PDFLayout{
     }
 
     @Override
-    public StringBuilder draw(BinarySerializer serializer) {
+    public void draw(BinarySerializer serializer) {
         super.draw(serializer);
         if(children != null) {
-            return children.draw(serializer);
-        } else {
-            return null;
+            children.draw(serializer);
         }
     }
 

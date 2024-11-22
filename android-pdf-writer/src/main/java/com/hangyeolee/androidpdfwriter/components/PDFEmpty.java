@@ -11,9 +11,8 @@ public class PDFEmpty extends PDFComponent{
     }
 
     @Override
-    public StringBuilder draw(BinarySerializer serializer) {
+    public void draw(BinarySerializer serializer) {
         // draw nothing
-        return null;
     }
 }
 
