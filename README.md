@@ -5,7 +5,7 @@ Easy PDF Library for Android.
 - [한국어 README.md](./README-ko.md)
 
 ## Table of Contents
-0. [v1.1.0-beta](#v1.1.0-beta)
+0. [v1.1.0-SNAPSHOT](#v1.1.0-SNAPSHOT)
 1. [Setup](#setup)
    1. [Gradle Setup](#gradle-setup)
    2. [Maven Setup](#maven-setup)
@@ -14,7 +14,7 @@ Easy PDF Library for Android.
 4. [Description](#description)
 5. [License](#license)
 
-## v1.1.0-beta
+## v1.1.0-SNAPSHOT
 The existing version draws the components shown on each page on a bitmap.
 The disadvantage of this method is that the app could bounce due to out of memory from the moment the canvas size exceeded five pages.
 
@@ -34,10 +34,11 @@ PDFText.build("Embedding Font. 폰트를 임베딩한다.").setFontFromAsset(con
 For setFontFromAsset, the setFontFromFile, setFontFromResource method produces the same results (font embedding failure, font broken, etc.).
 
 ## Setup
+The snapshot repository must be added first.
 ### Gradle Setup
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-beta'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-SNAPSHOT'
 }
 ```
 
@@ -46,7 +47,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.0-beta</version>
+    <version>1.1.0-SNAPSHOT</version>
 </dependency>
 ```
 

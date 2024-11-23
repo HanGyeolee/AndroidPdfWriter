@@ -6,9 +6,9 @@ plugins {
 
 ext {
     PUBLISH_GROUP_ID = 'io.github.hangyeolee'
-    PUBLISH_VERSION = '1.1.0-beta'
+    PUBLISH_VERSION = '1.1.0-SNAPSHOT'
     PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
-    PUBLISH_DESCRIPTION = 'A easy to create PDF file library for Android.'
+    PUBLISH_DESCRIPTION = 'Easy PDF Library for Android.'
     PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
     PUBLISH_LICENSE_NAME = 'Apache License'
     PUBLISH_LICENSE_URL =
@@ -26,7 +26,7 @@ ext {
 
 android {
     compileSdk 34
-    //compileSdkVersion 29
+    //compileSdkVersion 34
 
     defaultConfig {
         namespace "com.hangyeolee.androidpdfwriter"

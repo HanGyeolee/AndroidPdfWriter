@@ -5,7 +5,7 @@
 - [English README.md](./README.md)
 
 ## 목차
-0. [v1.1.0-beta](#v1.1.0-beta)
+0. [v1.1.0-SNAPSHOT](#v1.1.0-SNAPSHOT)
 1. [설정](#설정)
    1. [Gradle 설정](#gradle-설정)
    2. [Maven 설정](#maven-설정)
@@ -14,7 +14,7 @@
 4. [설명](#설명)
 5. [라이선스](#라이선스)
 
-## v1.1.0-beta
+## v1.1.0-SNAPSHOT
 기존 버전은 각 페이지에 보이는 컴포넌트들을 비트맵에 그려내는 방식입니다.
 이 방식의 단점은 캔버스의 크기가 5페이지를 초과하는 순간부터 메모리 부족으로 인해 앱이 튕길 수 있습니다.
 
@@ -34,10 +34,11 @@ PDFText.build("Embedding Font. 폰트를 임베딩한다.").setFontFromAsset(con
 setFontFromAsset 에 대해서 setFontFromFile, setFontFromResource 메소드도 동일한 결과 (폰트 임베딩 실패, 폰트 깨짐 등)를 냅니다.
 
 ## 설정
+snapshot 레포지토리를 먼저 추가해야합니다.
 ### Gradle 설정
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-beta'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-SNAPSHOT'
 }
 ```
 
@@ -46,7 +47,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.0-beta</version>
+    <version>1.1.0-SNAPSHOT</version>
 </dependency>
 ```
 

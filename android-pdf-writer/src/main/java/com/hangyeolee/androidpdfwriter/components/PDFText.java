@@ -27,10 +27,8 @@ import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FontType;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.Objects;
 
 public class PDFText extends PDFResourceComponent {
     public final static String Lorem =
@@ -64,16 +62,6 @@ public class PDFText extends PDFResourceComponent {
     private Rect fontBBox;
     private int[] charWidths = null;  // 문자별 폭 저장
 
-    /*
-     * Line spacing multiplier for default line spacing.
-     */
-    public static final float DEFAULT_LINESPACING_MULTIPLIER = 1.0f;
-
-    /*
-     * Line spacing addition for default line spacing.
-     */
-    public static final float DEFAULT_LINESPACING_ADDITION = 0.0f;
-
     String text = null;
     Layout.Alignment align = Layout.Alignment.ALIGN_NORMAL;
     StaticLayout layout = null;
@@ -106,7 +94,7 @@ public class PDFText extends PDFResourceComponent {
 
             for(;;) {
                 if (bufferPaint != lastPaint ||
-                        !Objects.equals(text, lastText) || lastWidth != _width || lastAlign != align) {
+                        !text.equals(lastText) || lastWidth != _width || lastAlign != align) {
                     if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP_MR1) {
                         layout = StaticLayout.Builder.obtain(text,
                                         0,
@@ -119,7 +107,7 @@ public class PDFText extends PDFResourceComponent {
                     else {
                         layout = new StaticLayout(
                                 text, 0, text.length(), (TextPaint) bufferPaint, (int) Math.ceil(_width), align,
-                                DEFAULT_LINESPACING_MULTIPLIER, DEFAULT_LINESPACING_ADDITION,
+                                1.0f, 0.0f,
                                 true, null, (int) Math.ceil(_width));
                     }
                 }
@@ -442,7 +430,7 @@ public class PDFText extends PDFResourceComponent {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                     bytes = text.getBytes(StandardCharsets.UTF_16BE);
                 } else {
-                    bytes = text.getBytes(Charset.forName("UTF-16BE"));
+                    bytes = text.getBytes("UTF-16BE");
                 }
 
                 result.append("[");
