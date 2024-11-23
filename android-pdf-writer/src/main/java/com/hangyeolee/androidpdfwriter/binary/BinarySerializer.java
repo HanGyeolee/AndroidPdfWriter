@@ -237,7 +237,7 @@ public class BinarySerializer {
         StringBuilder sb = new StringBuilder();
         sb.append(fontBytes.size()).append(" beginbfchar ");
         for(Character c : fontBytes) {
-            sb.append(String.format("<%04X> ", c & 0xFFFF));
+            sb.append(String.format(Locale.getDefault(), "<%04X> ", c & 0xFFFF));
         }
         sb.append("endbfchar\r");
         final String bfchar = sb.toString();

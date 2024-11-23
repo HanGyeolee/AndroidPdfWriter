@@ -228,6 +228,8 @@ public class PDFBuilderTest {
                             .setBackgroundColor(Color.WHITE)
                             .setBorder(4, Color.BLACK)
                             .addChild(PDFH2.build("H2 Name")
+                                    .setSize(null, null)
+                                    .setFontsize(24)
                                     .setBackgroundColor(Color.RED))
                             .addChild(PDFH3.build("H3 Glyph")
                                     .setBorder(border ->

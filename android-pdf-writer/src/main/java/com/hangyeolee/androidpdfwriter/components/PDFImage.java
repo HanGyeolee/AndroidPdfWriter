@@ -472,6 +472,7 @@ public class  PDFImage extends PDFResourceComponent{
     public static PDFImage build(Bitmap bitmap){
         return new PDFImage(BitmapExtractor.loadFromBitmap(bitmap));
     }
+
     /**
      * {@link Bitmap}을 통해서 {@link PDFImage} 를 생성합니다.<br>
      * {@link Bitmap}으로 키값을 생성하는 데, 시간이 오래 걸릴 수 있습니다.<br>
@@ -489,4 +490,5 @@ public class  PDFImage extends PDFResourceComponent{
     public static PDFImage build(Bitmap bitmap, @Fit.FitInt int fit){
         return new PDFImage(BitmapExtractor.loadFromBitmap(bitmap), fit);
     }
+
 }
