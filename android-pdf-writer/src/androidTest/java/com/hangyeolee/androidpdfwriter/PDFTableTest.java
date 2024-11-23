@@ -47,11 +47,7 @@ public class PDFTableTest {
 
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        builder = new PDFBuilder(Paper.A4);
-        builder.setPagePadding(30, 30)
-                .setQuality(90)
-                .setPagePadding(30.0f, 30.0f, 30.0f, 30.0f)
-                .setQuality(90);
+        builder = new PDFBuilder(Paper.A4).setPagePadding(30, 30).setQuality(90);
         {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .setBackgroundColor(Color.BLUE)

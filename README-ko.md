@@ -20,14 +20,24 @@
 
 버전 1.1.0 부터는 모든 컴포넌트가 PDF 바이너리 형식으로 변환됩니다.
 즉, 텍스트와 이미지를 바이너리 형식으로 최적화하여 출력되는 PDF 파일의 용량을 줄입니다.
-### 주의 사항
-> 레이아웃 내에서 이미지의 Fit 설정이 제대로 동작하지 않을 수 있습니다.
+### :warning:주의 사항
+폰트 설정이 정상적으로 동작하지 않습니다.
+PDF에서 기본적으로 제공하는 Base14 폰트만을 사용하길 권장합니다.
+
+ASCII(0xff) 문자만 정상적으로 동작합니다.
+``` java
+// 정상 동작 : Base14 폰트 사용
+PDFText.build("only ASCII code").setFont(PDFFont.TIMES_ROMAN);
+// 문제 발생 가능(폰트 임베딩 실패, 폰트 깨짐 등)
+PDFText.build("Embedding Font. 폰트를 임베딩한다.").setFontFromAsset(context, "assetPath.ttf"); 
+```
+setFontFromAsset 에 대해서 setFontFromFile, setFontFromResource 메소드도 동일한 결과 (폰트 임베딩 실패, 폰트 깨짐 등)를 냅니다.
 
 ## 설정
 ### Gradle 설정
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.0.4'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-beta'
 }
 ```
 
@@ -36,16 +46,15 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.0.4</version>
+    <version>1.1.0-beta</version>
 </dependency>
 ```
 
 ## 간단한 사용법
 ``` Java
-// 제네릭 형식은 최상단 레이아웃의 형식을 지정합니다.
 // PDF Builder의 파라미터는 72dpi를 기준으로 가로 길이와 세로 길이입니다.
 // A4 용지의 가로:595.3px 세로:841.9px
-PDFBuilder<PDFLinearLayout> builder = new PDFBuilder<>(Paper.A4);
+PDFBuilder builder = new PDFBuilder(Paper.A4);
 
 // PDF 페이지의 내용이 들어가지 않는 여백입니다. 가로, 세로 순서로 넣으시면 됩니다.
 builder.setPagePadding(30, 30);
@@ -53,84 +62,105 @@ builder.setPagePadding(30, 30);
 
 #### 테스트용 PDF 페이지를 만드는 코드입니다:
 ``` Java
-builder.root = PDFLinearLayout.build()
-    .setOrientation(Orientation.Column)
-    .setBackgroundColor(Color.BLUE)
-    .addChild(PDFImage.build(b)
-        .setSize(null, 200f)
-        .setFit(Fit.CONTAIN))
-    .addChild(PDFH1.build("제목")
-        .setBackgroundColor(Color.RED)
-        .setTextAlign(TextAlign.Center))
-    .addChild(PDFGridLayout.build(3, 5)
-        .setMargin(10, 10, 10, 10)
-        .setBackgroundColor(Color.WHITE)
-        .setBorder(border -> border
-            .setLeft(4, Color.BLACK)
-            .setTop(4, Color.RED)
-            .setRight(4, Color.GREEN)
-            .setBottom(4, Color.MAGENTA)
-        )
-        .addChild(0, 0, PDFH3.build("번호"))
-        .addChild(1, 0, PDFH3.build("이름")
-            .setBackgroundColor(Color.YELLOW)
-            .setTextAlign(TextAlign.Center))
-        .addChild(2, 0, PDFH3.build("내용")
-            .setBackgroundColor(Color.BLACK)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        .addChild(0, 1, PDFH3.build("001"))
-        .addChild(1, 2, PDFH3.build("홍길동")
-            .setBackgroundColor(Color.YELLOW)
-            .setTextAlign(TextAlign.Center))
-        .addChild(2, 3, PDFH3.build("어떤 내용이 담겨있다.")
-            .setBackgroundColor(Color.BLACK)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        .addChild(1, 4, PDFImage.build(b)
-            .setBackgroundColor(Color.RED)
-            .setFit(Fit.FILL)
-            .setSize(null, 50.0f))
-        .addChild(2, 4, PDFH3.build(
-            "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다. 아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다.")
-            .setTextColor(Color.BLACK)
-            .setTextAlign(TextAlign.Center)))
-    .addChild(PDFGridLayout.build(2, 4)
-        .setMargin(10, 10, 10, 10)
-        .setBackgroundColor(Color.WHITE)
-        .setBorder(border -> border
-            .setLeft(4, Color.BLACK)
-            .setTop(4, Color.RED)
-            .setRight(4, Color.GREEN)
-            .setBottom(4, Color.MAGENTA)
-        )
-        .addChild(0, 0, PDFH3.build("Span 이 없는 내용입니다.")
-            .setBackgroundColor(Color.BLACK)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        .addChild(0, 1, PDFH3.build("Span 이 없는 내용입니다.")
-            .setBackgroundColor(Color.WHITE)
-            .setTextColor(Color.BLACK)
-            .setTextAlign(TextAlign.Center))
-        .addChild(1, 0, 1, 2, PDFH3.build(
-            "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다. 또한 Span 이 적용되어 있으며, 잘하면 페이지를 넘어갈 수 도 있습니다.")
-            .setBackgroundColor(Color.BLACK)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        .addChild(0, 2, 1, 2, PDFH3.build(
-            "아주아주아주 긴 내용입니다. 이 내용에 따라서 Table 레이아웃의 세로 높이는 동일하게 늘어납니다. 또한 Span 이 적용되어 있으며, 잘하면 페이지를 넘어갈 수 도 있습니다.")
-            .setBackgroundColor(Color.BLACK)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        .addChild(1, 2, 1, 1, PDFH3.build("Span 이 없는 내용입니다.")
-            .setBackgroundColor(Color.GRAY)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        .addChild(1, 3,1, 1, PDFH3.build("Span 이 없는 내용입니다.")
-            .setBackgroundColor(Color.RED)
-            .setTextColor(Color.WHITE)
-            .setTextAlign(TextAlign.Center))
-        );
+builder.root = PDFLinearLayout.build(Orientation.Vertical)
+        .setBackgroundColor(Color.BLUE)
+        .addChild(PDFImage.fromResource(context, resourceId)
+                .setCompress(true)
+                .setHeight(200f)
+                .setFit(Fit.CONTAIN))
+        .addChild(PDFH1.build("Title")
+                .setBackgroundColor(Color.RED)
+                .setTextAlign(TextAlign.Center))
+        .addChild(PDFGridLayout.horizontal(3)
+                .setMargin(10, 10, 10, 10)
+                .setBackgroundColor(Color.WHITE)
+                .setBorder(border -> border
+                        .setLeft(4, Color.BLACK)
+                        .setTop(4, Color.RED)
+                        .setRight(4, Color.GREEN)
+                        .setBottom(4, Color.MAGENTA))
+                .addCell(PDFH3.build("Number").wrapGridCell())
+                .addCell(PDFH3.build("Name")
+                        .setBackgroundColor(Color.YELLOW)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell())
+                .addCell(PDFH3.build("Content")
+                        .setBackgroundColor(Color.BLACK)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell())
+                .addCell(1, 0, PDFH3.build("001")
+                        .setBackgroundColor(Color.GREEN)
+                        .wrapGridCell()
+                        .setBackgroundColor(Color.BLACK))
+                .addCell(2, 1, PDFH3.build("Hong Gil-Dong")
+                        .setBackgroundColor(Color.YELLOW)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell()
+                        .setBackgroundColor(Color.BLACK))
+                .addCell(3, 2, PDFH3.build("Some content had been existed.")
+                        .setBackgroundColor(Color.BLACK)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell()
+                        .setBackgroundColor(Color.GREEN))
+                .addCell(4, 1, PDFImage.fromResource(context, resourceId)
+                        .setCompress(true)
+                        .setHeight(150)
+                        .setFit(Fit.CONTAIN)
+                        .wrapGridCell())
+                .addCell(4, 2,  PDFH3.build(
+                        "It's a very, very long content, and the vertical height of the table layout is the same. It's a very, very long content, and the vertical height of the table layout is the same.")
+                        .setTextColor(Color.BLACK)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell()))
+        .addChild(PDFGridLayout.horizontal(2)
+                        .setMargin(10, 10, 10, 10)
+                        .setBackgroundColor(Color.WHITE)
+                        .setBorder(border -> border
+                                .setLeft(4, Color.BLACK)
+                                .setTop(4, Color.RED)
+                                .setRight(4, Color.GREEN)
+                                .setBottom(4, Color.MAGENTA))
+                .addCell(0, 0, PDFH3.build(
+                                "It's a content without Span.")
+                        .setBackgroundColor(Color.BLACK)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell())
+                .addCell(1, 0, PDFH3.build(
+                                "It's a content without Span.")
+                        .setBackgroundColor(Color.WHITE)
+                        .setTextColor(Color.BLACK)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell())
+                .addCell(0, 1, PDFH3.build(
+                                "It's a very long content. According to this content, the vertical height of Table layout is the same. It also has Span applied, and if you do well, you can also go over the page.")
+                        .setBackgroundColor(Color.BLACK)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell()
+                        .setRowSpan(2))
+                .addCell(2, 0, PDFH3.build(
+                                "PDFH3 It's a very long content. According to this content, the vertical height of Table layout is the same. It also has Span applied, and if you do well, you can also go over the page.")
+                        .setBackgroundColor(Color.BLACK)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell()
+                        .setRowSpan(2))
+                .addCell(2, 1, PDFH3.build(
+                                "PDFH3 It's a content without Span.")
+                        .setBackgroundColor(Color.GRAY)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell())
+                .addCell(3, 1, PDFH3.build(
+                                "PDFH3 It's a content without Span.")
+                        .setBackgroundColor(Color.RED)
+                        .setTextColor(Color.WHITE)
+                        .setTextAlign(TextAlign.Center)
+                        .wrapGridCell()))
+;
 ```
 
 #### 작성된 PDF를 파일로 저장하고 싶을 때:
@@ -141,18 +171,22 @@ builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
 ```
 
 ## 예시 이미지
-#### 저장된 PDF 파일은 하단과 같습니다.:
+#### 저장된 PDF 파일은 하단과 같습니다:
 
 ![저장된 PDF 파일 예시](./android-pdf-writer/src/androidTest/res/drawable/pdftabletest_resultimage.png)
 
+
 ## 설명
-이 라이브러리는 사용자가 설정한 화면을 비트맵으로 그려 JPEG 형식으로 압축한 후, PDF 파일로 출력합니다. 페이지 당 1장의 이미지만 포함합니다. JPEG 압축 품질을 변경할 수 있으며, 품질 기본 설정값은 `60` 입니다.
+PDF 내에 들어 가는 이미지에 대한 품질 값을 설정 합니다. JPEG 압축 품질을 변경할 수 있으며, 품질 기본 설정 값은 `85` 입니다.
 ``` Java
-builder.setQuality(60);
+builder.setQuality(85);
 ```
 
-DPI는 pdf로 생성할 이미지의 해상도입니다. 해상도가 높을수록 이미지의 용량이 증가할 것 입니다. 디바이스 dpi와 상관없이 오직 pdf의 72dpi를 기준으로 해상도가 증가합니다. DPI 기본 설정값은 `DPI.M5`로 360dpi 입니다.
+바이너리 최적화를 통해 DPI 조절은 불가능합니다. 삭제된 메소드입니다.
 ``` Java
+/**
+* deprecated 되지 않고 삭제됨.
+*/
 builder.setDPI(DPI.M5);
 ```
 
