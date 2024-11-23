@@ -57,7 +57,7 @@ public class PDFTableTest {
                     .setBackgroundColor(Color.BLUE)
                     .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                             .setCompress(true)
-                            .setHeight(100f)
+                            .setHeight(200f)
                             .setFit(Fit.CONTAIN))
                     .addChild(PDFH1.build("Title")
                             .setBackgroundColor(Color.RED)
@@ -98,7 +98,7 @@ public class PDFTableTest {
                                     .setBackgroundColor(Color.GREEN))
                             .addCell(4, 1, PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
                                     .setCompress(true)
-                                    .setHeight(100)
+                                    .setHeight(150)
                                     .setFit(Fit.CONTAIN)
                                     .wrapGridCell())
                             .addCell(4, 2,  PDFH3.build(

@@ -15,7 +15,6 @@ import androidx.annotation.RawRes;
 import com.hangyeolee.androidpdfwriter.PDFBuilder;
 import com.hangyeolee.androidpdfwriter.binary.BinaryConverter;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
-import com.hangyeolee.androidpdfwriter.exceptions.FontNotFoundException;
 import com.hangyeolee.androidpdfwriter.exceptions.ImageNotFoundException;
 import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
@@ -29,11 +28,16 @@ import java.util.Locale;
 public class  PDFImage extends PDFResourceComponent{
     BitmapExtractor.BitmapInfo info = null;
 
-    float resizeW;
-    float resizeH;
+
+    // Fit 적용 후의 크기 (기존 resizeW, resizeH 대체)
+    float resizedWidth;
+    float resizedHeight;
+
+    // Anchor에 의한 여백 (기존 gapX, gapY 유지)
     float gapX;
     float gapY;
 
+    // 이미지 압축 활성화 플래그 (기존 유지)
     boolean compressEnable = false;
 
     protected PDFImage(BitmapExtractor.BitmapInfo info){
@@ -57,132 +61,144 @@ public class  PDFImage extends PDFResourceComponent{
     @Override
     public void measure(float x, float y) {
         super.measure(x, y);
-        float _width =  (measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right);
-        float _height = getTotalHeight();
-        if(height > 0){
-            /*
-            height 가 measureHeight 보다 크다면?
-            상위 컴포넌트의 Height를 업데이트 한다.
-            */
-            while (height > _height) {
-                updateHeight(height - _height);
-                _height = getTotalHeight();
-            }
-        }
 
-        fitting(info.origin, _width, _height);
-
-        if(height < 1) {
-            /*
-            resizeH 가 measureHeight 보다 크다면?
-            상위 컴포넌트의 Height를 업데이트 한다.
-            */
-            while (resizeH > _height) {
-                updateHeight(resizeH - _height);
-                _height = (measureHeight - border.size.top - padding.top
-                        - border.size.bottom - padding.bottom);
-            }
-
-            fitting(info.origin, _width, _height);
-        }
-
+        // 측정 가능한 실제 너비/높이 계산
         float availableWidth = measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right;
         float availableHeight = measureHeight - border.size.top - padding.top
                 - border.size.bottom - padding.bottom;
-        if(fit == Fit.COVER || fit == Fit.CONTAIN){
-            _width = resizeW;
-            _height = resizeH;
-        }
-        else if(fit == Fit.NONE) {
-            _width = info.origin.getWidth();
-            _height = info.origin.getHeight();
-        }
-        else {
-            _width = availableWidth;
-            _height = availableHeight;
+
+        // 높이가 명시적으로 지정된 경우, 부모 크기 업데이트
+        if (height > 0) {
+            float _height = getTotalHeight();
+            while (height > _height) {
+                updateHeight(height - _height);
+                _height = getTotalHeight();
+
+                // 업데이트된 부모 크기로 사용 가능한 높이 재계산
+                availableHeight = measureHeight - border.size.top - padding.top
+                        - border.size.bottom - padding.bottom;
+            }
         }
 
+        // 항상 원본 비트맵으로 크기 계산
+        measureSize(info.origin, availableWidth, availableHeight);
+
+        // 계산된 크기가 가용 공간보다 큰 경우 부모 크기 업데이트
+        while (resizedHeight > availableHeight) {
+            updateHeight(resizedHeight - availableHeight);
+            availableHeight = measureHeight - border.size.top - padding.top
+                    - border.size.bottom - padding.bottom;
+
+            // 새로운 가용 공간으로 다시 크기 계산
+            measureSize(info.origin, availableWidth, availableHeight);
+        }
+
+        // 최종 높이 설정
+        float updatedHeight = resizedHeight;
+        height = updatedHeight + border.size.top + padding.top
+                + border.size.bottom + padding.bottom + margin.top + margin.bottom;
+
+        // Anchor에 따른 여백 계산
+        float gapWidth = availableWidth - resizedWidth;
+        float gapHeight = availableHeight - resizedHeight;
+        gapX = Anchor.getDeltaPixel(anchor.horizontal, gapWidth);
+        gapY = Anchor.getDeltaPixel(anchor.vertical, gapHeight);
+
+        // 압축을 위한 maxWidth/maxHeight 업데이트
         if(compressEnable) {
             if(fit == Fit.NONE) {
                 info.maxHeight = info.origin.getHeight();
                 info.maxWidth = info.origin.getWidth();
-                return;
-            }
-            if (_width * 5f < info.origin.getWidth() && _height * 5f < info.origin.getHeight()) {
-                if(info.maxHeight < _height) info.maxHeight = _height;
-                if(info.maxWidth < _width) info.maxWidth = _width;
+            }else if (resizedWidth * 5f < info.origin.getWidth() && resizedHeight * 5f < info.origin.getHeight()) {
+                if(info.maxHeight < resizedHeight) info.maxHeight = resizedHeight;
+                if(info.maxWidth < resizedWidth) info.maxWidth = resizedWidth;
             }
         }
     }
 
-    private void fitting(Bitmap origin, float _width, float _height){
-        float aspectRatio = 1;
-        if(origin.getWidth() > 0)
-            aspectRatio = (float)origin.getHeight() / origin.getWidth();
+    private void measureSize(Bitmap bitmap, float availableWidth, float availableHeight){
+        // 기본 크기 설정
+        resizedWidth = bitmap.getWidth();
+        resizedHeight = bitmap.getHeight();
 
-        resizeW = _width;
-        resizeH = _height;
+        // 비트맵의 가로세로 비율 계산
+        float aspectRatio = (float)bitmap.getHeight() / bitmap.getWidth();
 
-        if(resizeW < 1 && resizeH > 0){
-            resizeW = origin.getWidth() * resizeH/origin.getHeight();
-        } else if(resizeH < 1 && resizeW > 0){
-            resizeH = origin.getHeight() * resizeW/origin.getWidth();
-        } else if(resizeW < 1){
-            resizeW = origin.getWidth();
-            resizeH = origin.getHeight();
+        // 부모 크기가 지정되지 않은 경우
+        if (availableWidth < 1 && availableHeight > 0) {
+            resizedWidth = availableHeight / aspectRatio;
+            resizedHeight = availableHeight;
+        } else if (availableHeight < 1 && availableWidth > 0) {
+            resizedWidth = availableWidth;
+            resizedHeight = availableWidth * aspectRatio;
         }
 
         if (fit == Fit.SCALE_DOWN){
             fit = Fit.CONTAIN;
-            if (origin.getWidth() > origin.getHeight()) {
-                if(resizeW > origin.getWidth()){
-                    fit = Fit.NONE;
-                }
-            } else if(resizeH > origin.getHeight()){
+            if(resizedWidth > bitmap.getWidth() &&
+                resizedHeight > bitmap.getHeight()){
                 fit = Fit.NONE;
             }
         }
 
         switch (fit) {
             case Fit.FILL:
-            case Fit.SCALE_DOWN:
-                break;
-            case Fit.COVER:
-                if (origin.getWidth() > origin.getHeight()) {
-                    resizeH =  (_width * aspectRatio);
-                    gapX = 0;
-                    gapY = (_height - resizeH);
-                } else {
-                    resizeW =  (_height / aspectRatio);
-                    gapX = (_width - resizeW);
-                    gapY = 0;
-                }
-                // Measure X Anchor and Y Anchor
-                gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
-                gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
+                resizedWidth = availableWidth;
+                resizedHeight = availableHeight;
                 break;
             case Fit.CONTAIN:
-                if (origin.getWidth() > origin.getHeight()) {
-                    resizeW =  (_height / aspectRatio);
-                    gapX = (_width - resizeW);
-                    gapY = 0;
-                } else {
-                    resizeH =  (_width * aspectRatio);
-                    gapX = 0;
-                    gapY = (_height - resizeH);
+                if (bitmap.getWidth() > bitmap.getHeight()) {
+                    // 이미지가 가로로 더 긴 경우
+                    resizedWidth = availableHeight / aspectRatio;
+                    resizedHeight = availableHeight;
+
+                    if (resizedWidth > availableWidth) {
+                        // 계산된 가로가 가용 공간을 넘으면 가로 기준으로 다시 계산
+                        resizedWidth = availableWidth;
+                        resizedHeight = availableWidth * aspectRatio;
+                    }
                 }
-                // Measure X Anchor and Y Anchor
-                gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
-                gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
+                else {
+                    // 이미지가 세로로 더 길거나 정사각형인 경우
+                    resizedWidth = availableWidth;
+                    resizedHeight = availableWidth * aspectRatio;
+
+                    if (resizedHeight > availableHeight) {
+                        // 계산된 세로가 가용 공간을 넘으면 세로 기준으로 다시 계산
+                        resizedHeight = availableHeight;
+                        resizedWidth = availableHeight / aspectRatio;
+                    }
+                }
+                break;
+            case Fit.COVER:
+                if (bitmap.getWidth() > bitmap.getHeight()) {
+                    // 이미지가 가로로 더 긴 경우
+                    resizedWidth = availableWidth;
+                    resizedHeight = availableWidth * aspectRatio;
+
+                    if (resizedHeight < availableHeight) {
+                        // 계산된 세로가 가용 공간보다 작으면 세로 기준으로 다시 계산
+                        resizedHeight = availableHeight;
+                        resizedWidth = availableHeight / aspectRatio;
+                    }
+                }
+                else {
+                    // 이미지가 세로로 더 길거나 정사각형인 경우
+                    resizedHeight = availableHeight;
+                    resizedWidth = availableHeight / aspectRatio;
+
+                    if (resizedWidth < availableWidth) {
+                        // 계산된 가로가 가용 공간보다 작으면 가로 기준으로 다시 계산
+                        resizedWidth = availableWidth;
+                        resizedHeight = availableWidth * aspectRatio;
+                    }
+                }
                 break;
             case Fit.NONE:
-                gapX = (_width - origin.getWidth());
-                gapY = (_height - origin.getHeight());
-                // Measure X Anchor and Y Anchor
-                gapX = Anchor.getDeltaPixel(anchor.horizontal, gapX);
-                gapY = Anchor.getDeltaPixel(anchor.vertical, gapY);
+            default:
+                resizedWidth = bitmap.getWidth();
+                resizedHeight = bitmap.getHeight();
                 break;
         }
     }
@@ -194,38 +210,30 @@ public class  PDFImage extends PDFResourceComponent{
 
     @Override
     public void draw(BinarySerializer serializer) {
-        float availableWidth = measureWidth - border.size.left - padding.left
-                - border.size.right - padding.right;
-        float availableHeight = measureHeight - border.size.top - padding.top
-                - border.size.bottom - padding.bottom;
+        // 리소스 등록 전 비트맵 압축 수행
         compressBitmap(serializer);
-        fitting(info.resize, availableWidth, availableHeight);
-        float _width, _height;
-        if(fit == Fit.COVER || fit == Fit.CONTAIN){
-            _width = resizeW;
-            _height = resizeH;
-        }
-        else if(fit == Fit.NONE) {
-            _width = info.origin.getWidth();
-            _height = info.origin.getHeight();
-        }
-        else {
-            _width = availableWidth;
-            _height = availableHeight;
-        }
 
-        // 이미지가 그려질 실제 위치 계산
-        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
-        float y = Zoomable.getInstance().transform2PDFHeight(measureY + border.size.top + padding.top + gapY + _height);
-
+        // 부모 클래스의 draw 호출 (리소스 등록 포함)
         super.draw(serializer);
+        float pageHeight = Zoomable.getInstance().getContentHeight();
+
+        // 시작 페이지
         int currentPage = calculatePageIndex(measureY, measureHeight);
+
+        // 첫 페이지의 Y 좌표 조정
+        float currentY = measureY - currentPage * pageHeight;
+        if(currentY < 0) currentY = 0;
+
+        // PDF 좌표계로 변환하여 실제 그리기 위치 계산
+        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
+        float y = Zoomable.getInstance().transform2PDFHeight(currentY + border.size.top + padding.top + gapY + resizedHeight);
+
         StringBuilder content = serializer.getPage(currentPage);
-                // 지정된 크기에 맞게 늘리기
+        // 지정된 크기에 맞게 늘리기
         content.append(String.format(Locale.getDefault(),
                 "%s 0 0 %s %s %s cm\r\n",
-                BinaryConverter.formatNumber(_width),
-                BinaryConverter.formatNumber(_height),
+                BinaryConverter.formatNumber(resizedWidth),
+                BinaryConverter.formatNumber(resizedHeight),
                 BinaryConverter.formatNumber(x),
                 BinaryConverter.formatNumber(y))
         );

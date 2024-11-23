@@ -83,8 +83,6 @@ public class PDFText extends PDFResourceComponent {
     Layout.Alignment lastAlign = null;
     float lastWidth = 0;
 
-    float updatedHeight;
-
     protected PDFText(String text){
         this.setText(text).setTextPaint(null).setFont(PDFFont.HELVETICA);
     }
@@ -158,7 +156,7 @@ public class PDFText extends PDFResourceComponent {
             lastWidth = _width;
             lastAlign = align;
 
-            updatedHeight = measureTextHeight();
+            float updatedHeight = measureTextHeight();
             height = (updatedHeight + border.size.top + padding.top
                     + border.size.bottom + padding.bottom + margin.top + margin.bottom);
             float _height = getTotalHeight();
