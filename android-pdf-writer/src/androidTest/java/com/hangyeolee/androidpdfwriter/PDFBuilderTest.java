@@ -254,7 +254,12 @@ public class PDFBuilderTest {
                                     .setHeight(50.0f)))
                     .addChild(PDFH1.build(
                             PDFText.Lorem + PDFText.Lorem
-                    ));
+                    ))
+                    .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
+                            .setCompress(true)
+                            .setFit(Fit.CONTAIN)
+                            .setAnchor(Anchor.Start, Anchor.Center)
+                            .setHeight(100.0f));
         }
         Log.d(TAG, "PDF Builder setup completed");
 
