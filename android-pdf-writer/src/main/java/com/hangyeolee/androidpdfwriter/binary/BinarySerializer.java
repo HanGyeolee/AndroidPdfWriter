@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class BinarySerializer {
-    private static final String HEADER = "%PDF-1.4\r\n"
+    private static final String HEADER = "%PDF-1.7\r\n"
             + "%" + (char)0xE2 + (char)0xE3 + (char)0xCF + (char)0xD3 +"\r\n";
     private static final String TO_UNICODE_CMAP_TEMPLATE = """
                     /CIDInit /ProcSet findresource begin\r
@@ -31,16 +31,16 @@ public class BinarySerializer {
                     /CMapType 2 def\r
                     1 begincodespacerange <0000> <FFFF> endcodespacerange\r
                     %s
-                    endcmap\r
-                    CMapName currentdict /CMap defineresource pop\r
-                    end end
-                    """;
+                    endcmap CMapName currentdict /CMap defineresource pop\r
+                    end end""";
     /*
                     1 beginbfrange
                     <0000> <FFFF> <0000>
                     endbfrange
 
     * */
+
+    // 특수문자, 숫자, 한글자모, 한글 완성형
 
     private final BinaryObjectManager manager;
     private final Map<BitmapExtractor.BitmapInfo, String> imageResourceMap = new HashMap<>();
@@ -57,7 +57,6 @@ public class BinarySerializer {
     private BinaryPages pages;
     private BinaryPage currentPage;
     private BinaryResources resources;
-    private BinaryObject cmap = null;
 
     /**
      * BinaryPage 생성자
@@ -154,7 +153,7 @@ public class BinarySerializer {
         BinaryFontDescriptor fontDesc;
         if(BinaryConverter.isBase14Font(info.postScriptName)){
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, null, null));
+            font = manager.createObject(n -> new BinaryFont(n, null));
             font.setBaseFont(info.postScriptName);
             font.setSubtype("Type1");
 
@@ -165,17 +164,17 @@ public class BinarySerializer {
             fontDesc.setFontName(info.postScriptName);
             font.setFontDescriptor(fontDesc);
         }else {
-            if(cmap == null){
-                cmap = createToUnicode(info.W.keySet());
-            }
+            BinaryObject cmap = createToUnicode(info.usedGlyph);
+
             String CIDName = "CIDFont+"+fontId;
             // Font 객체 생성
-            font = manager.createObject(n -> new BinaryFont(n, "Identity-H", cmap));
+            font = manager.createObject(n -> new BinaryFont(n, "Identity-H"));
             font.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
             font.setSubtype("Type0");
+            font.setCAMP(cmap);
 //            font.setWidths(metrics.charWidths);
 
-            BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null, null));
+            BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null));
             cidFont.setSubtype("CIDFontType2");
             cidFont.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
             cidFont.dictionary.put("/CIDSystemInfo", "<</Registry (Adobe)/Ordering (Identity)/Supplement 0>>");
@@ -233,11 +232,14 @@ public class BinarySerializer {
         return imageId;
     }
 
-    private BinaryObject createToUnicode(Set<Character> fontBytes) {
+    private BinaryObject createToUnicode(Map<Integer, Character> fontBytes) {
         StringBuilder sb = new StringBuilder();
         sb.append(fontBytes.size()).append(" beginbfchar ");
-        for(Character c : fontBytes) {
-            sb.append(String.format(Locale.getDefault(), "<%04X> ", c & 0xFFFF));
+        for(Map.Entry<Integer, Character> entry : fontBytes.entrySet()) {
+            // 글리프, 유니코드
+            sb.append(String.format(Locale.getDefault(), "<%04X> <%04X> ",
+                    entry.getKey() & 0xFFFF,
+                    entry.getValue() & 0xFFFF));
         }
         sb.append("endbfchar\r");
         final String bfchar = sb.toString();

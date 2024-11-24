@@ -19,6 +19,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -33,23 +34,28 @@ public class FontExtractor {
     public static class FontInfo {
         public final String postScriptName;
         public final Typeface typeface;
-        public final String encoding;
         public final byte[] stream;
-        public final Map<Character, Integer> W = new HashMap<>();
+        public final Map<Integer, Integer> W = new HashMap<>();
+        public final Map<Integer, Character> usedGlyph = new HashMap<>();
+        public final Map<Character, Integer> glyphIndexMap;
 
         public FontInfo(
-                String postScriptName, String encoding,
-                Typeface typeface, byte[] stream) {
+                String postScriptName, Map<Character, Integer> glyphIndexMap, Typeface typeface, byte[] stream) {
             this.postScriptName = postScriptName;
-            this.encoding = encoding;
+            this.glyphIndexMap = glyphIndexMap;
             this.typeface = typeface;
             this.stream = stream;
         }
     }
 
-    private static class NameTableRecord {
-        public String name;
-        public String encoding;
+    protected static class FontNameAndCmap {
+        public final String postScriptName;
+        public final Map<Character, Integer> glyphIndexMap;
+
+        public FontNameAndCmap(String postScriptName, Map<Character, Integer> glyphIndexMap) {
+            this.postScriptName = postScriptName;
+            this.glyphIndexMap = glyphIndexMap;
+        }
     }
 
     protected static FontInfo loadFromDefault(@NonNull @PDFFont.ID String fontName){
@@ -77,7 +83,7 @@ public class FontExtractor {
 
             // 2. 폰트 이름 추출
             InputStream is = context.getAssets().open(assetPath);
-            NameTableRecord record = extractPostScriptName(is);
+            FontNameAndCmap record = extractPostScriptName(is);
 
             if(record == null) throw new IOException();
             is = context.getAssets().open(assetPath);
@@ -94,7 +100,7 @@ public class FontExtractor {
             }
 
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface, stream);
+            FontInfo fontInfo = new FontInfo(record.postScriptName, record.glyphIndexMap, typeface, stream);
             fontCache.put(assetPath, fontInfo);
             return fontInfo;
 
@@ -120,7 +126,7 @@ public class FontExtractor {
 
             // 2. 폰트 이름 추출
             FileInputStream fis = new FileInputStream(path);
-            NameTableRecord record = extractPostScriptName(fis);
+            FontNameAndCmap record = extractPostScriptName(fis);
 
             if(record == null) throw new IOException();
             fis = new FileInputStream(path);
@@ -136,7 +142,7 @@ public class FontExtractor {
                 fis.close();
             }
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface, stream);
+            FontInfo fontInfo = new FontInfo(record.postScriptName, record.glyphIndexMap, typeface, stream);
             fontCache.put(path, fontInfo);
             return fontInfo;
 
@@ -180,7 +186,7 @@ public class FontExtractor {
 
             // 2. 폰트 이름 추출
             is = context.getResources().openRawResource(resourceId);
-            NameTableRecord record = extractPostScriptName(is);
+            FontNameAndCmap record = extractPostScriptName(is);
 
             if(record == null) throw new IOException();
             is = context.getResources().openRawResource(resourceId);
@@ -197,7 +203,7 @@ public class FontExtractor {
             }
 
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.name, record.encoding, typeface, stream);
+            FontInfo fontInfo = new FontInfo(record.postScriptName, record.glyphIndexMap, typeface, stream);
             fontCache.put(key, fontInfo);
 
             return fontInfo;
@@ -209,85 +215,96 @@ public class FontExtractor {
     }
 
 
+    // name 테이블 태그 ('name' in hex)
+    static final int NAME_TABLE_TAG = 0x6E616D65;
+    // cmap 테이블 태그 ('cmap' in hex)
+    static final int CMAP_TABLE_TAG = 0x636D6170;
+    // PostScript 이름의 nameID
+    static final int POST_SCRIPT_NAME_ID = 6;
 
-    private static NameTableRecord  extractPostScriptName(InputStream is) throws IOException {
+    private static FontNameAndCmap extractPostScriptName(InputStream is) throws IOException {
         try {
-            // name 테이블 태그 ('name' in hex)
-            final int NAME_TABLE_TAG = 0x6E616D65;
-            // PostScript 이름의 nameID
-            final int POST_SCRIPT_NAME_ID = 6;
-
             // TTF 파일 읽기 준비
             byte[] buffer = new byte[is.available()];
             is.read(buffer);
             ByteBuffer bb = ByteBuffer.wrap(buffer);
             bb.order(ByteOrder.BIG_ENDIAN);
 
+            // Parse offset table
+            int majorVersion = bb.getShort() & 0xFFFF;
+            int minorVersion = bb.getShort() & 0xFFFF;
             // 테이블 수 읽기
-            bb.position(4);
             int numTables = bb.getShort() & 0xFFFF;
 
-            // name 테이블 찾기
+            // 테이블 찾기
             int tableOffset = 12;
             int nameTableOffset = -1;
+            int cmapTableOffset = -1;
 
-            for (int i = 0; i < numTables; i++) {
+            for (int i = 0; i < numTables && (nameTableOffset == -1 || cmapTableOffset == -1); i++) {
                 bb.position(tableOffset + i * 16);
                 int tag = bb.getInt();
                 if (tag == NAME_TABLE_TAG) {
                     bb.position(tableOffset + i * 16 + 8);
                     nameTableOffset = bb.getInt();
-                    break;
+                } else if (tag == CMAP_TABLE_TAG) {
+                    bb.position(tableOffset + i * 16 + 8);
+                    cmapTableOffset = bb.getInt();
                 }
             }
 
-            if (nameTableOffset == -1) {
+            if (nameTableOffset == -1 || cmapTableOffset == -1) {
                 return null;
             }
 
-            // name 테이블 읽기
-            bb.position(nameTableOffset);
-            int format = bb.getShort() & 0xFFFF;
-            int count = bb.getShort() & 0xFFFF;
-            int stringOffset = (bb.getShort() & 0xFFFF) + nameTableOffset;
+            // name 테이블에서 PostScript 이름 추출
+            String postScriptName = extractNameFromTable(bb, nameTableOffset);
 
-            NameTableRecord record = null;
-            int bestScore = -1;
+            // cmap 테이블에서 글리프 매핑 추출
+            Map<Character, Integer> glyphIndexMap = extractCmapFromTable(bb, cmapTableOffset);
 
-            // 레코드 순회
-            for (int i = 0; i < count; i++) {
-                int platformID = bb.getShort() & 0xFFFF;
-                int encodingID = bb.getShort() & 0xFFFF;
-                int languageID = bb.getShort() & 0xFFFF;
-                int nameID = bb.getShort() & 0xFFFF;
-                int length = bb.getShort() & 0xFFFF;
-                int offset = bb.getShort() & 0xFFFF;
-
-                if (nameID == POST_SCRIPT_NAME_ID) {
-                    int score = calculatePriority(platformID, encodingID);
-                    if (score > bestScore) {
-                        int savedPosition = bb.position();
-                        bb.position(stringOffset + offset);
-                        byte[] data = new byte[length];
-                        bb.get(data);
-                        bb.position(savedPosition);
-
-                        String encoding = TTFSystem.getCharset(platformID, encodingID);
-                        String name = new String(data, encoding);
-                        if (!name.trim().isEmpty()) {
-                            bestScore = score;
-                            record = new NameTableRecord();
-                            record.name = name;
-                            record.encoding = encoding;
-                        }
-                    }
-                }
-            }
-            return record;
-
+            return new FontNameAndCmap(postScriptName, glyphIndexMap);
         } finally {
             is.close();
         }
+    }
+
+    private static String extractNameFromTable(ByteBuffer bb, int nameTableOffset) throws UnsupportedEncodingException {
+        bb.position(nameTableOffset);
+        int format = bb.getShort() & 0xFFFF;
+        int count = bb.getShort() & 0xFFFF;
+        int stringOffset = (bb.getShort() & 0xFFFF) + nameTableOffset;
+
+        String result = null;
+        int bestScore = -1;
+
+        for (int i = 0; i < count; i++) {
+            int platformID = bb.getShort() & 0xFFFF;
+            int encodingID = bb.getShort() & 0xFFFF;
+            int languageID = bb.getShort() & 0xFFFF;
+            int nameID = bb.getShort() & 0xFFFF;
+            int length = bb.getShort() & 0xFFFF;
+            int offset = bb.getShort() & 0xFFFF;
+
+            if (nameID == POST_SCRIPT_NAME_ID) {
+                int score = calculatePriority(platformID, encodingID);
+                if (score > bestScore) {
+                    int savedPosition = bb.position();
+                    bb.position(stringOffset + offset);
+                    byte[] data = new byte[length];
+                    bb.get(data);
+                    bb.position(savedPosition);
+
+                    String encoding = TTFSystem.getCharset(platformID, encodingID);
+                    String name = new String(data, encoding);
+                    if (!name.trim().isEmpty()) {
+                        bestScore = score;
+                        result = name;
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private static int calculatePriority(int platformId, int encodingId) {
@@ -315,6 +332,117 @@ public class FontExtractor {
 
         return score;
     }
+
+    private static Map<Character, Integer> extractCmapFromTable(ByteBuffer bb, int cmapTableOffset) {
+        Map<Character, Integer> glyphIndexMap = new HashMap<>();
+
+        bb.position(cmapTableOffset);
+        int version = bb.getShort() & 0xFFFF;
+        int numSubtables = bb.getShort() & 0xFFFF;
+
+        // 적절한 서브테이블 찾기 (format 4 또는 12 선호)
+        int format4Offset = -1;
+        int format12Offset = -1;
+
+        for (int i = 0; i < numSubtables; i++) {
+            int platformID = bb.getShort() & 0xFFFF;
+            int encodingID = bb.getShort() & 0xFFFF;
+            int offset = bb.getInt();
+
+            if (platformID == 0 || platformID == 3) { // Unicode or Windows
+                int absoluteOffset = cmapTableOffset + offset;
+                bb.position(absoluteOffset);
+                int format = bb.getShort() & 0xFFFF;
+
+                if (format == 4) format4Offset = absoluteOffset;
+                else if (format == 12) format12Offset = absoluteOffset;
+            }
+        }
+
+        // format 12 우선 사용, 없으면 format 4 사용
+        if (format12Offset != -1) {
+            parseFormat12Cmap(bb, format12Offset, glyphIndexMap);
+        } else if (format4Offset != -1) {
+            parseFormat4Cmap(bb, format4Offset, glyphIndexMap);
+        }
+
+        return glyphIndexMap;
+    }
+
+    private static void parseFormat4Cmap(ByteBuffer bb, int offset, Map<Character, Integer> glyphIndexMap) {
+        bb.position(offset + 2); // format 스킵
+        int length = bb.getShort() & 0xFFFF;
+        int language = bb.getShort() & 0xFFFF;
+        int segCountX2 = bb.getShort() & 0xFFFF;
+        int segCount = segCountX2 / 2;
+
+        bb.position(bb.position() + 6); // searchRange, entrySelector, rangeShift 스킵
+
+        // 세그먼트 배열 읽기
+        int[] endCodes = new int[segCount];
+        int[] startCodes = new int[segCount];
+        int[] idDeltas = new int[segCount];
+        int[] idRangeOffsets = new int[segCount];
+
+        for (int i = 0; i < segCount; i++) {
+            endCodes[i] = bb.getShort() & 0xFFFF;
+        }
+
+        bb.getShort(); // reservedPad 스킵
+
+        for (int i = 0; i < segCount; i++) {
+            startCodes[i] = bb.getShort() & 0xFFFF;
+        }
+
+        for (int i = 0; i < segCount; i++) {
+            idDeltas[i] = bb.getShort();
+        }
+
+        int idRangeOffsetPosition = bb.position();
+
+        for (int i = 0; i < segCount; i++) {
+            idRangeOffsets[i] = bb.getShort() & 0xFFFF;
+        }
+
+        // 문자 매핑 구성
+        for (int i = 0; i < segCount; i++) {
+            for (int charCode = startCodes[i]; charCode <= endCodes[i] && charCode != 0xFFFF; charCode++) {
+                int glyphIndex;
+                if (idRangeOffsets[i] == 0) {
+                    glyphIndex = (charCode + idDeltas[i]) & 0xFFFF;
+                } else {
+                    offset = idRangeOffsetPosition + i * 2 + idRangeOffsets[i] +
+                            2 * (charCode - startCodes[i]);
+                    bb.position(offset);
+                    glyphIndex = bb.getShort() & 0xFFFF;
+                    if (glyphIndex != 0) {
+                        glyphIndex = (glyphIndex + idDeltas[i]) & 0xFFFF;
+                    }
+                }
+                if (glyphIndex != 0) {
+                    glyphIndexMap.put((char)charCode, glyphIndex);
+                }
+            }
+        }
+    }
+
+    private static void parseFormat12Cmap(ByteBuffer bb, int offset, Map<Character, Integer> glyphIndexMap) {
+        bb.position(offset + 4); // format과 reserved 스킵
+        int length = bb.getInt();
+        int language = bb.getInt();
+        int numGroups = bb.getInt();
+
+        for (int i = 0; i < numGroups; i++) {
+            int startCharCode = bb.getInt();
+            int endCharCode = bb.getInt();
+            int startGlyphId = bb.getInt();
+
+            for (int charCode = startCharCode; charCode <= endCharCode; charCode++) {
+                glyphIndexMap.put((char)charCode, startGlyphId + (charCode - startCharCode));
+            }
+        }
+    }
+
 
     private static File createTempFontFile(Context context, InputStream is) throws IOException {
         File tempFile = File.createTempFile("font", ".tmp", context.getCacheDir());

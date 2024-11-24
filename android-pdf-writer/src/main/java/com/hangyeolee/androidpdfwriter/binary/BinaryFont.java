@@ -8,6 +8,7 @@ import com.hangyeolee.androidpdfwriter.PDFBuilder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -17,16 +18,12 @@ class BinaryFont extends BinaryDictionary {
     private final List<BinaryObject> descendantFonts = new ArrayList<>();
     public BinaryFont(
             int objectNumber,
-            @Nullable String encoding,
-            @Nullable BinaryObject cmap) {
+            @Nullable String encoding) {
         super(objectNumber);
         dictionary.put("/Type", "/Font");
         // 기본 14 폰트용 공통 설정
         if (encoding != null) {
             dictionary.put("/Encoding", "/" + encoding);
-        }
-        if(cmap != null) {
-            dictionary.put("/ToUnicode", cmap); // ToUnicode CMap 추가
         }
     }
 
@@ -40,6 +37,10 @@ class BinaryFont extends BinaryDictionary {
         dictionary.put("/LastChar", 255);      // 마지막 문자
     }
 
+    public void setCAMP(BinaryObject cmap){
+        dictionary.put("/ToUnicode", cmap); // ToUnicode CMap 추가
+    }
+
     public void setFontDescriptor(BinaryFontDescriptor descriptor){
         dictionary.put("/FontDescriptor", descriptor);
     }
@@ -49,15 +50,20 @@ class BinaryFont extends BinaryDictionary {
     }
 
     public void setWidths(String widths) {
-        dictionary.put("/FontMatrix", "[0.001 0 0 0.001 0 0]");
+//        dictionary.put("/FontMatrix", "[0.001 0 0 0.001 0 0]");
         dictionary.put("/Widths", widths);
     }
 
-    public void setW(Map<Character, Integer> map) {
+    public void setW(Map<Integer, Integer> map) {
         if(!map.isEmpty()) {
+            // map index 낮은 순
             StringBuilder sb = new StringBuilder("[");
-            for (Map.Entry<Character, Integer> entry : map.entrySet()) {
-                sb.append((entry.getKey() & 0xffff)).append("[").append(entry.getValue()).append("] ");
+            for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+                // 글리프
+                sb.append(String.format(Locale.getDefault(), "%d %d %d ",
+                        entry.getKey() & 0xffff,
+                            entry.getKey() & 0xffff,
+                        entry.getValue()));
             }
             sb.append("]");
             dictionary.put("/W", sb.toString());

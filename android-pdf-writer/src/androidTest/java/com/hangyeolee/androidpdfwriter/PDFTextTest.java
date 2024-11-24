@@ -75,7 +75,8 @@ public class PDFTextTest {
         builder.setPagePadding(10, 10);
         builder.root = PDFLinearLayout.build(Orientation.Vertical)
                 .setBackgroundColor(Color.TRANSPARENT)
-                .addChild(PDFH1.build("제목")
+                .addChild(PDFH1.build("다람쥐 헌 쳇바퀴에 타고파.1234567890")
+                        .setTextColor(Color.BLACK)
                         .setFontFromAsset(context, "Pretendard-Bold.ttf")
                         .setTextAlign(TextAlign.Center)
                         .setAnchor(Anchor.Center, Anchor.Center));

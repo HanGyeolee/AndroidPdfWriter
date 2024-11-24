@@ -185,26 +185,6 @@ public class PDFText extends PDFResourceComponent {
         return layout.getHeight() + maxGap;
     }
 
-    @Override
-    public void registerResources(BinarySerializer page) {
-        // 폰트 리소스 등록
-        if (bufferPaint != null && bufferPaint.getTypeface() != null) {
-            FontMetrics fontMetrics = new FontMetrics(
-                    flags,
-                    italicAngle,
-                    ascent,
-                    descent,
-                    capHeight,
-                    stemV,
-                    xHeight,
-                    stemH,
-                    fontBBox,
-                    charWidths
-            );
-            resourceId = page.registerFont(info, fontMetrics);
-        }
-    }
-
     private void setFontMetrics(){
         TextPaint paint = (TextPaint) this.bufferPaint;
         // 1000 유닛 기준으로 변환할 스케일 팩터 계산
@@ -238,8 +218,8 @@ public class PDFText extends PDFResourceComponent {
         if(BinaryConverter.isBase14Font(info.postScriptName)){
             if(charWidths == null) {
                 // charWidths 계산
-                charWidths = new int[FONTBBOX_TEXT.length()];
-                for (int i = 0; i < FONTBBOX_TEXT.length(); i++) {
+                charWidths = new int[0x0100];
+                for (int i = 0; i < 0x0100; i++) {
                     float charWidth = paint.measureText(FONTBBOX_TEXT, i, i + 1) - 0.5f;
                     charWidths[i] = (int) Math.ceil(charWidth * scale);
                 }
@@ -248,7 +228,12 @@ public class PDFText extends PDFResourceComponent {
             //info W 에 길이 추가
             for (int i = 0; i < text.length(); i++) {
                 float charWidth = paint.measureText(text, i, i + 1) - 0.5f;
-                info.W.put(text.charAt(i), (int) Math.ceil(charWidth * scale));
+                // 글리프
+                Integer glyphIndex = info.glyphIndexMap.get(text.charAt(i));
+                if(glyphIndex != null) {
+                    info.W.put(glyphIndex, (int) Math.ceil(charWidth * scale));
+                    info.usedGlyph.put(glyphIndex, text.charAt(i));
+                }
             }
         }
 
@@ -273,6 +258,26 @@ public class PDFText extends PDFResourceComponent {
                 (int)Math.ceil(-metrics.descent * scale)            // 하단 확장(디센더)
         );
         return;
+    }
+
+    @Override
+    public void registerResources(BinarySerializer page) {
+        // 폰트 리소스 등록
+        if (bufferPaint != null && bufferPaint.getTypeface() != null) {
+            FontMetrics fontMetrics = new FontMetrics(
+                    flags,
+                    italicAngle,
+                    ascent,
+                    descent,
+                    capHeight,
+                    stemV,
+                    xHeight,
+                    stemH,
+                    fontBBox,
+                    charWidths
+            );
+            resourceId = page.registerFont(info, fontMetrics);
+        }
     }
 
     /**
@@ -424,8 +429,11 @@ public class PDFText extends PDFResourceComponent {
             try {
                 // JVM은 기본적으로 UTF-16BE로 인코딩
                 result.append("[");
-                for (int i = 0; i < text.length(); i += 2) {
-                    result.append(String.format(Locale.getDefault(),"<%04X>", text.charAt(i) & 0xFFFF));
+                for (int i = 0; i < text.length(); i++) {
+                    // 폰트에서의 글리프 인덱스 가 들어가야함.
+                    Integer glyphIndex = info.glyphIndexMap.get(text.charAt(i));
+                    if(glyphIndex != null)
+                        result.append(String.format(Locale.getDefault(),"<%04X>", glyphIndex & 0xFFFF));
                 }
                 result.append("]");
             } catch (Exception ignored) {
