@@ -34,26 +34,84 @@ public class FontExtractor {
     public static class FontInfo {
         public final String postScriptName;
         public final Typeface typeface;
-        public final byte[] stream;
-        public final Map<Integer, Integer> W = new HashMap<>();
-        public final Map<Integer, Character> usedGlyph = new HashMap<>();
+        public final int flags;
+        // 유니코드, 가로 길이
+        public final Map<Character, Integer> W = new HashMap<>();
+        // 유니코드, 글리프ID
+        public final Map<Character, Integer> usedGlyph = new HashMap<>();
+        // 유니코드, 글리프ID
         public final Map<Character, Integer> glyphIndexMap;
 
+        private final Context context;  // Asset인 경우 필요
+        private final Object key;      // 파일 경로 또는 asset 경로
+        private final FontSource sourceType;  // ASSET, FILE, RESOURCE 등
+
+        public enum FontSource {
+            BASE14,
+            ASSET,
+            FILE,
+            RESOURCE
+        }
+
         public FontInfo(
-                String postScriptName, Map<Character, Integer> glyphIndexMap, Typeface typeface, byte[] stream) {
+                Context context, Object key, FontSource sourceType,
+                String postScriptName, Map<Character, Integer> glyphIndexMap, int flags, Typeface typeface) {
             this.postScriptName = postScriptName;
+            this.flags = flags;
             this.glyphIndexMap = glyphIndexMap;
             this.typeface = typeface;
-            this.stream = stream;
+            this.context = context;
+            this.key = key;
+            this.sourceType = sourceType;
+        }
+
+        // 필요할 때만 폰트 데이터를 읽어오는 메소드
+        public byte[] getFontData() {
+            InputStream is = null;
+            try {
+                switch (sourceType) {
+                    case ASSET:
+                        if (context == null) throw new IOException("Context is null");
+                        is = context.getAssets().open((String) key);
+                        break;
+                    case FILE:
+                        is = new FileInputStream((String) key);
+                        break;
+                    case RESOURCE:
+                        if (context == null) throw new IOException("Context is null");
+                        is = context.getResources().openRawResource((Integer) key);
+                        break;
+                }
+                return readAllBytes(is);
+            } catch (IOException ignored){} finally {
+                if (is != null) {
+                    try {
+                        is.close();
+                    }catch (IOException ignored1){}
+                }
+            }
+            return null;
+        }
+
+        private static byte[] readAllBytes(InputStream is) throws IOException {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return is.readAllBytes();
+            } else {
+                byte[] buffer = new byte[is.available()];
+                is.read(buffer);
+                return buffer;
+            }
         }
     }
 
     protected static class FontNameAndCmap {
         public final String postScriptName;
         public final Map<Character, Integer> glyphIndexMap;
+        public final int flags;
 
-        public FontNameAndCmap(String postScriptName, Map<Character, Integer> glyphIndexMap) {
+        public FontNameAndCmap(String postScriptName, int flags, Map<Character, Integer> glyphIndexMap) {
             this.postScriptName = postScriptName;
+            this.flags = flags;
             this.glyphIndexMap = glyphIndexMap;
         }
     }
@@ -62,7 +120,10 @@ public class FontExtractor {
         if (fontCache.containsKey(fontName)) {
             return fontCache.get(fontName);
         }
-        FontInfo fontInfo = new FontInfo(fontName, null, PDFFont.getTypeface(fontName), null);
+        FontInfo fontInfo = new FontInfo(
+                null, null, FontInfo.FontSource.BASE14,
+                fontName, null,
+                PDFFont.getFontFlags(fontName), PDFFont.getTypeface(fontName));
         fontCache.put(fontName, fontInfo);
         return fontInfo;
     }
@@ -86,21 +147,12 @@ public class FontExtractor {
             FontNameAndCmap record = extractPostScriptName(is);
 
             if(record == null) throw new IOException();
-            is = context.getAssets().open(assetPath);
-            byte[] stream;
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    stream = is.readAllBytes();
-                } else {
-                    stream = new byte[is.available()];
-                    is.read(stream);
-                }
-            } finally {
-                is.close();
-            }
 
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.postScriptName, record.glyphIndexMap, typeface, stream);
+            FontInfo fontInfo = new FontInfo(
+                    context, assetPath, FontInfo.FontSource.ASSET,
+                    record.postScriptName, record.glyphIndexMap,
+                    record.flags, typeface);
             fontCache.put(assetPath, fontInfo);
             return fontInfo;
 
@@ -129,20 +181,12 @@ public class FontExtractor {
             FontNameAndCmap record = extractPostScriptName(fis);
 
             if(record == null) throw new IOException();
-            fis = new FileInputStream(path);
-            byte[] stream;
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    stream = fis.readAllBytes();
-                } else {
-                    stream = new byte[fis.available()];
-                    fis.read(stream);
-                }
-            } finally {
-                fis.close();
-            }
+
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.postScriptName, record.glyphIndexMap, typeface, stream);
+            FontInfo fontInfo = new FontInfo(
+                    null, path, FontInfo.FontSource.FILE,
+                    record.postScriptName, record.glyphIndexMap,
+                    record.flags, typeface);
             fontCache.put(path, fontInfo);
             return fontInfo;
 
@@ -189,23 +233,13 @@ public class FontExtractor {
             FontNameAndCmap record = extractPostScriptName(is);
 
             if(record == null) throw new IOException();
-            is = context.getResources().openRawResource(resourceId);
-            byte[] stream;
-            try {
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    stream = is.readAllBytes();
-                } else {
-                    stream = new byte[is.available()];
-                    is.read(stream);
-                }
-            } finally {
-                is.close();
-            }
 
             // 3. 결과 캐싱
-            FontInfo fontInfo = new FontInfo(record.postScriptName, record.glyphIndexMap, typeface, stream);
+            FontInfo fontInfo = new FontInfo(
+                    context, resourceId, FontInfo.FontSource.RESOURCE,
+                    record.postScriptName, record.glyphIndexMap,
+                    record.flags, typeface);
             fontCache.put(key, fontInfo);
-
             return fontInfo;
 
         } catch (IOException e) {
@@ -219,6 +253,8 @@ public class FontExtractor {
     static final int NAME_TABLE_TAG = 0x6E616D65;
     // cmap 테이블 태그 ('cmap' in hex)
     static final int CMAP_TABLE_TAG = 0x636D6170;
+    static final int HEAD_TABLE_TAG = 0x68656164; // 'head'
+    static final int OS_2_TABLE_TAG = 0x4F532F32; // 'OS/2'
     // PostScript 이름의 nameID
     static final int POST_SCRIPT_NAME_ID = 6;
 
@@ -240,6 +276,8 @@ public class FontExtractor {
             int tableOffset = 12;
             int nameTableOffset = -1;
             int cmapTableOffset = -1;
+            int headTableOffset = -1;
+            int os2TableOffset = -1;
 
             for (int i = 0; i < numTables && (nameTableOffset == -1 || cmapTableOffset == -1); i++) {
                 bb.position(tableOffset + i * 16);
@@ -250,6 +288,12 @@ public class FontExtractor {
                 } else if (tag == CMAP_TABLE_TAG) {
                     bb.position(tableOffset + i * 16 + 8);
                     cmapTableOffset = bb.getInt();
+                } else if (tag == HEAD_TABLE_TAG) {
+                    bb.position(tableOffset + i * 16 + 8);
+                    headTableOffset = bb.getInt();
+                } else if (tag == OS_2_TABLE_TAG) {
+                    bb.position(tableOffset + i * 16 + 8);
+                    os2TableOffset = bb.getInt();
                 }
             }
 
@@ -257,13 +301,16 @@ public class FontExtractor {
                 return null;
             }
 
+            // Extract font style and flags from 'head' and 'OS/2' tables
+            int fontFlags = calculateFontFlags(bb, headTableOffset, os2TableOffset);
+
             // name 테이블에서 PostScript 이름 추출
             String postScriptName = extractNameFromTable(bb, nameTableOffset);
 
             // cmap 테이블에서 글리프 매핑 추출
             Map<Character, Integer> glyphIndexMap = extractCmapFromTable(bb, cmapTableOffset);
 
-            return new FontNameAndCmap(postScriptName, glyphIndexMap);
+            return new FontNameAndCmap(postScriptName, fontFlags, glyphIndexMap);
         } finally {
             is.close();
         }
@@ -443,6 +490,64 @@ public class FontExtractor {
         }
     }
 
+    private static int calculateFontFlags(ByteBuffer bb, int headOffset, int os2Offset) {
+        // 기본 flags 설정
+        int flags = 1; // FixedPitch (모노스페이스 폰트용, 기본값으로 설정)
+
+        if (os2Offset != -1) {
+            // panose 필드 읽기 (OS/2 테이블의 offset 32에 위치)
+            bb.position(os2Offset + 32);
+            byte familyType = bb.get();    // 0 = Any, 1 = No Fit, 2 = Text and Display, ...
+            byte serifStyle = bb.get();    // 0 = Any, 1 = No Fit, 2 = Cove, ...
+
+            // serifStyle이 0이나 1이 아니면 serif가 있는 것으로 간주
+            if (serifStyle > 1) {
+                flags = 2; // Serif
+            }
+
+            // OS/2 테이블에서 fsSelection 필드 읽기
+            bb.position(os2Offset + 62);
+            int weightClass = bb.getShort() & 0xFFFF;
+
+            bb.position(os2Offset + 8);
+            int fsSelection = bb.getShort() & 0xFFFF;
+
+            // Symbolic 비트 확인 (비트 0)
+            if ((fsSelection & 0x0800) != 0) { // Symbol character set
+                flags |= 4; // Symbolic
+            } else {
+                flags |= 1 << 5; // Nonsymbolic
+            }
+
+            // Italic 비트 확인 (비트 1)
+            if ((fsSelection & 0x0001) != 0) {
+                flags |= 1 << 6; // Italic
+            }
+
+            // Bold 확인
+            if (weightClass >= 700) {
+                flags |= 1 << 18; // ForceBold
+            }
+        }
+
+        if (headOffset != -1) {
+            // head 테이블에서 macStyle 필드 읽기
+            bb.position(headOffset + 44);
+            int macStyle = bb.getShort() & 0xFFFF;
+
+            // Mac style italic 비트가 설정되어 있고 아직 italic 플래그가 없으면 설정
+            if ((macStyle & 0x0002) != 0 && (flags & (1 << 6)) == 0) {
+                flags |= 1 << 6; // Italic
+            }
+
+            // Mac style bold 비트가 설정되어 있고 아직 bold 플래그가 없으면 설정
+            if ((macStyle & 0x0001) != 0 && (flags & (1 << 18)) == 0) {
+                flags |= 1 << 18; // ForceBold
+            }
+        }
+
+        return flags;
+    }
 
     private static File createTempFontFile(Context context, InputStream is) throws IOException {
         File tempFile = File.createTempFile("font", ".tmp", context.getCacheDir());

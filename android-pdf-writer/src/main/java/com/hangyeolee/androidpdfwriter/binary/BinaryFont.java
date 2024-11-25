@@ -54,20 +54,20 @@ class BinaryFont extends BinaryDictionary {
         dictionary.put("/Widths", widths);
     }
 
-    public void setW(Map<Integer, Integer> map) {
+    public void setW(Map<Character, Integer> map, Map<Character, Integer> glyphIds) {
         if(!map.isEmpty()) {
-            // map index 낮은 순
             StringBuilder sb = new StringBuilder("[");
-            for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
-                // 글리프
-                sb.append(String.format(Locale.getDefault(), "%d %d %d ",
-                        entry.getKey() & 0xffff,
-                            entry.getKey() & 0xffff,
-                        entry.getValue()));
+            for (Map.Entry<Character, Integer> entry : map.entrySet()) {
+                Integer glyphId = glyphIds.get(entry.getKey());
+                if(glyphId != null)
+                    // 글리프, 가로길이
+                    sb.append(String.format(Locale.getDefault(), "%d[%d]",
+                            glyphId & 0xffff,
+                            entry.getValue()));
             }
             sb.append("]");
             dictionary.put("/W", sb.toString());
-            dictionary.put("/DW", 1000);
+//            dictionary.put("/DW", 1000);
         }
     }
 

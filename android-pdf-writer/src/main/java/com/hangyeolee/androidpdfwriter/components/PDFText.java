@@ -48,7 +48,6 @@ public class PDFText extends PDFResourceComponent {
             "\u00ef\u00f0\u00f1\u00f2\u00f3\u00f4\u00f5\u00f6\u00f7\u00f8\u00f9\u00fa\u00fb\u00fc" +
             "\u00fd\u00fe\u00ff";
     FontExtractor.FontInfo info = null;
-    private int flags;
     private int italicAngle;
     private int ascent;
     private int descent;
@@ -68,9 +67,6 @@ public class PDFText extends PDFResourceComponent {
     Layout.Alignment lastAlign = null;
     float lastWidth = 0;
 
-    protected PDFText(String text){
-        this.setText(text).setTextPaint(null).setFont(PDFFont.HELVETICA);
-    }
     protected PDFText(String text, @NonNull @PDFFont.ID String fontName){
         this.setText(text).setTextPaint(null).setFont(fontName);
     }
@@ -191,11 +187,10 @@ public class PDFText extends PDFResourceComponent {
         float scale = 1000f / bufferPaint.getTextSize();
         Rect bounds = new Rect();
 
-        flags = getFontFlags(paint.getTypeface());
         italicAngle = paint.getTypeface().isItalic() ? -12 : 0;
         // 폰트 메트릭 정보 저장
         ascent = (int)Math.ceil(-paint.ascent() * scale);
-        descent = (int)Math.ceil(paint.descent() * scale);
+        descent = (int)Math.ceil(-paint.descent() * scale);
 
         // 대문자 'H'의 bounds를 측정하여 높이 계산
         paint.getTextBounds("H", 0, 1, bounds);
@@ -218,8 +213,8 @@ public class PDFText extends PDFResourceComponent {
         if(BinaryConverter.isBase14Font(info.postScriptName)){
             if(charWidths == null) {
                 // charWidths 계산
-                charWidths = new int[0x0100];
-                for (int i = 0; i < 0x0100; i++) {
+                charWidths = new int[0xE0];
+                for (int i = 0; i < 0xE0; i++) {
                     float charWidth = paint.measureText(FONTBBOX_TEXT, i, i + 1) - 0.5f;
                     charWidths[i] = (int) Math.ceil(charWidth * scale);
                 }
@@ -231,8 +226,8 @@ public class PDFText extends PDFResourceComponent {
                 // 글리프
                 Integer glyphIndex = info.glyphIndexMap.get(text.charAt(i));
                 if(glyphIndex != null) {
-                    info.W.put(glyphIndex, (int) Math.ceil(charWidth * scale));
-                    info.usedGlyph.put(glyphIndex, text.charAt(i));
+                    info.W.put(text.charAt(i), (int) Math.ceil(charWidth * scale));
+                    info.usedGlyph.put(text.charAt(i), glyphIndex);
                 }
             }
         }
@@ -264,8 +259,19 @@ public class PDFText extends PDFResourceComponent {
     public void registerResources(BinarySerializer page) {
         // 폰트 리소스 등록
         if (bufferPaint != null && bufferPaint.getTypeface() != null) {
+            int flag = info.flags;
+            Typeface typeface = bufferPaint.getTypeface();
+
+            // 스타일 수정 시
+            if (typeface.isBold()) {
+                flag |= 1 << 18; // ForceBold
+            }
+            if (typeface.isItalic()) {
+                flag |= 1 << 6; // Italic
+            }
+
             FontMetrics fontMetrics = new FontMetrics(
-                    flags,
+                    flag,
                     italicAngle,
                     ascent,
                     descent,
@@ -278,26 +284,6 @@ public class PDFText extends PDFResourceComponent {
             );
             resourceId = page.registerFont(info, fontMetrics);
         }
-    }
-
-    /**
-     * 폰트 플래그 계산
-     */
-    private int getFontFlags(Typeface typeface) {
-        int flags = 0;
-
-        // Symbolic 폰트 플래그
-        flags |= 1 << 2;
-
-        // 기타 플래그들
-        if (typeface.isBold()) {
-            flags |= 1 << 18; // ForceBold
-        }
-        if (typeface.isItalic()) {
-            flags |= 1 << 6; // Italic
-        }
-
-        return flags;
     }
 
     @Override
@@ -365,6 +351,9 @@ public class PDFText extends PDFResourceComponent {
                     content = serializer.getPage(startPage + currentPage);
                     currentY += lineHeight;
                     drawBaseline(content, currentY);
+                    content.append(String.format(Locale.getDefault(),"%s 0 Td\r\n",
+                            BinaryConverter.formatNumber(lastAlignX+alignX)
+                    ));
                 } else {
                     content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",
                             BinaryConverter.formatNumber(alignX),
@@ -378,8 +367,7 @@ public class PDFText extends PDFResourceComponent {
             }
 
             // 텍스트 이스케이프 처리
-            String escapedText = escapePDFString(lineText);
-            content.append(escapedText).append(" Tj\r\n");
+            escapePDFString(content, lineText);
             lastAlignX += alignX;
         }
 
@@ -417,13 +405,13 @@ public class PDFText extends PDFResourceComponent {
     /**
      * PDF 문자열 이스케이프 처리
      */
-    private String escapePDFString(String text) {
+    private void escapePDFString(StringBuilder content, String text) {
         String s = "(" + text.replace("\\", "\\\\")
                 .replace("(", "\\(")
                 .replace(")", "\\)") + ")";
         if(BinaryConverter.isBase14Font(info.postScriptName)){
             // ASCII only - 괄호 문자열로 처리
-            return s;
+            content.append(s).append(" Tj\r\n");
         } else {
             StringBuilder result = new StringBuilder();
             try {
@@ -431,15 +419,15 @@ public class PDFText extends PDFResourceComponent {
                 result.append("[");
                 for (int i = 0; i < text.length(); i++) {
                     // 폰트에서의 글리프 인덱스 가 들어가야함.
-                    Integer glyphIndex = info.glyphIndexMap.get(text.charAt(i));
+                    Integer glyphIndex = info.usedGlyph.get(text.charAt(i));
                     if(glyphIndex != null)
                         result.append(String.format(Locale.getDefault(),"<%04X>", glyphIndex & 0xFFFF));
                 }
                 result.append("]");
             } catch (Exception ignored) {
-                return s; // fallback - 일반 문자열로 처리
+                content.append(s).append(" Tj\r\n"); // fallback - 일반 문자열로 처리
             }
-            return result.toString();
+            content.append(result).append(" TJ\r\n");
         }
     }
 
@@ -625,7 +613,7 @@ public class PDFText extends PDFResourceComponent {
      * Use {@link PDFFont#HELVETICA} as the default {@link PDFFont}
      * @param text 글자
      */
-    public static PDFText build(String text){return new PDFText(text);}
+    public static PDFText build(String text){return new PDFText(text, PDFFont.HELVETICA);}
     /**
      * {@link PDFFont}를 지정하여 문장 요소를 만듭니다..<br/>
      * Create a text component by specifying the {@link PDFFont}.

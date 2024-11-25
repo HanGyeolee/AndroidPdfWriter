@@ -83,7 +83,7 @@ public class PDFTextTest {
         Log.d(TAG, "PDF Builder setup completed");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_KoreanText.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_KoreanText_subset.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);
