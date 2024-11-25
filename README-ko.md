@@ -24,7 +24,6 @@
 임베딩 폰트는 아직 `.ttf` 확장자만 지원합니다.
 
 ## 설정
-snapshot 레포지토리를 먼저 추가해야합니다.
 ### Gradle 설정
 ``` gradle
 dependencies {

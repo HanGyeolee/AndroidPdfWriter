@@ -24,7 +24,6 @@ That is, the capacity of the output PDF file is reduced by optimizing text and i
 Embedding fonts are only supported for the `.ttf` extension.
 
 ## Setup
-The snapshot repository must be added first.
 ### Gradle Setup
 ``` gradle
 dependencies {
