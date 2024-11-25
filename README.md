@@ -5,7 +5,7 @@ Easy PDF Library for Android.
 - [한국어 README.md](./README-ko.md)
 
 ## Table of Contents
-0. [v1.1.0-SNAPSHOT](#v1.1.0-SNAPSHOT)
+0. [v1.1.0](#v1.1.0)
 1. [Setup](#setup)
    1. [Gradle Setup](#gradle-setup)
    2. [Maven Setup](#maven-setup)
@@ -14,31 +14,21 @@ Easy PDF Library for Android.
 4. [Description](#description)
 5. [License](#license)
 
-## v1.1.0-SNAPSHOT
+## v1.1.0
 The existing version draws the components shown on each page on a bitmap.
 The disadvantage of this method is that the app could bounce due to out of memory from the moment the canvas size exceeded five pages.
 
 Starting with version 1.1.0, all components are converted to PDF binary format.
 That is, the capacity of the output PDF file is reduced by optimizing text and images in binary format.
-### :warning:Warning
-Font settings are not working properly.
-It is recommended to use only the Base14 font that is basically provided by PDF.
 
-Only ASCII (0xff) characters work normally.
-``` java
-// Normal Operation : Using Base14 Font
-PDFText.build("only ASCII code").setFont(PDFFont.TIMES_ROMAN);
-// Possible problems (font embedding failure, font broken, etc.)
-PDFText.build("Embedding Font. 폰트를 임베딩한다.").setFontFromAsset(context, "assetPath.ttf");
-```
-For setFontFromAsset, the setFontFromFile, setFontFromResource method produces the same results (font embedding failure, font broken, etc.).
+Embedding fonts are only supported for the `.ttf` extension.
 
 ## Setup
 The snapshot repository must be added first.
 ### Gradle Setup
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-SNAPSHOT'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0'
 }
 ```
 
@@ -47,7 +37,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -69,7 +59,7 @@ builder.root = PDFLinearLayout.build(Orientation.Vertical)
                 .setCompress(true)
                 .setHeight(200f)
                 .setFit(Fit.CONTAIN))
-        .addChild(PDFH1.build("Title")
+        .addChild(PDFH1.build("Title", PDFFont.HELVETICA_BOLD)
                 .setBackgroundColor(Color.RED)
                 .setTextAlign(TextAlign.Center))
         .addChild(PDFGridLayout.horizontal(3)
@@ -82,6 +72,7 @@ builder.root = PDFLinearLayout.build(Orientation.Vertical)
                         .setBottom(4, Color.MAGENTA))
                 .addCell(PDFH3.build("Number").wrapGridCell())
                 .addCell(PDFH3.build("Name")
+                        .setFontFromAsset(context, "Pretendard-Bold.ttf")
                         .setBackgroundColor(Color.YELLOW)
                         .setTextAlign(TextAlign.Center)
                         .wrapGridCell())

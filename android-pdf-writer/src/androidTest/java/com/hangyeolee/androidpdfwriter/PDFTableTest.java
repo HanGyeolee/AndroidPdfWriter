@@ -17,6 +17,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFH3;
 import com.hangyeolee.androidpdfwriter.components.PDFH4;
 import com.hangyeolee.androidpdfwriter.components.PDFImage;
 import com.hangyeolee.androidpdfwriter.components.PDFLinearLayout;
+import com.hangyeolee.androidpdfwriter.font.PDFFont;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
 import com.hangyeolee.androidpdfwriter.utils.Paper;

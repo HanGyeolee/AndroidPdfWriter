@@ -6,7 +6,7 @@ plugins {
 
 ext {
     PUBLISH_GROUP_ID = 'io.github.hangyeolee'
-    PUBLISH_VERSION = '1.1.0-SNAPSHOT'
+    PUBLISH_VERSION = '1.1.0'
     PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
     PUBLISH_DESCRIPTION = 'Easy PDF Library for Android.'
     PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
@@ -69,7 +69,6 @@ android {
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.0.0'
-    implementation 'org.jetbrains:annotations:15.0'
     testImplementation 'junit:junit:4.13.2'
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

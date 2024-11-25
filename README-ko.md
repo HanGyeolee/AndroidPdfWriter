@@ -5,7 +5,7 @@
 - [English README.md](./README.md)
 
 ## 목차
-0. [v1.1.0-SNAPSHOT](#v1.1.0-SNAPSHOT)
+0. [v1.1.0](#v1.1.0)
 1. [설정](#설정)
    1. [Gradle 설정](#gradle-설정)
    2. [Maven 설정](#maven-설정)
@@ -14,31 +14,21 @@
 4. [설명](#설명)
 5. [라이선스](#라이선스)
 
-## v1.1.0-SNAPSHOT
+## v1.1.0
 기존 버전은 각 페이지에 보이는 컴포넌트들을 비트맵에 그려내는 방식입니다.
 이 방식의 단점은 캔버스의 크기가 5페이지를 초과하는 순간부터 메모리 부족으로 인해 앱이 튕길 수 있습니다.
 
 버전 1.1.0 부터는 모든 컴포넌트가 PDF 바이너리 형식으로 변환됩니다.
 즉, 텍스트와 이미지를 바이너리 형식으로 최적화하여 출력되는 PDF 파일의 용량을 줄입니다.
-### :warning:주의 사항
-폰트 설정이 정상적으로 동작하지 않습니다.
-PDF에서 기본적으로 제공하는 Base14 폰트만을 사용하길 권장합니다.
 
-ASCII(0xff) 문자만 정상적으로 동작합니다.
-``` java
-// 정상 동작 : Base14 폰트 사용
-PDFText.build("only ASCII code").setFont(PDFFont.TIMES_ROMAN);
-// 문제 발생 가능(폰트 임베딩 실패, 폰트 깨짐 등)
-PDFText.build("Embedding Font. 폰트를 임베딩한다.").setFontFromAsset(context, "assetPath.ttf"); 
-```
-setFontFromAsset 에 대해서 setFontFromFile, setFontFromResource 메소드도 동일한 결과 (폰트 임베딩 실패, 폰트 깨짐 등)를 냅니다.
+임베딩 폰트는 아직 `.ttf` 확장자만 지원합니다.
 
 ## 설정
 snapshot 레포지토리를 먼저 추가해야합니다.
 ### Gradle 설정
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0-SNAPSHOT'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0'
 }
 ```
 
@@ -47,7 +37,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -69,7 +59,7 @@ builder.root = PDFLinearLayout.build(Orientation.Vertical)
                 .setCompress(true)
                 .setHeight(200f)
                 .setFit(Fit.CONTAIN))
-        .addChild(PDFH1.build("Title")
+        .addChild(PDFH1.build("Title", PDFFont.HELVETICA_BOLD)
                 .setBackgroundColor(Color.RED)
                 .setTextAlign(TextAlign.Center))
         .addChild(PDFGridLayout.horizontal(3)
@@ -82,6 +72,7 @@ builder.root = PDFLinearLayout.build(Orientation.Vertical)
                         .setBottom(4, Color.MAGENTA))
                 .addCell(PDFH3.build("Number").wrapGridCell())
                 .addCell(PDFH3.build("Name")
+                        .setFontFromAsset(context, "Pretendard-Bold.ttf")
                         .setBackgroundColor(Color.YELLOW)
                         .setTextAlign(TextAlign.Center)
                         .wrapGridCell())
