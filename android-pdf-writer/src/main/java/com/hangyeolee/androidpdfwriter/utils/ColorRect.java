@@ -1,7 +1,10 @@
 package com.hangyeolee.androidpdfwriter.utils;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import java.util.Locale;
 
 public class ColorRect{
     @ColorInt
@@ -65,13 +68,10 @@ public class ColorRect{
         return result;
     }
 
+    @NonNull
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(32);
-        sb.append("ColorRect("); sb.append(String.format("%X", left)); sb.append(", ");
-        sb.append(String.format("%X", top)); sb.append(", "); sb.append(String.format("%X", right));
-        sb.append(", "); sb.append(String.format("%X", bottom)); sb.append(")");
-        return sb.toString();
+        return String.format(Locale.getDefault(), "ColorRect(%X, %X, %X, %X)", left, top, right, bottom);
     }
 }
 

@@ -228,6 +228,8 @@ public class PDFBuilderTest {
                             .setBackgroundColor(Color.WHITE)
                             .setBorder(4, Color.BLACK)
                             .addChild(PDFH2.build("H2 Name")
+                                    .setSize(null, null)
+                                    .setFontsize(24)
                                     .setBackgroundColor(Color.RED))
                             .addChild(PDFH3.build("H3 Glyph")
                                     .setBorder(border ->
@@ -254,7 +256,12 @@ public class PDFBuilderTest {
                                     .setHeight(50.0f)))
                     .addChild(PDFH1.build(
                             PDFText.Lorem + PDFText.Lorem
-                    ));
+                    ))
+                    .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)
+                            .setCompress(true)
+                            .setFit(Fit.CONTAIN)
+                            .setAnchor(Anchor.Start, Anchor.Center)
+                            .setHeight(100.0f));
         }
         Log.d(TAG, "PDF Builder setup completed");
 

@@ -75,14 +75,15 @@ public class PDFTextTest {
         builder.setPagePadding(10, 10);
         builder.root = PDFLinearLayout.build(Orientation.Vertical)
                 .setBackgroundColor(Color.TRANSPARENT)
-                .addChild(PDFH1.build("제목")
+                .addChild(PDFH1.build("다람쥐 헌 쳇바퀴에 타고파.1234567890")
+                        .setTextColor(Color.BLACK)
                         .setFontFromAsset(context, "Pretendard-Bold.ttf")
                         .setTextAlign(TextAlign.Center)
                         .setAnchor(Anchor.Center, Anchor.Center));
         Log.d(TAG, "PDF Builder setup completed");
         builder.draw();
         Log.d(TAG, "builder draw");
-        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_KoreanText.pdf");
+        Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_KoreanText_subset.pdf");
         Log.d(TAG, "builder save");
 
         assertNotNull("Generated PDF URI should not be null", uri);

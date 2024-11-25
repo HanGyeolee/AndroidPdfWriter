@@ -6,9 +6,9 @@ plugins {
 
 ext {
     PUBLISH_GROUP_ID = 'io.github.hangyeolee'
-    PUBLISH_VERSION = '1.0.5'
+    PUBLISH_VERSION = '1.1.0'
     PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
-    PUBLISH_DESCRIPTION = 'A easy to create PDF file library for Android.'
+    PUBLISH_DESCRIPTION = 'Easy PDF Library for Android.'
     PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
     PUBLISH_LICENSE_NAME = 'Apache License'
     PUBLISH_LICENSE_URL =
@@ -26,13 +26,13 @@ ext {
 
 android {
     compileSdk 34
-    //compileSdkVersion 29
+    //compileSdkVersion 34
 
     defaultConfig {
         namespace "com.hangyeolee.androidpdfwriter"
         minSdkVersion 14
         targetSdk 34
-        versionCode 3
+        versionCode 4
         versionName PUBLISH_VERSION
 
         testApplicationId "com.hangyeolee.androidpdfwriter.test"
@@ -68,8 +68,7 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.0.1'
-    implementation 'org.jetbrains:annotations:15.0'
+    implementation 'androidx.annotation:annotation:1.0.0'
     testImplementation 'junit:junit:4.13.2'
 
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'

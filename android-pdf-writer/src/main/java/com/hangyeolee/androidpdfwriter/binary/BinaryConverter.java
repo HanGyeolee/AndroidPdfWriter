@@ -49,7 +49,7 @@ public class BinaryConverter {
 
         // 숫자를 문자열로 변환 (지수 표기법 없이)
         String format = "%."+digit+"f";
-        String str = String.format(Locale.US, format, number);
+        String str = String.format(Locale.getDefault(), format, number);
 
         // 후행 0 제거
         str = str.replaceAll("0*$", "");

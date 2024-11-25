@@ -66,4 +66,40 @@ public class PDFFont {
         }
         return null;
     }
+
+    public static int getFontFlags(@NonNull @ID String fontName){
+        int flags = 0;
+        switch (fontName) {
+            case TIMES_BOLD, TIMES_BOLDITALIC, TIMES_ROMAN, TIMES_ITALIC:
+                // Serif 폰트
+                flags |= (1 << 1);  // Serif bit
+                flags |= (1 << 5);  // Nonsymbolic bit
+                break;
+            case HELVETICA_BOLD, HELVETICA_BOLDITALIC, HELVETICA, HELVETICA_ITALIC:
+                // Sans-serif 폰트
+                flags |= (1 << 5);  // Nonsymbolic bit
+                break;
+            case COURIER_BOLD, COURIER_BOLDITALIC, COURIER, COURIER_ITALIC:
+                // Monospace 폰트
+                flags |= 1;  // FixedPitch bit
+                flags |= (1 << 5);  // Nonsymbolic bit
+                break;
+            default:
+                // Symbol 폰트
+                flags |= (1 << 2);  // Symbolic bit
+                break;
+        };
+
+        // Italic 플래그 설정
+        if (fontName.contains("ITALIC")) {
+            flags |= (1 << 6);  // Italic bit
+        }
+
+        // Bold 플래그 설정
+        if (fontName.contains("BOLD")) {
+            flags |= (1 << 18);  // ForceBold bit
+        }
+
+        return flags;
+    }
 }
