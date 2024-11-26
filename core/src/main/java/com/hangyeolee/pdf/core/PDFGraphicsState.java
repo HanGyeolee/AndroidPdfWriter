@@ -11,7 +11,7 @@ import java.util.Locale;
 /**
  * PDF 그래픽스 상태를 저장하고 복원하는 헬퍼 클래스
  */
-class PDFGraphicsState {
+public class PDFGraphicsState {
     public static void save(StringBuilder content) {
         content.append("q\r\n"); // Save graphics state
     }
