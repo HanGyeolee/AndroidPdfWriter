@@ -7,7 +7,7 @@ public class PDFEmpty extends PDFComponent{
 
     @Override
     public void measure(float x, float y) {
-        // measure nothing
+        super.measure(x, y);
     }
 
     @Override
