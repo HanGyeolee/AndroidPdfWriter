@@ -1,4 +1,4 @@
-package com.hangyeolee.pdf.core.components;
+package com.hangyeolee.pdf.core;
 
 import com.hangyeolee.pdf.core.binary.BinarySerializer;
 

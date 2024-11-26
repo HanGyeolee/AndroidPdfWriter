@@ -1,4 +1,4 @@
-package com.hangyeolee.pdf.core.components;
+package com.hangyeolee.pdf.core;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -12,7 +12,6 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
 import androidx.annotation.RawRes;
 
-import com.hangyeolee.pdf.core.PDFBuilder;
 import com.hangyeolee.pdf.core.binary.BinaryConverter;
 import com.hangyeolee.pdf.core.binary.BinarySerializer;
 import com.hangyeolee.pdf.core.exceptions.ImageNotFoundException;

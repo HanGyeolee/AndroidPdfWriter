@@ -1,6 +1,5 @@
-package com.hangyeolee.pdf.core.components;
+package com.hangyeolee.pdf.core;
 
-import com.hangyeolee.pdf.core.binary.BinarySerializer;
 import com.hangyeolee.pdf.core.utils.Anchor;
 
 public abstract class PDFLayout extends PDFComponent{

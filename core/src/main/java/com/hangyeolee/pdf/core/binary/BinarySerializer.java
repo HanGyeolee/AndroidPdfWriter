@@ -1,13 +1,12 @@
 package com.hangyeolee.pdf.core.binary;
 
-import android.graphics.Bitmap;
 import android.graphics.RectF;
 
 import androidx.annotation.NonNull;
 
-import com.hangyeolee.pdf.core.components.BitmapExtractor;
-import com.hangyeolee.pdf.core.components.PDFLayout;
-import com.hangyeolee.pdf.core.components.FontExtractor;
+import com.hangyeolee.pdf.core.BitmapExtractor;
+import com.hangyeolee.pdf.core.PDFLayout;
+import com.hangyeolee.pdf.core.FontExtractor;
 import com.hangyeolee.pdf.core.font.FontMetrics;
 import com.hangyeolee.pdf.core.font.TTFSubsetter;
 import com.hangyeolee.pdf.core.utils.Zoomable;
@@ -18,7 +17,6 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 
 public class BinarySerializer {
     private static final String HEADER = "%PDF-1.4\r\n%âãÏÓ\r\n";

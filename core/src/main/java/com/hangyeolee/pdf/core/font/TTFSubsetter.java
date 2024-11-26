@@ -2,7 +2,7 @@ package com.hangyeolee.pdf.core.font;
 
 import android.util.Log;
 
-import com.hangyeolee.pdf.core.components.FontExtractor;
+import com.hangyeolee.pdf.core.FontExtractor;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

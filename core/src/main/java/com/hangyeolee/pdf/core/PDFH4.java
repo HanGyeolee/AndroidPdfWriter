@@ -1,6 +1,5 @@
-package com.hangyeolee.pdf.core.components;
+package com.hangyeolee.pdf.core;
 
-import android.graphics.Typeface;
 import android.text.TextPaint;
 
 import com.hangyeolee.pdf.core.font.PDFFont;

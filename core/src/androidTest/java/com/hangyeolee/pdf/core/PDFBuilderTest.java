@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import android.Manifest;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.util.Log;
@@ -15,16 +14,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
-import com.hangyeolee.pdf.core.components.PDFGridLayout;
-import com.hangyeolee.pdf.core.components.PDFH1;
-import com.hangyeolee.pdf.core.components.PDFH2;
-import com.hangyeolee.pdf.core.components.PDFH3;
-import com.hangyeolee.pdf.core.components.PDFH4;
-import com.hangyeolee.pdf.core.components.PDFH5;
-import com.hangyeolee.pdf.core.components.PDFH6;
-import com.hangyeolee.pdf.core.components.PDFImage;
-import com.hangyeolee.pdf.core.components.PDFLinearLayout;
-import com.hangyeolee.pdf.core.components.PDFText;
 import com.hangyeolee.pdf.core.utils.Anchor;
 import com.hangyeolee.pdf.core.utils.Fit;
 import com.hangyeolee.pdf.core.utils.Orientation;
@@ -37,8 +26,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.io.InputStream;
 
 @RunWith(AndroidJUnit4.class)
 public class PDFBuilderTest {

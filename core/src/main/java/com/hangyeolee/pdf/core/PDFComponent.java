@@ -1,4 +1,4 @@
-package com.hangyeolee.pdf.core.components;
+package com.hangyeolee.pdf.core;
 
 import android.graphics.Color;
 import android.graphics.Paint;

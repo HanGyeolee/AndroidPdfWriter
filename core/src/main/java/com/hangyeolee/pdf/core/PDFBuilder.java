@@ -14,7 +14,6 @@ import androidx.annotation.IntRange;
 import androidx.annotation.Nullable;
 
 import com.hangyeolee.pdf.core.binary.BinarySerializer;
-import com.hangyeolee.pdf.core.components.PDFLayout;
 import com.hangyeolee.pdf.core.utils.Paper;
 import com.hangyeolee.pdf.core.utils.PaperUnit;
 import com.hangyeolee.pdf.core.utils.StandardDirectory;

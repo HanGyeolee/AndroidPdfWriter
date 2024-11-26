@@ -14,8 +14,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
-import com.hangyeolee.pdf.core.components.PDFH1;
-import com.hangyeolee.pdf.core.components.PDFLinearLayout;
 import com.hangyeolee.pdf.core.utils.Anchor;
 import com.hangyeolee.pdf.core.utils.Orientation;
 import com.hangyeolee.pdf.core.utils.Paper;

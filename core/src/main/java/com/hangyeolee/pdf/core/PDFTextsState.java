@@ -1,4 +1,4 @@
-package com.hangyeolee.pdf.core.components;
+package com.hangyeolee.pdf.core;
 
 /**
  * PDF 그래픽스 상태를 저장하고 복원하는 헬퍼 클래스

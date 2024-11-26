@@ -1,7 +1,5 @@
 package com.hangyeolee.pdf.core.font;
 
-import static org.junit.Assert.*;
-
 import android.Manifest;
 import android.content.Context;
 import android.util.Log;
@@ -10,8 +8,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.rule.GrantPermissionRule;
 
-import com.hangyeolee.pdf.core.components.FontExtractor;
-import com.hangyeolee.pdf.core.components.PDFText;
+import com.hangyeolee.pdf.core.FontExtractor;
+import com.hangyeolee.pdf.core.PDFText;
 
 import org.junit.After;
 import org.junit.Before;
