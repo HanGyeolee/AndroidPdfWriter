@@ -21,6 +21,7 @@ import com.hangyeolee.androidpdfwriter.exceptions.FontNotFoundException;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.font.PDFFont;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
+import com.hangyeolee.androidpdfwriter.utils.FloatComparison;
 import com.hangyeolee.androidpdfwriter.utils.TextAlign;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
@@ -153,14 +154,16 @@ public class PDFText extends PDFResourceComponent {
             float updatedHeight = measureTextHeight();
             height = (updatedHeight + border.size.top + padding.top
                     + border.size.bottom + padding.bottom + margin.top + margin.bottom);
-            float _height = getTotalHeight();
+            float availableHeight = measureHeight - border.size.top - padding.top
+                    - border.size.bottom - padding.bottom;
             /*
             updatedHeight 가 measureHeight 보다 크다면?
             상위 컴포넌트의 Height를 업데이트 한다.
             */
-            while (updatedHeight > _height) {
-                updateHeight(updatedHeight - _height);
-                _height = getTotalHeight();
+            while (FloatComparison.isGreater(updatedHeight, availableHeight)) {
+                updateHeight(updatedHeight - availableHeight);
+                availableHeight = measureHeight - border.size.top - padding.top
+                        - border.size.bottom - padding.bottom;
             }
         }
     }

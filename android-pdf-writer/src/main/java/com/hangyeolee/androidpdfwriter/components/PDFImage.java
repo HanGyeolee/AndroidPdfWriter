@@ -23,6 +23,7 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
+import com.hangyeolee.androidpdfwriter.utils.FloatComparison;
 import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Locale;
@@ -82,7 +83,7 @@ public class  PDFImage extends PDFResourceComponent{
         // 높이가 명시적으로 지정된 경우, 부모 크기 업데이트
         if (height > 0) {
             float _height = getTotalHeight();
-            while (height > _height) {
+            while (FloatComparison.isGreater(height,_height)) {
                 updateHeight(height - _height);
                 _height = getTotalHeight();
 
@@ -95,19 +96,8 @@ public class  PDFImage extends PDFResourceComponent{
         // 항상 원본 비트맵으로 크기 계산
         measureSize(info.origin, availableWidth, availableHeight);
 
-        // 계산된 크기가 가용 공간보다 큰 경우 부모 크기 업데이트
-        while (resizedHeight > availableHeight) {
-            updateHeight(resizedHeight - availableHeight);
-            availableHeight = measureHeight - border.size.top - padding.top
-                    - border.size.bottom - padding.bottom;
-
-            // 새로운 가용 공간으로 다시 크기 계산
-            measureSize(info.origin, availableWidth, availableHeight);
-        }
-
         // 최종 높이 설정
-        float updatedHeight = resizedHeight;
-        height = updatedHeight + border.size.top + padding.top
+        height = availableHeight + border.size.top + padding.top
                 + border.size.bottom + padding.bottom + margin.top + margin.bottom;
 
         // Anchor에 따른 여백 계산
@@ -228,27 +218,42 @@ public class  PDFImage extends PDFResourceComponent{
         super.draw(serializer);
         float pageHeight = Zoomable.getInstance().getContentHeight();
 
-        // 시작 페이지
-        int currentPage = calculatePageIndex(measureY, measureHeight);
+        // 시작 페이지와 끝 페이지 계산
+        int startPage = calculatePageIndex(measureY);
+        int endPage = calculatePageIndex(measureY, getTotalHeight());
 
         // 첫 페이지의 Y 좌표 조정
-        float currentY = measureY - currentPage * pageHeight;
+        float currentY = measureY - startPage * pageHeight;
         if(currentY < 0) currentY = 0;
 
-        // PDF 좌표계로 변환하여 실제 그리기 위치 계산
-        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
-        float y = Zoomable.getInstance().transform2PDFHeight(currentY + border.size.top + padding.top + gapY + resizedHeight);
+        // 페이지별로 분할하여 그리기
+        for (int currentPage = startPage; currentPage <= endPage; currentPage++) {
+            StringBuilder content = serializer.getPage(currentPage);
 
-        StringBuilder content = serializer.getPage(currentPage);
-        // 지정된 크기에 맞게 늘리기
-        content.append(String.format(Locale.getDefault(),
-                "%s 0 0 %s %s %s cm\r\n",
-                BinaryConverter.formatNumber(resizedWidth),
-                BinaryConverter.formatNumber(resizedHeight),
-                BinaryConverter.formatNumber(x),
-                BinaryConverter.formatNumber(y))
-        );
-        content.append("/").append(resourceId).append(" Do\r\n");
+            // PDF 좌표계로 변환하여 실제 그리기 위치 계산
+            float x = Zoomable.getInstance().transform2PDFWidth(
+                    measureX + border.size.left + padding.left + gapX
+            );
+            float y = Zoomable.getInstance().transform2PDFHeight(
+                    currentY + border.size.top + padding.top + gapY + resizedHeight
+            );
+
+            // 지정된 크기에 맞게 늘리기
+            content.append(String.format(Locale.getDefault(),
+                    "%s 0 0 %s %s %s cm\r\n",
+                    BinaryConverter.formatNumber(resizedWidth),
+                    BinaryConverter.formatNumber(resizedHeight),
+                    BinaryConverter.formatNumber(x),
+                    BinaryConverter.formatNumber(y))
+            );
+
+            // 이미지 그리기
+            content.append("/").append(resourceId).append(" Do\n");
+            content.append("Q\n"); // 그래픽 상태 복원
+
+            // 다음 섹션 준비
+            currentY -= pageHeight;
+        }
     }
 
     private void compressBitmap(BinarySerializer serializer){
