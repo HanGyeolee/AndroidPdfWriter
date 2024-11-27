@@ -9,6 +9,7 @@ import android.os.Build;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
+import android.util.Log;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
@@ -78,9 +79,6 @@ public class PDFText extends PDFResourceComponent {
     public void measure(float x, float y) {
         super.measure(x, y);
         if(text != null) {
-            // Paint 메트릭 계산
-            setFontMetrics();
-
             float maxWidth = 0;
             float _width = (measureWidth - border.size.left - padding.left
                     - border.size.right - padding.right);
@@ -210,24 +208,14 @@ public class PDFText extends PDFResourceComponent {
         stemH = (int)Math.ceil(Math.min(bounds.width() * 0.25f, stemV) * scale); // 일반적으로 stemV보다 작음
 
 
-        if(BinaryConverter.isBase14Font(info.postScriptName)){
+        boolean isBase14 = BinaryConverter.isBase14Font(info.postScriptName);
+        if(isBase14){
             if(charWidths == null) {
                 // charWidths 계산
                 charWidths = new int[0xE0];
                 for (int i = 0; i < 0xE0; i++) {
                     float charWidth = paint.measureText(FONTBBOX_TEXT, i, i + 1) - 0.5f;
-                    charWidths[i] = (int) Math.ceil(charWidth * scale);
-                }
-            }
-        } else {
-            //info W 에 길이 추가
-            for (int i = 0; i < text.length(); i++) {
-                float charWidth = paint.measureText(text, i, i + 1) - 0.5f;
-                // 글리프
-                Integer glyphIndex = info.glyphIndexMap.get(text.charAt(i));
-                if(glyphIndex != null) {
-                    info.W.put(text.charAt(i), (int) Math.ceil(charWidth * scale));
-                    info.usedGlyph.put(text.charAt(i), glyphIndex);
+                    charWidths[i] = Math.round(charWidth * scale);
                 }
             }
         }
@@ -237,13 +225,23 @@ public class PDFText extends PDFResourceComponent {
         Paint.FontMetrics metrics = paint.getFontMetrics();
 
         // 가장 왼쪽으로 확장되는 문자들 체크 (예: 'j', 'f' 등)
-        String allChars = text + FONTBBOX_TEXT;
         float minLeft = 0;
         float maxRight = 0;
-        for (char c : allChars.toCharArray()) {
+        for (char c : FONTBBOX_TEXT.toCharArray()) {
             paint.getTextBounds(String.valueOf(c), 0, 1, bounds);
             minLeft = Math.min(minLeft, bounds.left);
             maxRight = Math.max(maxRight, bounds.right);
+        }
+        if(!isBase14){
+            for(char c : text.toCharArray()) {
+                float width = paint.measureText(String.valueOf(c), 0, 1) - 0.75f;
+                // 글리프
+                Integer glyphIndex = info.glyphIndexMap.get(c);
+                if (glyphIndex != null) {
+                    info.W.put(c, (int) Math.ceil(width * scale));
+                    info.usedGlyph.put(c, glyphIndex);
+                }
+            }
         }
 
         fontBBox = new Rect(
@@ -259,6 +257,9 @@ public class PDFText extends PDFResourceComponent {
     public void registerResources(BinarySerializer page) {
         // 폰트 리소스 등록
         if (bufferPaint != null && bufferPaint.getTypeface() != null) {
+            // Paint 메트릭 계산
+            setFontMetrics();
+
             int flag = info.flags;
             Typeface typeface = bufferPaint.getTypeface();
 

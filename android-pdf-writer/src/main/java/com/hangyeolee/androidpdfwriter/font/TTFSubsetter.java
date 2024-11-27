@@ -27,7 +27,7 @@ public class TTFSubsetter {
     private static final int USE_MY_METRICS = 0x0200;
     private static final int OVERLAP_COMPOUND = 0x0400;
 
-    private static class TableEntry {
+    public static class TableEntry {
         String tag;
         int checkSum;
         int offset;
@@ -37,11 +37,87 @@ public class TTFSubsetter {
         // 글리프 오프셋을 저장하기 위한 맵 추가
         Map<Integer, Integer> glyphOffsets = new HashMap<>();
     }
+    public static class HeadTableEntry extends TableEntry{
+        private int version;                    // Fixed: 0x00010000 for version 1.0
+        private int fontRevision;               // Fixed: font version
+        private long checkSumAdjustment;        // uint32: checksum adjustment
+        private long magicNumber;               // uint32: magic number (0x5F0F3CF5)
+        private int flags;                      // uint16: flags
+        private int unitsPerEm;                 // uint16: units per em
+        private long created;                   // int64: created date in seconds since 1904
+        private long modified;                  // int64: modified date in seconds since 1904
+        private short xMin;                     // FWord: minimum x value
+        private short yMin;                     // FWord: minimum y value
+        private short xMax;                     // FWord: maximum x value
+        private short yMax;                     // FWord: maximum y value
+        private int macStyle;                   // uint16: mac style bits
+        private int lowestRecPPEM;             // uint16: smallest readable size in pixels
+        private short fontDirectionHint;        // int16: font direction hint
+        private short indexToLocFormat;         // int16: format of 'loca' table
+        private short glyphDataFormat;          // int16: glyph data format
+
+        /**
+         * glyf 테이블의 오프셋을 계산하는데 필요한 indexToLocFormat을 반환합니다.
+         * @return 0: short format, 1: long format
+         */
+        public boolean isLongLocaFormat() {
+            return indexToLocFormat == 1;
+        }
+
+        /**
+         * checkSumAdjustment를 업데이트합니다.
+         */
+        public void updateCheckSumAdjustment(long newCheckSum) {
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            buffer.order(ByteOrder.BIG_ENDIAN);
+            buffer.position(8);
+            buffer.putInt((int)(newCheckSum & 0xFFFFFFFFL));
+            checkSumAdjustment = newCheckSum;
+        }
+
+        /**
+         * FontDescriptor에 필요한 값들을 가져옵니다.
+         */
+        public int[] getFontDescriptorMetrics() {
+            return new int[] {
+                    xMin, yMin, xMax, yMax,
+                    unitsPerEm,
+                    (macStyle & 0x01) != 0 ? 1 : 0,  // Bold
+                    (macStyle & 0x02) != 0 ? 1 : 0   // Italic
+            };
+        }
+
+        /**
+         * TTFSubsetter에서 loca 테이블을 처리할 때 필요한 파라미터들을 반환합니다.
+         */
+        public int getGlyphOffsetMultiplier() {
+            return indexToLocFormat == 0 ? 2 : 1;
+        }
+
+        /**
+         * 글리프 오프셋을 계산합니다.
+         */
+        public int calculateGlyphOffset(int locaValue) {
+            return indexToLocFormat == 0 ? locaValue * 2 : locaValue;
+        }
+
+        public int getUnitsPerEm() {
+            return unitsPerEm;
+        }
+
+        public int getMacStyle() {
+            return macStyle;
+        }
+
+        public short[] getBoundingBox() {
+            return new short[] { xMin, yMin, xMax, yMax };
+        }
+    }
 
     // 글리프 매핑 관리를 위한 클래스
     private static class GlyphMapping {
         private final Map<Integer, Integer> oldToNewId = new HashMap<>();
-        private int nextNewId = 0;
+        private int nextNewId = 1;
 
         public GlyphMapping() {
             // 0번 글리프는 항상 0번으로 유지
@@ -145,7 +221,7 @@ public class TTFSubsetter {
 
         Set<Integer> additionalGlyphs = new HashSet<>();
         Set<Integer> pendingGlyphs = new HashSet<>(initialGlyphs);
-        Set<Integer> processedGlyphs = new HashSet<>();
+        Set<Integer> processedGlyphs = new HashSet<>(initialGlyphs.size());
 
         while (!pendingGlyphs.isEmpty()) {
             Iterator<Integer> it = pendingGlyphs.iterator();
@@ -222,6 +298,12 @@ public class TTFSubsetter {
                 bb.position(bb.position() + 8);
             }
 
+            // 명령어 데이터 스킵
+            if ((flags & WE_HAVE_INSTRUCTIONS) != 0) {
+                int instructionLength = bb.getShort() & 0xFFFF;
+                bb.position(bb.position() + instructionLength);
+            }
+
             hasMoreComponents = (flags & MORE_COMPONENTS) != 0;
         } while (hasMoreComponents);
 
@@ -265,10 +347,16 @@ public class TTFSubsetter {
         input.position(12);
 
         for (int i = 0; i < numTables; i++) {
-            TableEntry entry = new TableEntry();
-            entry.tag = new String(new byte[]{
+            String tag = new String(new byte[]{
                     input.get(), input.get(), input.get(), input.get()
             });
+            TableEntry entry;
+            if(tag.equals("head")){
+                entry = new HeadTableEntry();
+            } else {
+                entry = new TableEntry();
+            }
+            entry.tag = tag;
             entry.checkSum = input.getInt();
             entry.offset = input.getInt();
             entry.length = input.getInt();
@@ -281,6 +369,9 @@ public class TTFSubsetter {
                 input.get(entry.data);
                 input.position(savedPosition);
                 tables.add(entry);
+                if(tag.equals("head")){
+                    processHeadTable((HeadTableEntry)entry);
+                }
             }
         }
     }
@@ -313,13 +404,50 @@ public class TTFSubsetter {
         return glyphMapping;
     }
 
-    private GlyphMapping processLocaTable(TableEntry entry) {
+    private void processHeadTable(HeadTableEntry entry) {
+        ByteBuffer bb = ByteBuffer.wrap(entry.data);
+        bb.order(ByteOrder.BIG_ENDIAN);
+
+        entry.version = bb.getInt();                  // 0-3
+        entry.fontRevision = bb.getInt();             // 4-7
+        entry.checkSumAdjustment = bb.getInt() & 0xFFFFFFFFL;  // 8-11
+        entry.magicNumber = bb.getInt() & 0xFFFFFFFFL;         // 12-15
+        entry.flags = bb.getShort() & 0xFFFF;         // 16-17
+        entry.unitsPerEm = bb.getShort() & 0xFFFF;    // 18-19
+
+        // 날짜 처리 (각각 8바이트)
+        entry.created = bb.getLong();                 // 20-27
+        entry.modified = bb.getLong();                // 28-35
+
+        // 바운딩 박스 좌표
+        entry.xMin = bb.getShort();                   // 36-37
+        entry.yMin = bb.getShort();                   // 38-39
+        entry.xMax = bb.getShort();                   // 40-41
+        entry.yMax = bb.getShort();                   // 42-43
+
+        entry.macStyle = bb.getShort() & 0xFFFF;      // 44-45
+        entry.lowestRecPPEM = bb.getShort() & 0xFFFF; // 46-47
+        entry.fontDirectionHint = bb.getShort();      // 48-49
+        entry.indexToLocFormat = bb.getShort();       // 50-51
+        entry.glyphDataFormat = bb.getShort();        // 52-53
+    }
+
+    private GlyphMapping processLocaTable(TableEntry entry) throws NullPointerException {
+        HeadTableEntry headTable = (HeadTableEntry)findTable("head");
+        if(headTable == null) throw new NullPointerException();
+        boolean isLongFormat = headTable.isLongLocaFormat();
+
         ByteBuffer bb = ByteBuffer.wrap(entry.data);
         bb.order(ByteOrder.BIG_ENDIAN);
 
         // 원본 글리프 오프셋 읽기
         for (int oldGlyphId = 0; oldGlyphId < numGlyphs; oldGlyphId++) {
-            int offset = bb.getInt();
+            int offset;
+            if (isLongFormat) {
+                offset = bb.getInt();
+            } else {
+                offset = (bb.getShort() & 0xFFFF) * 2; // short format에서는 2를 곱해야 함
+            }
             entry.glyphOffsets.put(oldGlyphId, offset);
         }
 
@@ -339,7 +467,18 @@ public class TTFSubsetter {
                 }
             }
             if (oldId != -1) {
-                writeInt(newLoca, entry.glyphOffsets.get(oldId));
+                if (isLongFormat) {
+                    writeInt(newLoca, entry.glyphOffsets.get(oldId));
+                } else {
+                    writeShort(newLoca, entry.glyphOffsets.get(oldId) >> 1); // short format에서는 2로 나눠야 함
+                }
+            } else {
+                // 마지막 엔트리이거나 누락된 글리프의 경우
+                if (isLongFormat) {
+                    writeInt(newLoca, newId > 0 ? entry.glyphOffsets.get(oldId - 1) : 0);
+                } else {
+                    writeShort(newLoca, newId > 0 ? entry.glyphOffsets.get(oldId - 1) >> 1 : 0);
+                }
             }
         }
 
@@ -348,9 +487,12 @@ public class TTFSubsetter {
         return glyphMapping;
     }
 
-
-    private void processGlyfTable(TableEntry entry, TableEntry locaEntry, GlyphMapping glyphMapping) {
+    private void processGlyfTable(TableEntry entry, TableEntry locaEntry, GlyphMapping glyphMapping)
+            throws NullPointerException {
         ByteArrayOutputStream newGlyf = new ByteArrayOutputStream();
+        HeadTableEntry headTable = (HeadTableEntry)findTable("head");
+        if(headTable == null) throw new NullPointerException();
+        boolean isLongFormat = headTable.isLongLocaFormat();
 
         // 새로운 오프셋 맵
         Map<Integer, Integer> newOffsets = new HashMap<>();
@@ -379,33 +521,105 @@ public class TTFSubsetter {
             newOffsets.put(newId, currentOffset);
 
             if (length > 0) {
-                // 글리프 데이터 복사
-                newGlyf.write(entry.data, oldOffset, length);
-                currentOffset += length;
+                // 글리프 데이터 읽기
+                byte[] glyphData = new byte[length];
+                System.arraycopy(entry.data, oldOffset, glyphData, 0, length);
 
-                // 4바이트 정렬
-                int padding = (-length) & 3;
-                for (int i = 0; i < padding; i++) {
-                    newGlyf.write(0);
+                // 복합 글리프인지 확인
+                ByteBuffer bb = ByteBuffer.wrap(glyphData);
+                bb.order(ByteOrder.BIG_ENDIAN);
+                short numberOfContours = bb.getShort();
+
+                if(numberOfContours == -1){
+                    // 복합 글리프 갱신
+                    ByteArrayOutputStream updatedGlyph = new ByteArrayOutputStream();
+                    writeShort(updatedGlyph, numberOfContours);
+
+                    // 바운딩 박스 복사 (8 bytes)
+                    updatedGlyph.write(glyphData, 2, 8);
+                    bb.position(10);  // numberOfContours(2) + bbox(8)
+
+                    // 컴포넌트 처리
+                    boolean hasMoreComponents;
+                    do {
+                        int flags = bb.getShort() & 0xFFFF;
+                        writeShort(updatedGlyph, flags);
+                        // 복합 글리프 처리 부분에서 수정
+                        int oldComponentId = bb.getShort() & 0xFFFF;
+                        int newComponentId = glyphMapping.getNewId(oldComponentId);
+                        writeShort(updatedGlyph, newComponentId);
+
+                        // 변환 행렬 데이터 처리
+                        int componentDataLength = 0;
+                        if ((flags & ARG_1_AND_2_ARE_WORDS) != 0) {
+                            componentDataLength += 4;  // 2 words
+                        } else {
+                            componentDataLength += 2;  // 2 bytes
+                        }
+
+                        if ((flags & WE_HAVE_A_SCALE) != 0) {
+                            componentDataLength += 2;
+                        } else if ((flags & WE_HAVE_AN_X_AND_Y_SCALE) != 0) {
+                            componentDataLength += 4;
+                        } else if ((flags & WE_HAVE_A_TWO_BY_TWO) != 0) {
+                            componentDataLength += 8;
+                        }
+
+                        // 변환 행렬 데이터 복사
+                        updatedGlyph.write(glyphData, bb.position(), componentDataLength);
+                        bb.position(bb.position() + componentDataLength);
+
+                        // instructions 처리
+                        if ((flags & WE_HAVE_INSTRUCTIONS) != 0) {
+                            int instructionLength = bb.getShort() & 0xFFFF;
+                            writeShort(updatedGlyph, instructionLength);
+                            updatedGlyph.write(glyphData, bb.position(), instructionLength);
+                            bb.position(bb.position() + instructionLength);
+                        }
+
+                        hasMoreComponents = (flags & MORE_COMPONENTS) != 0;
+                    } while (hasMoreComponents);
+
+                    glyphData = updatedGlyph.toByteArray();
                 }
-                currentOffset += padding;
+                // 4바이트 정렬
+                int alignedLength = (length + 3) & ~3;
+                byte[] alignedData = new byte[alignedLength];
+                System.arraycopy(glyphData, 0, alignedData, 0, length);
+
+                newGlyf.write(alignedData, 0, alignedLength);
+                currentOffset += alignedLength;
             }
         }
 
         entry.data = newGlyf.toByteArray();
 
         // loca 테이블 업데이트
-        updateLocaOffsets(locaEntry, newOffsets);
+        updateLocaOffsets(locaEntry, newOffsets, entry.data.length, isLongFormat);
     }
 
-    private void updateLocaOffsets(TableEntry locaEntry, Map<Integer, Integer> newOffsets) {
+    private void updateLocaOffsets(TableEntry locaEntry, Map<Integer, Integer> newOffsets,
+                                  int finalGlyfSize, boolean isLongFormat) {
         ByteArrayOutputStream newLoca = new ByteArrayOutputStream();
 
-        for (int i = 0; i < newOffsets.size(); i++) {
-            writeInt(newLoca, newOffsets.get(i));
+
+        // 모든 글리프 + 마지막 엔트리에 대한 오프셋 작성
+        for (int i = 0; i <= newOffsets.size(); i++) {
+            int offset;
+            if (i < newOffsets.size()) {
+                offset = newOffsets.get(i);
+            } else {
+                // 마지막 엔트리는 glyf 테이블의 전체 크기
+                offset = finalGlyfSize;
+            }
+
+            if (isLongFormat) {
+                writeInt(newLoca, offset);
+            } else {
+                // short format에서는 2로 나눠서 저장
+                writeShort(newLoca, offset >> 1);
+            }
         }
-        // 마지막 오프셋 추가
-        writeInt(newLoca, locaEntry.data.length);
 
         locaEntry.data = newLoca.toByteArray();
     }
@@ -670,6 +884,7 @@ public class TTFSubsetter {
             char unicode = entry.getKey();
             int oldGlyphId = entry.getValue();
             int newGlyphId = glyphMapping.getNewId(oldGlyphId);
+
             if (newGlyphId != -1) {
                 fontInfo.usedGlyph.put(unicode, newGlyphId);
             }
@@ -827,12 +1042,28 @@ public class TTFSubsetter {
         }
     }
 
-    private TableEntry findTable(String tag) {
+    public TableEntry findTable(String tag) {
         for (TableEntry entry : tables) {
             if (entry.tag.equals(tag)) {
                 return entry;
             }
         }
         return null;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            if (input != null) {
+                input.clear();
+            }
+            for (TableEntry entry : tables) {
+                entry.data = null;
+                entry.glyphOffsets.clear();
+            }
+            tables.clear();
+        } finally {
+            super.finalize();
+        }
     }
 }

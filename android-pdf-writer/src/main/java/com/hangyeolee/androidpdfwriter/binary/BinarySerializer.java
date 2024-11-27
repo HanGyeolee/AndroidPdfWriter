@@ -156,6 +156,10 @@ public class BinarySerializer {
             fontDesc.setFontName(info.postScriptName);
             font.setFontDescriptor(fontDesc);
         }else {
+            // Font Subsetting
+            TTFSubsetter subsetter = new TTFSubsetter(info);
+            Integer macStyle = ((TTFSubsetter.HeadTableEntry)subsetter.findTable("head")).getMacStyle();
+
             String CIDName = "CIDFont+"+fontId; //info.postScriptName+"+"+fontId;
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, "Identity-H"));
@@ -166,9 +170,7 @@ public class BinarySerializer {
             BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null));
             cidFont.setSubtype("CIDFontType2");
             cidFont.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
-            cidFont.dictionary.put("/CIDSystemInfo", "<</Registry(Adobe)/Ordering(Identity)/Supplement 0>>");
-//            cidFont.dictionary.put("/CMapName", "/Identity-H");
-            cidFont.dictionary.put("/CIDToGIDMap", "/Identity");
+            cidFont.setCIDSystemInfo(macStyle);
             font.addDescendantFont(cidFont);
 
             // FontDescriptor 객체 생성
@@ -178,10 +180,9 @@ public class BinarySerializer {
 
             // Font 파일 생성
             BinaryContentStream fontfile2 = manager.createObject(n -> {
-                // Font Subsetting
-                TTFSubsetter subsetter = new TTFSubsetter(info);
                 return new BinaryContentStream(n, subsetter.subset(), true);
             });
+
             font.setCAMP(createToUnicode(info.usedGlyph));
             cidFont.setW(info.W, info.usedGlyph);
             fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경

@@ -1,8 +1,8 @@
 package com.hangyeolee.androidpdfwriter.components;
 
 
-import com.hangyeolee.pdf.core.binary.BinarySerializer;
-import com.hangyeolee.pdf.core.utils.Zoomable;
+import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
+import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 /**
  * 강제 페이지 나누기를 위한 컴포넌트.<br>
