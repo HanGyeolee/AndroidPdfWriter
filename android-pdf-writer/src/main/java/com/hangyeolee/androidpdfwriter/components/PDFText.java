@@ -79,6 +79,21 @@ public class PDFText extends PDFResourceComponent {
     public void measure(float x, float y) {
         super.measure(x, y);
         if(text != null) {
+            boolean isBase14 = BinaryConverter.isBase14Font(info.postScriptName);
+            if(!isBase14){
+                // 1000 유닛 기준으로 변환할 스케일 팩터 계산
+                float scale = 1000f / bufferPaint.getTextSize();
+                for(char c : text.toCharArray()) {
+                    float width = bufferPaint.measureText(String.valueOf(c), 0, 1) - 0.5f;
+                    // 글리프
+                    Integer glyphIndex = info.glyphIndexMap.get(c);
+                    if (glyphIndex != null) {
+                        info.W.put(c, (int) Math.ceil(width * scale));
+                        info.usedGlyph.put(c, glyphIndex);
+                    }
+                }
+            }
+
             float maxWidth = 0;
             float _width = (measureWidth - border.size.left - padding.left
                     - border.size.right - padding.right);
@@ -231,17 +246,6 @@ public class PDFText extends PDFResourceComponent {
             paint.getTextBounds(String.valueOf(c), 0, 1, bounds);
             minLeft = Math.min(minLeft, bounds.left);
             maxRight = Math.max(maxRight, bounds.right);
-        }
-        if(!isBase14){
-            for(char c : text.toCharArray()) {
-                float width = paint.measureText(String.valueOf(c), 0, 1) - 0.75f;
-                // 글리프
-                Integer glyphIndex = info.glyphIndexMap.get(c);
-                if (glyphIndex != null) {
-                    info.W.put(c, (int) Math.ceil(width * scale));
-                    info.usedGlyph.put(c, glyphIndex);
-                }
-            }
         }
 
         fontBBox = new Rect(

@@ -50,7 +50,7 @@ public class TTFSubsetter {
         private short yMin;                     // FWord: minimum y value
         private short xMax;                     // FWord: maximum x value
         private short yMax;                     // FWord: maximum y value
-        private int macStyle;                   // uint16: mac style bits
+        private Integer macStyle = null;        // uint16: mac style bits
         private int lowestRecPPEM;             // uint16: smallest readable size in pixels
         private short fontDirectionHint;        // int16: font direction hint
         private short indexToLocFormat;         // int16: format of 'loca' table
