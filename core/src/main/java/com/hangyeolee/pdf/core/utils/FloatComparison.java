@@ -1,7 +1,7 @@
 package com.hangyeolee.pdf.core.utils;
 
 public class FloatComparison {
-    private static final float EPSILON = 1E-5f; // 적절한 epsilon 값 설정
+    private static final float EPSILON = 1E-4f; // 적절한 epsilon 값 설정 float 값 100~1000 사이에 적합
 
     // 두 float이 실질적으로 같은지 비교
     public static boolean isEqual(float a, float b) {
