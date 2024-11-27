@@ -14,6 +14,18 @@ import com.hangyeolee.pdf.core.utils.Orientation;
 import com.hangyeolee.pdf.core.utils.Paper;
 import com.hangyeolee.pdf.core.utils.StandardDirectory;
 import com.hangyeolee.pdf.core.utils.TextAlign;
+import com.hangyeolee.pdf.core.PDFEmpty;
+import com.hangyeolee.pdf.core.PDFGridCell;
+import com.hangyeolee.pdf.core.PDFGridLayout;
+import com.hangyeolee.pdf.core.PDFH1;
+import com.hangyeolee.pdf.core.PDFH2;
+import com.hangyeolee.pdf.core.PDFH3;
+import com.hangyeolee.pdf.core.PDFH4;
+import com.hangyeolee.pdf.core.PDFH5;
+import com.hangyeolee.pdf.core.PDFH6;
+import com.hangyeolee.pdf.core.PDFImage;
+import com.hangyeolee.pdf.core.PDFLinearLayout;
+import com.hangyeolee.pdf.core.font.PDFFont;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,7 +49,7 @@ public class PDFTableTest {
      */
     @Before
     public void setUp() {
-        PDFBuilder.DEBUG = false;
+        PDFBuilder.DEBUG = true;
         context = InstrumentationRegistry.getInstrumentation().getTargetContext();
     }
 
@@ -285,13 +297,20 @@ public class PDFTableTest {
     final float SPACING = 1.08f;            //줄간격 = 폰트 사이즈 *1.08 => 워드 설정값.
     @Test
     public void testReport() {
+        PDFH1.fontSize = convertWordPointToPixel(TITLE);
+        PDFH2.fontSize = convertWordPointToPixel(SUB_TITLE);
+        PDFH3.fontSize = convertWordPointToPixel(SUBJECT);
+        PDFH4.fontSize = convertWordPointToPixel(ANIMAL_INFORMATION);
+        PDFH5.fontSize = convertWordPointToPixel(CONTENTS);
+        PDFH6.fontSize = convertWordPointToPixel(TABLE_CHART);
+
         PDFBuilder builder = new PDFBuilder(Paper.A4).setPagePadding(36, 36).setQuality(70);
         {
             builder.root = PDFLinearLayout.build(Orientation.Vertical)
                     .addChild(PDFEmpty.build()
                             .setPadding(0, (int) convertWordPointToPixel(22 * (1 + SPACING) * 6), 0, 0) )
                     .addChild(PDFLinearLayout.build(Orientation.Vertical)
-                            .addChild(PDFImage.fromResource(context, com.hangyeolee.pdf.core.test.R.drawable.test)     //(폰트사이즈 22 + 줄간격 22*1.08) * 단락 나누기(엔터) 6회
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)     //(폰트사이즈 22 + 줄간격 22*1.08) * 단락 나누기(엔터) 6회
                                     .setBackgroundColor(Color.WHITE)
                                     .setHeight(70f)
                                     .setFit(Fit.CONTAIN)
@@ -300,7 +319,6 @@ public class PDFTableTest {
                             .addChild(PDFH1.build("동물 심전도(ECG) 검진 보고서")
                                     .setFontFromAsset(context, "Pretendard-Bold.ttf")
                                     .setPadding(0, 0, 0, (int) convertWordPointToPixel(TITLE * SPACING))
-                                    .setBackgroundColor(Color.WHITE)
                                     .setTextAlign(TextAlign.Start))
                             .addChild(PDFH2.build("2024.11.27 08:30")
                                     .setFontFromAsset(context, "Pretendard-Bold.ttf")

@@ -477,7 +477,9 @@ public class  PDFImage extends PDFResourceComponent{
      * @see PDFImage#fromAsset(Context, String)
      * @see PDFImage#fromFile(String)
      * @param context AppContext
-     * @param resourceId 리소스 아이디
+     * @param resourceId 리소스 아이디<br>
+     *                   xml drawable은 v1.1.1에서 지원하지 않습니다.<br>
+     *                   xml drawable is not supported in v1.1.1.
      */
     public static PDFImage fromResource(@NonNull Context context, @RawRes int resourceId){
         return new PDFImage(BitmapExtractor.loadFromResource(context, resourceId));
@@ -511,7 +513,9 @@ public class  PDFImage extends PDFResourceComponent{
      * @see PDFImage#fromAsset(Context, String, int)
      * @see PDFImage#fromFile(String, int)
      * @param context AppContext
-     * @param resourceId 리소스 아이디
+     * @param resourceId 리소스 아이디<br>
+     *                   xml drawable은 v1.1.1에서 지원하지 않습니다.<br>
+     *                   xml drawable is not supported in v1.1.1.
      * @param fit 이미지 맞춤
      */
     public static PDFImage fromResource(@NonNull Context context, @RawRes int resourceId, @Fit.FitInt int fit){

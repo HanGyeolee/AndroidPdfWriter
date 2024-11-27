@@ -93,8 +93,8 @@ public class BitmapExtractor {
                     int height = drawable.getIntrinsicHeight();
 
                     // 크기가 정의되지 않은 경우 기본값 설정
-                    if (width < 128) width = 128;
-                    if (height < 128) height = 128;
+                    if (width < 512) width = 512;
+                    if (height < 512) height = 512;
 
                     origin = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
                     Canvas canvas = new Canvas(origin);

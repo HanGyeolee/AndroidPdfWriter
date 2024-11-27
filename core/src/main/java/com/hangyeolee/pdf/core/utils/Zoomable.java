@@ -15,6 +15,11 @@ public class Zoomable {
     private RectF pageRect = null;
     private final RectF padding = new RectF();
 
+    public static void clear(){
+        getInstance().pageRect = null;
+        getInstance().padding.set(0, 0, 0, 0);
+    }
+
     /**
      * PDF 페이지 크기 설정
      * @param pageRect 크기

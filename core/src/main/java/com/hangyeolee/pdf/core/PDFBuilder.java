@@ -39,6 +39,7 @@ public class PDFBuilder {
     public PDFLayout root = null;
 
     public PDFBuilder(Paper pageSize){
+        Zoomable.clear();
         this.pageSize = pageSize;
         Zoomable.getInstance().setPageRect(
                 new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
@@ -49,6 +50,7 @@ public class PDFBuilder {
             @FloatRange(from = 1.0f) float width,
             @FloatRange(from = 1.0f) float height,
             PaperUnit unit){
+        Zoomable.clear();
         if(width < 1) width = 1;
         if(height < 1) height = 1;
         this.pageSize.setCustom(width, height, unit);
