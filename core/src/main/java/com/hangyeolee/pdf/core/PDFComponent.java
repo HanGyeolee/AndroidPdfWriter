@@ -76,8 +76,11 @@ public abstract class PDFComponent{
         if(width < 0) {
             width = 0;
         }
-        if(height < 0) {
-            height = 0;
+        if(height <= 0) {
+            height = (border.size.top + border.size.bottom
+                    + padding.top + padding.bottom
+                    + margin.top + margin.bottom);
+            updateHeight(height);
         }
 
         relativeX = x;
