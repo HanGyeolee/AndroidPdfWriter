@@ -84,7 +84,7 @@ public class PDFText extends PDFResourceComponent {
                 // 1000 유닛 기준으로 변환할 스케일 팩터 계산
                 float scale = 1000f / bufferPaint.getTextSize();
                 for(char c : text.toCharArray()) {
-                    float width = bufferPaint.measureText(String.valueOf(c), 0, 1) - 0.5f;
+                    float width = bufferPaint.measureText(String.valueOf(c), 0, 1) - 0.75f;
                     // 글리프
                     Integer glyphIndex = info.glyphIndexMap.get(c);
                     if (glyphIndex != null) {
@@ -125,7 +125,7 @@ public class PDFText extends PDFResourceComponent {
                     float w = layout.getLineWidth(i);
                     if (w > maxWidth) maxWidth = w;
                 }
-                if (maxWidth == _width) {
+                if (maxWidth >= _width) {
                     maxWidth += margin.right + margin.left + border.size.right + border.size.left
                             + padding.right + padding.left;
                     break;
