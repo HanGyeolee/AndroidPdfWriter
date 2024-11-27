@@ -76,8 +76,11 @@ public abstract class PDFComponent{
         if(width < 0) {
             width = 0;
         }
-        if(height < 0) {
-            height = 0;
+        if(height <= 0) {
+            height = (border.size.top + border.size.bottom
+                    + padding.top + padding.bottom
+                    + margin.top + margin.bottom);
+            updateHeight(height);
         }
 
         relativeX = x;
@@ -100,11 +103,11 @@ public abstract class PDFComponent{
         else{
             // 하위 구성 요소인 경우
             // 부모의 사용 가능한 최대 크기 계산
-            float maxW = parent.measureWidth
+            float maxW = parent.measureWidth - relativeX
                     - parent.border.size.left - parent.border.size.right
                     - parent.padding.left - parent.padding.right
                     - left - right;
-            float maxH = parent.measureHeight
+            float maxH = parent.measureHeight - relativeY
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - top - bottom;
@@ -112,11 +115,11 @@ public abstract class PDFComponent{
             if(maxH < 0) maxH = 0;
 
             // 설정된 크기와 최대 크기 중 적절한 값 선택
-            if(0 < width && width + relativeX <= maxW) measureWidth = width;
+            if(0 < width && width <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
-            else measureWidth =  (maxW - relativeX);
-            if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight =  (maxH - relativeY);
+            else measureWidth =  maxW;
+            if(0 < height && height <= maxH) measureHeight = height;
+            else measureHeight =  maxH;
 
             gapX = maxW - measureWidth;
             gapY = maxH - measureHeight;
@@ -263,13 +266,13 @@ public abstract class PDFComponent{
             parent.updateHeight(heightGap);
 
             // 부모의 새로운 크기에 맞춰 자신의 크기 재조정
-            float maxHeight = parent.measureHeight
+            float maxHeight = parent.measureHeight - relativeY
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - verticalMargins;
 
-            if(0 < height && height + relativeY <= maxHeight) measureHeight = height;
-            else measureHeight = maxHeight - relativeY;
+            if(0 < height && height <= maxHeight) measureHeight = height;
+            else measureHeight = maxHeight;
         }
     }
 

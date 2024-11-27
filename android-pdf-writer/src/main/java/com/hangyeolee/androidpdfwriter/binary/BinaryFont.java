@@ -71,6 +71,21 @@ class BinaryFont extends BinaryDictionary {
         }
     }
 
+    public void setCIDSystemInfo(Integer macStyle) {
+        // CIDSystemInfo 딕셔너리
+        dictionary.put("/CIDSystemInfo",
+                "<< /Registry(Adobe)/Ordering(Identity)/Supplement 0>>");
+
+        if(macStyle != null) {
+            // Style 정보 반영
+            if ((macStyle & 0x01) != 0) {  // Bold
+                dictionary.put("/Style", "<< /Panose <000002000000000000000000> >>");
+            }
+        }
+
+        dictionary.put("/CIDToGIDMap", "/Identity");
+    }
+
     @Override
     public String toDictionaryString() {
         if(!descendantFonts.isEmpty()) {
