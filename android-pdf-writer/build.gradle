@@ -6,7 +6,7 @@ plugins {
 
 ext {
     PUBLISH_GROUP_ID = 'io.github.hangyeolee'
-    PUBLISH_VERSION = '1.1.0'
+    PUBLISH_VERSION = '1.1.1'
     PUBLISH_ARTIFACT_ID = 'androidpdfwriter'
     PUBLISH_DESCRIPTION = 'Easy PDF Library for Android.'
     PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
