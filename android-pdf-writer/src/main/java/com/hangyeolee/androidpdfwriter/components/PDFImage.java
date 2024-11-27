@@ -297,6 +297,8 @@ public class  PDFImage extends PDFResourceComponent{
                     }
                 }
             }
+        }else{
+            info.resize = info.origin;
         }
     }
 

@@ -30,6 +30,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.InputStream;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Formatter;
+import java.util.Locale;
 
 @RunWith(AndroidJUnit4.class)
 public class PDFTableTest {
@@ -279,5 +283,52 @@ public class PDFTableTest {
         }
         builder.draw();
         builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "test_GridLayout_korea.pdf");
+    }
+
+    final int TITLE = 26;                   //제목
+    final int SUB_TITLE = 18;               //부제목
+    final int ANIMAL_INFORMATION = 14;      //동물 정보
+    final int SUBJECT = 16;                 //주제
+    final int CONTENTS = 12;                //내용
+    final int TABLE_CHART = 10;             //표
+    final int PARAGRAPH = 8;                //워드 단락 나누기 포인트 설정값.
+    final float SPACING = 1.08f;            //줄간격 = 폰트 사이즈 *1.08 => 워드 설정값.
+    @Test
+    public void testReport() {
+        PDFBuilder builder = new PDFBuilder(Paper.A4).setPagePadding(36, 36).setQuality(70);
+        {
+            builder.root = PDFLinearLayout.build(Orientation.Vertical)
+                    .addChild(PDFEmpty.build()
+                            .setPadding(0, (int) convertWordPointToPixel(22 * (1 + SPACING) * 6), 0, 0) )
+                    .addChild(PDFLinearLayout.build(Orientation.Vertical)
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.pdf.core.test.R.drawable.test)     //(폰트사이즈 22 + 줄간격 22*1.08) * 단락 나누기(엔터) 6회
+                                    .setBackgroundColor(Color.WHITE)
+                                    .setHeight(70f)
+                                    .setFit(Fit.CONTAIN)
+                                    .setAnchor(Anchor.Start, null)
+                            )
+                            .addChild(PDFH1.build("동물 심전도(ECG) 검진 보고서")
+                                    .setFontFromAsset(context, "Pretendard-Bold.ttf")
+                                    .setPadding(0, 0, 0, (int) convertWordPointToPixel(TITLE * SPACING))
+                                    .setBackgroundColor(Color.WHITE)
+                                    .setTextAlign(TextAlign.Start))
+                            .addChild(PDFH2.build("2024.11.27 08:30")
+                                    .setFontFromAsset(context, "Pretendard-Bold.ttf")
+                                    .setPadding(0, 0, 0, (int) convertWordPointToPixel(SUB_TITLE * SPACING)))
+                            .addChild(PDFH2.build("정기 심전도 검사")
+                                    .setFontFromAsset(context, "Pretendard-Bold.ttf")
+                                    .setPadding(0, 0, 0, (int) convertWordPointToPixel(SUB_TITLE * SPACING)))
+                    )
+                    .addChild(PDFEmpty.build()
+                            .setPadding(0, (int) convertWordPointToPixel(10 * (1 + SPACING)), 0, 0) )
+                    .addChild(PDFEmpty.build()
+                            .setPadding(0, (int) convertWordPointToPixel(10 * (1 + SPACING)), 0, 0) );
+        }
+        builder.draw();
+        builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "test_report.pdf");
+    }
+    private float mm2px(float mm){return mm * 2.8348472f;}
+    private float convertWordPointToPixel(float wordPoint){
+        return mm2px(wordPoint * 0.35f);
     }
 }
