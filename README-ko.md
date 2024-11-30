@@ -5,7 +5,7 @@
 - [English README.md](./README.md)
 
 ## 목차
-0. [v1.1.0](#v1.1.0)
+0. [변경사항](#변경사항)
 1. [설정](#설정)
    1. [Gradle 설정](#gradle-설정)
    2. [Maven 설정](#maven-설정)
@@ -14,20 +14,33 @@
 4. [설명](#설명)
 5. [라이선스](#라이선스)
 
-## v1.1.0
+## 변경사항
+### v1.1.2
+투명 배경 이미지를 지원합니다. 알파값을 소프트 마스크 이미지로 표현함으로서, 작은 크기의 이미지일 경우 가장자리에 검은 색 선이 그려질 수 있습니다.
+Xml Vector Drawable 또한 PDFImage 로 그리려고 시도하면, 최소 256x256 px 크기의 알파값이 있는 비트맵으로 변경합니다.
+
+Zoomable 싱글톤 객체 때문에 여러 PDF를 동시에 그릴 수 없는 문제를 해결하기 위해, PDFPageLayout 객체를 통해 현재 PDF 의 크기를 참조합니다.
+
+### v1.1.1
 기존 버전은 각 페이지에 보이는 컴포넌트들을 비트맵에 그려내는 방식입니다.
 이 방식의 단점은 캔버스의 크기가 5페이지를 초과하는 순간부터 메모리 부족으로 인해 앱이 튕길 수 있습니다.
 
-버전 1.1.0 부터는 모든 컴포넌트가 PDF 바이너리 형식으로 변환됩니다.
+버전 1.1.1 부터는 모든 컴포넌트가 PDF 바이너리 형식으로 변환됩니다.
 즉, 텍스트와 이미지를 바이너리 형식으로 최적화하여 출력되는 PDF 파일의 용량을 줄입니다.
 
 임베딩 폰트는 아직 `.ttf` 확장자만 지원합니다.
+
+### v1.1.0
+레이아웃 컴포넌트의 위치 측정 알고리즘 이슈
+부동 소수점의 특징로 인해 측정 알고리즘 무한 루프 동작 이슈
+폰트 서브 세팅 오류 이슈
+이미지 리사이징 시 원본 미참조 이슈
 
 ## 설정
 ### Gradle 설정
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.2'
 }
 ```
 
@@ -36,7 +49,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 
@@ -44,15 +57,13 @@ dependencies {
 ``` Java
 // PDF Builder의 파라미터는 72dpi를 기준으로 가로 길이와 세로 길이입니다.
 // A4 용지의 가로:595.3px 세로:841.9px
-PDFBuilder builder = new PDFBuilder(Paper.A4);
-
 // PDF 페이지의 내용이 들어가지 않는 여백입니다. 가로, 세로 순서로 넣으시면 됩니다.
-builder.setPagePadding(30, 30);
+PDFBuilder builder = new PDFBuilder(PageLayoutFactory.createLayout(Paper.A4, 30, 30));
 ```
 
 #### 테스트용 PDF 페이지를 만드는 코드입니다:
 ``` Java
-builder.root = PDFLinearLayout.build(Orientation.Vertical)
+PDFLinearLayout root = PDFLinearLayout.build(Orientation.Vertical)
         .setBackgroundColor(Color.BLUE)
         .addChild(PDFImage.fromResource(context, resourceId)
                 .setCompress(true)
@@ -156,7 +167,8 @@ builder.root = PDFLinearLayout.build(Orientation.Vertical)
 
 #### 작성된 PDF를 파일로 저장하고 싶을 때:
 ``` Java
-builder.draw();
+// 해당 레이아웃을 그려냅니다.
+builder.draw(root);
 // 다운로드 폴더에 저장될 것 입니다.
 builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
 ```
@@ -171,19 +183,6 @@ builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
 PDF 내에 들어 가는 이미지에 대한 품질 값을 설정 합니다. JPEG 압축 품질을 변경할 수 있으며, 품질 기본 설정 값은 `85` 입니다.
 ``` Java
 builder.setQuality(85);
-```
-
-바이너리 최적화를 통해 DPI 조절은 불가능합니다. 삭제된 메소드입니다.
-``` Java
-/**
-* deprecated 되지 않고 삭제됨.
-*/
-builder.setDPI(DPI.M5);
-```
-
-PDF 페이지의 여백이 클수록 PDFComponents의 최대 너비 및 높이가 작아집니다. 여백 기본 설정값은 `(0,0)` 입니다. 프린트할 경우를 대비해 대략 `(30, 30)` 정도의 여백을 추가하는 것을 추천합니다.
-``` Java
-builder.setPagePadding(30, 30);
 ```
 
 ## 라이선스

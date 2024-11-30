@@ -134,9 +134,4 @@ public class PDFBuilder {
 
         return uri;
     }
-
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-    }
 }
