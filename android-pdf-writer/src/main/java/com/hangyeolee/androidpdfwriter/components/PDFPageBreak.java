@@ -8,7 +8,6 @@ import androidx.annotation.ColorInt;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 /**
  * 강제 페이지 나누기를 위한 컴포넌트.<br>
@@ -24,7 +23,7 @@ public class PDFPageBreak extends PDFComponent {
         super.measure(x, y);
 
         // 현재 페이지의 남은 공간을 모두 차지하도록 높이 조정
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
         int currentPage = calculatePageIndex(measureY);
         float nextHeight = (currentPage + 1) * pageHeight;
         float remainingHeight = nextHeight - measureY;

@@ -24,7 +24,6 @@ import com.hangyeolee.androidpdfwriter.utils.Fit;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.FloatComparison;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
 
 import java.util.Locale;
 
@@ -216,7 +215,7 @@ public class  PDFImage extends PDFResourceComponent{
 
         // 부모 클래스의 draw 호출 (리소스 등록 포함)
         super.draw(serializer);
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
 
         // 시작 페이지와 끝 페이지 계산
         int startPage = calculatePageIndex(measureY);
@@ -231,10 +230,10 @@ public class  PDFImage extends PDFResourceComponent{
             StringBuilder content = serializer.getPage(currentPage);
 
             // PDF 좌표계로 변환하여 실제 그리기 위치 계산
-            float x = Zoomable.getInstance().transform2PDFWidth(
+            float x = pageLayout.transform2PDFWidth(
                     measureX + border.size.left + padding.left + gapX
             );
-            float y = Zoomable.getInstance().transform2PDFHeight(
+            float y = pageLayout.transform2PDFHeight(
                     currentY + border.size.top + padding.top + gapY + resizedHeight
             );
 

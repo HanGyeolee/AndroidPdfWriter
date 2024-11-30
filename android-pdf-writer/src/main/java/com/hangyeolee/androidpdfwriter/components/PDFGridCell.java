@@ -8,7 +8,7 @@ import androidx.annotation.NonNull;
 import com.hangyeolee.androidpdfwriter.binary.BinarySerializer;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+import com.hangyeolee.androidpdfwriter.utils.PageLayout;
 
 public class PDFGridCell extends PDFLayout{
     PDFComponent children;
@@ -53,7 +53,7 @@ public class PDFGridCell extends PDFLayout{
         super.measure(x, y);
         if(children != null) {
             // 테두리와 패딩을 제외한 실제 사용 가능한 너비 계산
-            float contentHeight = Zoomable.getInstance().getContentHeight();
+            float contentHeight = pageLayout.getContentHeight();
             // Grid에서 할당 받은 영역 내에서 하위 구성 요소 배치
             if (children instanceof PDFImage) {
                 int stack = 0;
@@ -282,6 +282,12 @@ public class PDFGridCell extends PDFLayout{
     public PDFGridCell setAnchor(Integer horizontal, Integer vertical) {
         super.setAnchor(horizontal, vertical);
         return this;
+    }
+
+    @Override
+    public void setPageLayout(PageLayout pageLayout) {
+        super.setPageLayout(pageLayout);
+        children.setPageLayout(pageLayout);
     }
 
     public static PDFGridCell build(){return new PDFGridCell();}
