@@ -16,6 +16,7 @@ import androidx.test.rule.GrantPermissionRule;
 
 import com.hangyeolee.pdf.core.utils.Anchor;
 import com.hangyeolee.pdf.core.utils.Orientation;
+import com.hangyeolee.pdf.core.utils.PageLayoutFactory;
 import com.hangyeolee.pdf.core.utils.Paper;
 import com.hangyeolee.pdf.core.utils.StandardDirectory;
 import com.hangyeolee.pdf.core.utils.TextAlign;
@@ -47,10 +48,9 @@ public class PDFTextTest {
 
     @Test
     public void testLinearLayoutNText() {
-        PDFBuilder builder = new PDFBuilder(Paper.A4);
+        PDFBuilder builder = new PDFBuilder(PageLayoutFactory.createLayout(Paper.A4, 30, 30));
         builder.setQuality(85);
-        builder.setPagePadding(10, 10);
-        builder.root = PDFLinearLayout.build(Orientation.Vertical)
+        PDFLinearLayout root = PDFLinearLayout.build(Orientation.Vertical)
                 .setBackgroundColor(Color.TRANSPARENT)
                 .addChild(PDFH1.build("Title")
                         //.setFontFromAsset(context, "Pretendard-Bold.ttf")
@@ -58,7 +58,7 @@ public class PDFTextTest {
                         .setTextAlign(TextAlign.Center)
                         .setAnchor(Anchor.Center, Anchor.Center));
         Log.d(TAG, "PDF Builder setup completed");
-        builder.draw();
+        builder.draw(root);
         Log.d(TAG, "builder draw");
         Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_Text.pdf");
         Log.d(TAG, "builder save");
@@ -68,10 +68,9 @@ public class PDFTextTest {
 
     @Test
     public void testKoreanText() {
-        PDFBuilder builder = new PDFBuilder(Paper.A4);
+        PDFBuilder builder = new PDFBuilder(PageLayoutFactory.createLayout(Paper.A4, 10, 10));
         builder.setQuality(85);
-        builder.setPagePadding(10, 10);
-        builder.root = PDFLinearLayout.build(Orientation.Vertical)
+        PDFLinearLayout root = PDFLinearLayout.build(Orientation.Vertical)
                 .setBackgroundColor(Color.TRANSPARENT)
                 .addChild(PDFH1.build("다람쥐 헌 쳇바퀴에 타고파.1234567890")
                         .setTextColor(Color.BLACK)
@@ -79,7 +78,7 @@ public class PDFTextTest {
                         .setTextAlign(TextAlign.Center)
                         .setAnchor(Anchor.Center, Anchor.Center));
         Log.d(TAG, "PDF Builder setup completed");
-        builder.draw();
+        builder.draw(root);
         Log.d(TAG, "builder draw");
         Uri uri = builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS , "test_KoreanText_subset.pdf");
         Log.d(TAG, "builder save");

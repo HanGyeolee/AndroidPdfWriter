@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import com.hangyeolee.pdf.core.listener.Action;
-import com.hangyeolee.pdf.core.utils.Zoomable;
+import com.hangyeolee.pdf.core.utils.PageLayout;
 
 public class PDFLinearLayout extends PDFLayout {
     protected ArrayList<PDFComponent> children;
@@ -46,7 +46,7 @@ public class PDFLinearLayout extends PDFLayout {
                     "In Orientation.Vertical, height must be specified to fit the child into"+this.getClass().getName()+".");
         }
         // 테두리와 패딩을 제외한 실제 사용 가능한 너비 계산
-        float contentHeight = Zoomable.getInstance().getContentHeight();
+        float contentHeight = pageLayout.getContentHeight();
         float currentY = 0;
 
         // fitChildrenToLayout이 true일 경우 전체 weight 합 계산
@@ -94,7 +94,7 @@ public class PDFLinearLayout extends PDFLayout {
                     "In Orientation.Horizontal, width must be specified to fit the child into"+this.getClass().getName()+".");
         }
         // 테두리와 패딩을 제외한 실제 사용 가능한 너비 계산
-        float contentHeight = Zoomable.getInstance().getContentHeight();
+        float contentHeight = pageLayout.getContentHeight();
         float availableWidth = measureWidth - border.size.left - padding.left
                 - border.size.right - padding.right;
         float maxHeight = 0;
@@ -166,10 +166,10 @@ public class PDFLinearLayout extends PDFLayout {
             pagenationDrawStart(serializer, child,
                 (content, component, x, y, width, height, currentPage, startPage, endPage) -> {
                     // 현재 페이지 내에서의 좌표 계산
-                    float pdfX = Zoomable.getInstance().transform2PDFWidth(
+                    float pdfX = pageLayout.transform2PDFWidth(
                             x
                     );
-                    float pdfY = Zoomable.getInstance().transform2PDFHeight(
+                    float pdfY = pageLayout.transform2PDFHeight(
                             y + height
                     );
 
@@ -342,6 +342,14 @@ public class PDFLinearLayout extends PDFLayout {
     protected PDFLinearLayout setParent(PDFComponent parent) {
         super.setParent(parent);
         return this;
+    }
+
+    @Override
+    public void setPageLayout(PageLayout pageLayout) {
+        super.setPageLayout(pageLayout);
+        for(PDFComponent component : children){
+            component.setPageLayout(pageLayout);
+        }
     }
 
     public static PDFLinearLayout build(@Orientation.OrientationInt int orientation){return new PDFLinearLayout().setOrientation(orientation);}

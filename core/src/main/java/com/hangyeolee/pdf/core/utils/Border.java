@@ -94,7 +94,7 @@ public class Border {
 
     int currentColor = Color.TRANSPARENT;
     String currentWidth;
-    public void draw(StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
+    public void draw(PageLayout pageLayout, StringBuilder content, float measureX, float measureY, float measureWidth, float measureHeight){
         if(canDraw()) {
             // 그래픽스 상태 저장
             content.append("q\r\n"); // Save graphics state
@@ -108,8 +108,8 @@ public class Border {
                 setLineWidthInPDF(content, BinaryConverter.formatNumber(size.left, 2));
 
                 // PDF 좌표계로 변환 (좌하단 기준)
-                float pdfX = Zoomable.getInstance().transform2PDFWidth(measureX + gap);
-                float pdfY = Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap);
+                float pdfX = pageLayout.transform2PDFWidth(measureX + gap);
+                float pdfY = pageLayout.transform2PDFHeight(measureY + measureHeight - gap);
 
                 // PDF 컨텐츠 스트림에 사각형 그리기
                 content.append(String.format(Locale.getDefault(), "%s %s %s %s re\r\n",
@@ -128,15 +128,15 @@ public class Border {
                     setColorInPDF(content, color.left);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.left, 2));
 
-                    String pdfx = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + gap));
+                    String pdfx = BinaryConverter.formatNumber(pageLayout.transform2PDFWidth(measureX + gap));
                     // 시작점 이동
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
                             pdfx,
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY))));  // y좌표 변환
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFHeight(measureY))));  // y좌표 변환
                     // 선 그리기
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
                             pdfx,
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight))));
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFHeight(measureY + measureHeight))));
                     content.append("S\r\n");  // 선 그리기 실행
                 }
 
@@ -146,12 +146,12 @@ public class Border {
                     setColorInPDF(content, color.top);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.top, 2));
 
-                    String pdfy = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + gap));
+                    String pdfy = BinaryConverter.formatNumber(pageLayout.transform2PDFHeight(measureY + gap));
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX)),
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFWidth(measureX)),
                             pdfy));
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth)),
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFWidth(measureX + measureWidth)),
                             pdfy));
                     content.append("S\r\n");
                 }
@@ -162,13 +162,13 @@ public class Border {
                     setColorInPDF(content, color.right);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.right, 2));
 
-                    String pdfx = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth - gap));
+                    String pdfx = BinaryConverter.formatNumber(pageLayout.transform2PDFWidth(measureX + measureWidth - gap));
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
                             pdfx,
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY))));
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFHeight(measureY))));
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
                             pdfx,
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight))));
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFHeight(measureY + measureHeight))));
                     content.append("S\r\n");
                 }
 
@@ -178,12 +178,12 @@ public class Border {
                     setColorInPDF(content, color.bottom);
                     setLineWidthInPDF(content, BinaryConverter.formatNumber(size.bottom, 2));
 
-                    String pdfy = BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFHeight(measureY + measureHeight - gap));
+                    String pdfy = BinaryConverter.formatNumber(pageLayout.transform2PDFHeight(measureY + measureHeight - gap));
                     content.append(String.format(Locale.getDefault(), "%s %s m\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX)),
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFWidth(measureX)),
                             pdfy));
                     content.append(String.format(Locale.getDefault(), "%s %s l\r\n",
-                            BinaryConverter.formatNumber(Zoomable.getInstance().transform2PDFWidth(measureX + measureWidth)),
+                            BinaryConverter.formatNumber(pageLayout.transform2PDFWidth(measureX + measureWidth)),
                             pdfy));
                     content.append("S\r\n");
                 }

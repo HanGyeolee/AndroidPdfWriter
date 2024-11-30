@@ -1,5 +1,6 @@
 package com.hangyeolee.pdf.core.binary;
 
+import android.graphics.Bitmap;
 import android.graphics.RectF;
 import android.util.Log;
 
@@ -10,7 +11,7 @@ import com.hangyeolee.pdf.core.PDFLayout;
 import com.hangyeolee.pdf.core.FontExtractor;
 import com.hangyeolee.pdf.core.font.FontMetrics;
 import com.hangyeolee.pdf.core.font.TTFSubsetter;
-import com.hangyeolee.pdf.core.utils.Zoomable;
+import com.hangyeolee.pdf.core.utils.PageLayout;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -55,11 +56,11 @@ public class BinarySerializer {
      * BinaryPage 생성자
      * @param root 페이지의 루트 컴포넌트
      */
-    public BinarySerializer(PDFLayout root){
+    public BinarySerializer(PDFLayout root, PageLayout pageLayout){
         this.rootComponent = root;
         mediaBox = new RectF(
-                0, Zoomable.getInstance().getPageRect().bottom,
-                Zoomable.getInstance().getPageRect().right, 0);
+                0, pageLayout.getPageRect().bottom,
+                pageLayout.getPageRect().right, 0);
         this.manager = new BinaryObjectManager();
     }
 
@@ -165,7 +166,6 @@ public class BinarySerializer {
             font = manager.createObject(n -> new BinaryFont(n, "Identity-H"));
             font.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
             font.setSubtype("Type0");
-//            font.setWidths(metrics.charWidths);
 
             BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null));
             cidFont.setSubtype("CIDFontType2");

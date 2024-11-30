@@ -3,8 +3,6 @@ package com.hangyeolee.pdf.core.binary;
 import android.graphics.Bitmap;
 import android.util.Log;
 
-import com.hangyeolee.androidpdfwriter.PDFBuilder;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;

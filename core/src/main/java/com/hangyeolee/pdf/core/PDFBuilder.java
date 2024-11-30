@@ -2,22 +2,18 @@ package com.hangyeolee.pdf.core;
 
 import android.content.ContentValues;
 import android.content.Context;
-import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
-import androidx.annotation.FloatRange;
 import androidx.annotation.IntRange;
-import androidx.annotation.Nullable;
 
 import com.hangyeolee.pdf.core.binary.BinarySerializer;
-import com.hangyeolee.pdf.core.utils.Paper;
-import com.hangyeolee.pdf.core.utils.PaperUnit;
+import com.hangyeolee.pdf.core.utils.PageLayout;
+import com.hangyeolee.pdf.core.utils.PageLayoutFactory;
 import com.hangyeolee.pdf.core.utils.StandardDirectory;
-import com.hangyeolee.pdf.core.utils.Zoomable;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -33,70 +29,16 @@ public class PDFBuilder {
      * That is, release the Filter FlatDecode entry.
      */
     public static boolean DEBUG = false;
+    private final PageLayout pageLayout;
+
     int quality = 85;
     BinarySerializer page;
-    Paper pageSize = Paper.A4;
-    public PDFLayout root = null;
 
-    public PDFBuilder(Paper pageSize){
-        Zoomable.clear();
-        this.pageSize = pageSize;
-        Zoomable.getInstance().setPageRect(
-                new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
-        );
+    public PDFBuilder() {
+        this(PageLayoutFactory.createDefaultLayout());
     }
-
-    public PDFBuilder(
-            @FloatRange(from = 1.0f) float width,
-            @FloatRange(from = 1.0f) float height,
-            PaperUnit unit){
-        Zoomable.clear();
-        if(width < 1) width = 1;
-        if(height < 1) height = 1;
-        this.pageSize.setCustom(width, height, unit);
-        Zoomable.getInstance().setPageRect(
-                new RectF(0, 0, pageSize.getWidth(), pageSize.getHeight())
-        );
-    }
-
-    /**
-     * PDF 페이지 패딩, 세로 및 가로 설정.<br/>
-     * 모든 페이지에 지정된 패딩이 적용 됩니다.<br/>
-     * set PDF page padding, vertical and horizontal<br/>
-     * The specified padding applies to all pages.
-     * @param vertical 세로 패딩
-     * @param horizontal 가로 패딩
-     * @return 자기 자신
-     */
-    public PDFBuilder setPagePadding(
-            @FloatRange(from = 0.0f) float vertical,
-            @FloatRange(from = 0.0f) float horizontal){
-        if(vertical < 0) vertical = 0;
-        if(horizontal < 0) horizontal = 0;
-        Zoomable.getInstance().getPadding().set(horizontal, vertical, horizontal, vertical);
-        return this;
-    }
-
-    /**
-     * @param left 왼쪽 패딩
-     * @param top 위쪽 패딩
-     * @param right 오른쪽 패딩
-     * @param bottom 아래쪽 패딩
-     * @return 자기 자신
-     */
-    public PDFBuilder setPagePadding(@Nullable Float left,@Nullable Float top,@Nullable Float right,@Nullable Float bottom){
-        float n_left = 0;
-        float n_top = 0;
-        float n_right = 0;
-        float n_bottom = 0;
-
-        if(left != null && left > 0.0f) n_left = left;
-        if(top != null && top > 0.0f) n_top = top;
-        if(right != null && right > 0.0f) n_right = right;
-        if(bottom != null && bottom > 0.0f) n_bottom = bottom;
-
-        Zoomable.getInstance().getPadding().set(n_left, n_top, n_right, n_bottom);
-        return this;
+    public PDFBuilder(PageLayout pageLayout){
+        this.pageLayout = pageLayout;
     }
 
     /**
@@ -116,13 +58,15 @@ public class PDFBuilder {
     /**
      * PDF 그리기<br>
      * draw PDF
+     * @param root Root Layout Component
      */
-    public PDFBuilder draw(){
+    public PDFBuilder draw(PDFLayout root){
         if(root != null) {
-            float width = Zoomable.getInstance().getContentWidth();
+            float width = pageLayout.getContentWidth();
 
+            root.setPageLayout(pageLayout);
             root.setSize(width, null).measure();
-            page = new BinarySerializer(root);
+            page = new BinarySerializer(root, pageLayout);
             page.setQuality(quality);
             page.draw();
         }

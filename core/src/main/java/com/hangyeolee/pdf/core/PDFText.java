@@ -27,7 +27,7 @@ import com.hangyeolee.pdf.core.utils.Border;
 
 import com.hangyeolee.pdf.core.listener.Action;
 import com.hangyeolee.pdf.core.utils.FontType;
-import com.hangyeolee.pdf.core.utils.Zoomable;
+import com.hangyeolee.pdf.core.utils.PageLayout;
 
 import java.util.Locale;
 
@@ -169,7 +169,7 @@ public class PDFText extends PDFResourceComponent {
     }
 
     protected float measureTextHeight(){
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
         float maxGap = 0;
         float currentY = measureY;
         int i = 0;
@@ -299,7 +299,7 @@ public class PDFText extends PDFResourceComponent {
         super.draw(serializer);
 
         if (text == null || layout == null) return;
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
 
 
         // 페이지별로 분할하여 그리기
@@ -400,8 +400,8 @@ public class PDFText extends PDFResourceComponent {
         PDFGraphicsState.addFillColor(content, bufferPaint.getColor());
 
         // 베이스라인 위치 계산
-        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left);
-        float y = Zoomable.getInstance().transform2PDFHeight(currentY + border.size.top + padding.top);
+        float x = pageLayout.transform2PDFWidth(measureX + border.size.left + padding.left);
+        float y = pageLayout.transform2PDFHeight(currentY + border.size.top + padding.top);
 
         // 텍스트 위치로 이동
         content.append(String.format(Locale.getDefault(),"%s %s Td\r\n",

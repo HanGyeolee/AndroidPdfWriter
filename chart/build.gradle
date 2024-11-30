@@ -10,7 +10,7 @@ ext {
     PUBLISH_ARTIFACT_ID = 'chart'
     PUBLISH_DESCRIPTION = 'Easy PDF Library for Android.'
     PUBLISH_URL = 'https://github.com/hangyeolee/AndroidPdfWriter'
-    PUBLISH_LICENSE_NAME = 'Apache License'
+    PUBLISH_LICENSE_NAME = 'Apache License 2.0'
     PUBLISH_LICENSE_URL =
             'https://github.com/hangyeolee/AndroidPdfWriter/blob/main/LICENSE'
     PUBLISH_DEVELOPER_ID = 'hangoil65'
