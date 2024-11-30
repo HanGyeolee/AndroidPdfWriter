@@ -5,7 +5,7 @@ Easy PDF Library for Android.
 - [한국어 README.md](./README-ko.md)
 
 ## Table of Contents
-0. [v1.1.0](#v1.1.0)
+0. [Changed](#changed)
 1. [Setup](#setup)
    1. [Gradle Setup](#gradle-setup)
    2. [Maven Setup](#maven-setup)
@@ -14,7 +14,14 @@ Easy PDF Library for Android.
 4. [Description](#description)
 5. [License](#license)
 
-## v1.1.0
+## Changed
+### v1.1.2
+Supports transparent background images. By representing the alpha value as a soft mask image, a black line can be drawn at the edges for small images.
+If you also attempt to draw the Xml Vector Drawable with PDFimage, change it to a bitmap with an alpha value of at least 256x256 px.
+
+To address the issue of being unable to draw multiple PDFs simultaneously due to Zoomable Single-Tone objects, refer to the size of the current PDF through the PDFPageLayout object.
+
+### v1.1.1
 The existing version draws the components shown on each page on a bitmap.
 The disadvantage of this method is that the app could bounce due to out of memory from the moment the canvas size exceeded five pages.
 
@@ -23,11 +30,17 @@ That is, the capacity of the output PDF file is reduced by optimizing text and i
 
 Embedding fonts are only supported for the `.ttf` extension.
 
+### v1.1.0
+Layout Component Measurement Algorithm Issue
+Measurement Algorithm Infinite Loop Behavior Issues Due to the Feature of Floating Points
+Font Subsetting Error Issue
+Original Non-Reference Issue when resizing an image
+
 ## Setup
 ### Gradle Setup
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.0'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.2'
 }
 ```
 
@@ -36,7 +49,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 
@@ -44,15 +57,13 @@ dependencies {
 ``` Java
 // The parameters of the PDF Builder are horizontal and vertical lengths based on 72 dpi.
 // A4 paper width:595.3px height:841.9px
-PDFBuilder builder = new PDFBuilder(Paper.A4);
-
 // set PDF page padding, vertical and horizontal
-builder.setPagePadding(30, 30);
+PDFBuilder builder = new PDFBuilder(PageLayoutFactory.createLayout(Paper.A4, 30, 30));
 ```
 
 #### this is test pdf page:
 ``` Java
-builder.root = PDFLinearLayout.build(Orientation.Vertical)
+PDFLinearLayout root = PDFLinearLayout.build(Orientation.Vertical)
         .setBackgroundColor(Color.BLUE)
         .addChild(PDFImage.fromResource(context, resourceId)
                 .setCompress(true)
@@ -156,7 +167,8 @@ builder.root = PDFLinearLayout.build(Orientation.Vertical)
 
 #### When you want to save a created file:
 ``` Java
-builder.draw();
+// Draws the corresponding layout.
+builder.draw(root);
 // Saved in the Download folder.
 builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
 ```
@@ -171,19 +183,6 @@ builder.save(context, StandardDirectory.DIRECTORY_DOWNLOADS, "result.pdf");
 Sets the quality value for the image within the PDF. Can change compress quality. Default quality is `85`.
 ``` Java
 builder.setQuality(60);
-```
-
-DPI adjustment is not possible with binary optimization. Deleted method.
-``` Java
-/**
-* Deleted. not deprecated.
-*/
-builder.setDPI(DPI.M5);
-```
-
-The larger the padding of the page that is not related to PDFComponents, the smaller the maximum width and height of the components. Default Padding is `(0, 0)`. In case of printing, it is recommended to add about `(30, 30)` padding.
-``` Java
-builder.setPagePadding(30, 30);
 ```
 
 ## License
