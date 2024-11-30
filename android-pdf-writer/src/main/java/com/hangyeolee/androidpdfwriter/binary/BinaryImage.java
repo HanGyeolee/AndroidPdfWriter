@@ -3,6 +3,8 @@ package com.hangyeolee.androidpdfwriter.binary;
 import android.graphics.Bitmap;
 import android.util.Log;
 
+import com.hangyeolee.androidpdfwriter.PDFBuilder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -13,7 +15,7 @@ import java.nio.ByteBuffer;
 class BinaryImage extends BinaryXObject {
     private static final String TAG = "BinaryImage";
     private static final int CHUNK_SIZE = 4096;
-    private final byte[] imageData;
+    private byte[] imageData;
 
     public BinaryImage(int objectNumber, Bitmap bitmap, int quality) {
         super(objectNumber);
@@ -22,15 +24,49 @@ class BinaryImage extends BinaryXObject {
         dictionary.put("/Height", bitmap.getHeight());
         dictionary.put("/ColorSpace", "/DeviceRGB");
         dictionary.put("/BitsPerComponent", 8);
-        dictionary.put("/Filter", "/DCTDecode");
+        dictionary.put("/Filter", "/" + DCT_DECODE);
 
         this.imageData = compressInChunks(bitmap, quality);
         dictionary.put("/Length", this.imageData != null ? imageData.length : 0);
+    }
+    public BinaryImage(int objectNumber, byte[] binary, int width, int height) {
+        super(objectNumber);
+        dictionary.put("/Subtype", "/Image");
+        dictionary.put("/Width", width);
+        dictionary.put("/Height", height);
+        dictionary.put("/BitsPerComponent", 8);
+        this.imageData = binary;
+        dictionary.put("/Length", this.imageData != null ? imageData.length : 0);
+    }
+
+    public void setFilter(String filter){
+        if(filter != null && !filter.isBlank() && !filter.isEmpty()) {
+            if(filter.equals(FLATE_DECODE)){
+                // 컨텐츠 압축
+                dictionary.put("/Length1", imageData.length);
+                this.imageData = compressContent(imageData);
+
+                // 딕셔너리에 압축 관련 항목 추가
+                dictionary.put("/Filter", "/"+FLATE_DECODE);
+                dictionary.put("/Length", imageData.length);
+            }
+        }
     }
 
     @Override
     public byte[] getStreamData() {
         return imageData;
+    }
+
+    public void setColorSpace(String colorSpace){
+        if(colorSpace != null && !colorSpace.isEmpty() && !colorSpace.isBlank()) {
+            dictionary.put("/ColorSpace", "/"+colorSpace);
+        }
+    }
+    public void setSMask(BinaryObject object){
+        if(object != null) {
+            dictionary.put("/SMask", object);
+        }
     }
 
     private byte[] compressDirectly(Bitmap bitmap, int quality) throws OutOfMemoryError {
@@ -54,7 +90,7 @@ class BinaryImage extends BinaryXObject {
                     sourceBitmap.copyPixelsToBuffer(buffer);
                     return buffer.array();
                 } catch (Exception e1){
-                    Log.e(TAG, "Out of Memory: too large image, nothing returned", e1);
+                    Log.e(TAG, "Out of Memory: nothing can do, return nothing", e1);
                     return null;
                 }
             }

@@ -2,6 +2,7 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
 import android.graphics.RectF;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class BinarySerializer {
+    private static final String TAG ="BinarySerializer";
     private static final String HEADER = "%PDF-1.4\r\n%âãÏÓ\r\n";
     private static final String TO_UNICODE_CMAP_TEMPLATE = """
                     /CIDInit/ProcSet findresource begin 12 dict begin\r
@@ -37,6 +39,7 @@ public class BinarySerializer {
     private final BinaryObjectManager manager;
     private final Map<BitmapExtractor.BitmapInfo, String> imageResourceMap = new HashMap<>();
     private final Map<FontExtractor.FontInfo, String> fontResourceMap = new HashMap<>();
+    private int nextMaskNumber = 1;
     private int nextImageNumber = 1;
     private int nextFontNumber = 1;
 
@@ -218,13 +221,58 @@ public class BinarySerializer {
         imageId = "Im" + nextImageNumber++;
         imageResourceMap.put(info, imageId);
 
-        // 이미지 객체 생성
-        BinaryImage image = manager.createObject(n -> new BinaryImage(n, info.resize, quality));
-
-        // Resources에 이미지 추가
-        resources.addXObject(imageId, image);
+        // 이미지 알파 체크
+        checkAlpha(imageId, info.resize);
 
         return imageId;
+    }
+
+    private void checkAlpha(String imageId, Bitmap bitmap){
+        boolean hasAlpha = bitmap.hasAlpha();
+        // 이미지 객체 생성
+        BinaryImage image = manager.createObject(n -> new BinaryImage(n, bitmap, quality));
+        if (hasAlpha) {
+            try {
+                String maskId = "Ms" + nextMaskNumber++;
+                // 알파 채널 추출 및 Soft Mask 생성
+                byte[] alphaData = extractAlphaChannel(bitmap);
+                if(alphaData != null) {
+                    BinaryImage sMask = manager.createObject(n -> new BinaryImage(n, alphaData, bitmap.getWidth(), bitmap.getHeight()));
+                    sMask.setColorSpace("DeviceGray");
+                    sMask.setFilter("FlateDecode");
+
+                    image.setSMask(sMask);
+                    // Resources에 마스크 추가
+                    resources.addXObject(maskId, sMask);
+                }
+            } catch (OutOfMemoryError e){
+                Log.e(TAG, "Failed to process image due to memory constraints", e);
+            }
+        }
+        // Resources에 이미지 추가
+        resources.addXObject(imageId, image);
+    }
+
+    private byte[] extractAlphaChannel(Bitmap bitmap) {
+        try {
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            byte[] alphaData = new byte[width * height];
+
+            // 메모리 효율을 위해 행 단위로 처리
+            int[] pixels = new int[width];
+            for (int y = 0; y < height; y++) {
+                bitmap.getPixels(pixels, 0, width, 0, y, width, 1);
+                for (int x = 0; x < width; x++) {
+                    alphaData[y * width + x] = (byte) ((pixels[x] >> 24) & 0xFF);
+                }
+            }
+
+            return alphaData;
+        } catch (OutOfMemoryError e) {
+            Log.e(TAG, "Failed to extract alpha channel", e);
+            return null;
+        }
     }
 
     private BinaryObject createToUnicode(Map<Character, Integer> fontBytes) {

@@ -313,7 +313,7 @@ public class PDFTableTest {
                     .addChild(PDFEmpty.build()
                             .setPadding(0, (int) convertWordPointToPixel(22 * (1 + SPACING) * 6), 0, 0) )
                     .addChild(PDFLinearLayout.build(Orientation.Vertical)
-                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.test)     //(폰트사이즈 22 + 줄간격 22*1.08) * 단락 나누기(엔터) 6회
+                            .addChild(PDFImage.fromResource(context, com.hangyeolee.androidpdfwriter.test.R.drawable.logo)     //(폰트사이즈 22 + 줄간격 22*1.08) * 단락 나누기(엔터) 6회
                                     .setBackgroundColor(Color.WHITE)
                                     .setHeight(70f)
                                     .setFit(Fit.CONTAIN)
