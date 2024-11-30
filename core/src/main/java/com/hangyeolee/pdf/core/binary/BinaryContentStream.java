@@ -28,7 +28,7 @@ class BinaryContentStream extends BinaryDictionary {
             this.compressedContent = compressContent(stream);
 
             // 딕셔너리에 압축 관련 항목 추가
-            dictionary.put("/Filter", "/FlateDecode");
+            dictionary.put("/Filter", "/"+FLATE_DECODE);
             dictionary.put("/Length", compressedContent.length);
         }
     }
@@ -47,35 +47,8 @@ class BinaryContentStream extends BinaryDictionary {
             this.compressedContent = compressContent(stream);
 
             // 딕셔너리에 압축 관련 항목 추가
-            dictionary.put("/Filter", "/FlateDecode");
+            dictionary.put("/Filter", "/"+FLATE_DECODE);
             dictionary.put("/Length", compressedContent.length);
-        }
-    }
-
-    /**
-     * 문자열 컨텐츠를 FlateDecode로 압축
-     */
-    private byte[] compressContent(byte[] content) {
-        try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(content.length);
-
-            // DeflaterOutputStream 사용 - zlib 형식 준수
-            Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-            DeflaterOutputStream zlibStream = new DeflaterOutputStream(outputStream, deflater);
-
-            // 데이터 쓰기
-            zlibStream.write(content);
-            zlibStream.finish();
-            zlibStream.close();
-
-            // 리소스 정리
-            deflater.end();
-
-            return outputStream.toByteArray();
-        } catch (Exception e) {
-            e.printStackTrace();
-            // 압축 실패시 원본 반환
-            return content;
         }
     }
 
