@@ -15,6 +15,11 @@
 5. [라이선스](#라이선스)
 
 ## 변경사항
+### v1.1.3
+이미지 및 폰트 첨부 시 메모리 초과 오류를 임시 파일로 대체함으로서 해결하였습니다. 
+
+모든 stream 데이터는 임시 파일에 저장되며, PDF 바이너리로 작성될 때 읽어들입니다. `DCT_DECODE` 와 `FLATE_DECODE` 모두 임시 파일에서 진행되도록 하여 메모리 사용량을 급격히 낮추었습니다. 
+
 ### v1.1.2
 투명 배경 이미지를 지원합니다. 알파값을 소프트 마스크 이미지로 표현함으로서, 작은 크기의 이미지일 경우 가장자리에 검은 색 선이 그려질 수 있습니다.
 Xml Vector Drawable 또한 PDFImage 로 그리려고 시도하면, 최소 256x256 px 크기의 알파값이 있는 비트맵으로 변경합니다.
@@ -30,17 +35,11 @@ Zoomable 싱글톤 객체 때문에 여러 PDF를 동시에 그릴 수 없는 �
 
 임베딩 폰트는 아직 `.ttf` 확장자만 지원합니다.
 
-### v1.1.0
-레이아웃 컴포넌트의 위치 측정 알고리즘 이슈
-부동 소수점의 특징로 인해 측정 알고리즘 무한 루프 동작 이슈
-폰트 서브 세팅 오류 이슈
-이미지 리사이징 시 원본 미참조 이슈
-
 ## 설정
 ### Gradle 설정
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.2'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.3'
 }
 ```
 
@@ -49,7 +48,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
 </dependency>
 ```
 

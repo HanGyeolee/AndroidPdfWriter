@@ -15,6 +15,11 @@ Easy PDF Library for Android.
 5. [License](#license)
 
 ## Changed
+### v1.1.3
+I solved the memory excess error when attaching images and fonts by replacing it with a temporary file.
+
+All stream data is stored in a temporary file and read as a PDF binary. Both `DCT_DECODE` and `FLATE_DECODE` have been made in temporary files, drastically reducing memory usage.
+
 ### v1.1.2
 Supports transparent background images. By representing the alpha value as a soft mask image, a black line can be drawn at the edges for small images.
 If you also attempt to draw the Xml Vector Drawable with PDFimage, change it to a bitmap with an alpha value of at least 256x256 px.
@@ -29,12 +34,6 @@ Starting with version 1.1.0, all components are converted to PDF binary format.
 That is, the capacity of the output PDF file is reduced by optimizing text and images in binary format.
 
 Embedding fonts are only supported for the `.ttf` extension.
-
-### v1.1.0
-Layout Component Measurement Algorithm Issue
-Measurement Algorithm Infinite Loop Behavior Issues Due to the Feature of Floating Points
-Font Subsetting Error Issue
-Original Non-Reference Issue when resizing an image
 
 ## Setup
 ### Gradle Setup
