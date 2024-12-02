@@ -48,7 +48,7 @@ class BinaryImage extends BinaryXObject {
                             dictionary.put("/Length1", imageData.length);
                         }
 
-                        int length = getTemporaryLength();
+                        long length = getTemporaryLength();
                         // 딕셔너리에 압축 관련 항목 추가
                         dictionary.put("/Filter", "/" + FLATE_DECODE);
                         dictionary.put("/Length", length);

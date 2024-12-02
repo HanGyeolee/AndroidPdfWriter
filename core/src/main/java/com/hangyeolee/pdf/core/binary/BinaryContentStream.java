@@ -29,7 +29,7 @@ class BinaryContentStream extends BinaryDictionary {
                     dictionary.put("/Length1", stream.length);
                 }
 
-                int length = getTemporaryLength();
+                long length = getTemporaryLength();
                 // 딕셔너리에 압축 관련 항목 추가
                 dictionary.put("/Filter", "/" + FLATE_DECODE);
                 dictionary.put("/Length", length);
@@ -56,7 +56,7 @@ class BinaryContentStream extends BinaryDictionary {
                 // 컨텐츠 압축
                 dictionary.put("/Length1", stream.length);
 
-                int length = getTemporaryLength();
+                long length = getTemporaryLength();
                 // 딕셔너리에 압축 관련 항목 추가
                 dictionary.put("/Filter", "/" + FLATE_DECODE);
                 dictionary.put("/Length", length);

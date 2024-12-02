@@ -249,7 +249,6 @@ public class  PDFImage extends PDFResourceComponent{
 
             // 이미지 그리기
             content.append("/").append(resourceId).append(" Do\n");
-            content.append("Q\n"); // 그래픽 상태 복원
 
             // 다음 섹션 준비
             currentY -= pageHeight;
