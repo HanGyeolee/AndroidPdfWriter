@@ -95,7 +95,7 @@ public class BinarySerializer {
         }
     }
 
-    public StringBuilder newPage(){
+    private StringBuilder newPage(){
         // 페이지 생성 및 리소스 설정
         currentPage = manager.createObject(BinaryPage::new);
         currentPage.setMediaBox(mediaBox);

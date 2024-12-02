@@ -26,14 +26,16 @@ import java.util.zip.DeflaterOutputStream;
  * PDF 객체를 표현하는 클래스
  */
 class BinaryObject {
+    private static final File tempPath = new File(System.getProperty("java.io.tmpdir", "."));
     private static final String TAG = "BinaryObject";
     protected static final String FLATE_DECODE = "FlateDecode";
     protected static final String DCT_DECODE = "DCTDecode";
-    protected static final int CHUNK_SIZE = 524288; // 0.5MB
     private final int objectNumber;
+    private final int hash;
 
     public BinaryObject(int objectNumber) {
         this.objectNumber = objectNumber;
+        hash = this.hashCode();
     }
 
     /**
@@ -56,8 +58,6 @@ class BinaryObject {
 
         // 리소스 정리
         deflater.end();
-
-        outputStream.close();
     }
 
     protected void writeContent(byte[] content) throws OutOfMemoryError {
@@ -77,7 +77,7 @@ class BinaryObject {
         return createTemporaryStream(0);
     }
     protected OutputStream createTemporaryStream(int hash) throws IOException {
-        File tempFile = File.createTempFile("pdf_image_"+this.hashCode(), hash+".tmp");
+        File tempFile = new File(tempPath, "pdf_"+this.hash+"_"+hash+".tmp");
         tempFile.delete();
         return new BufferedOutputStream(new FileOutputStream(tempFile));
     }
@@ -85,38 +85,45 @@ class BinaryObject {
         return readTemporaryStream(0);
     }
     protected byte[] readTemporaryStream(int hash) throws IOException {
-        File tempFile = File.createTempFile("pdf_image_"+this.hashCode(), hash+".tmp");
+        File tempFile = new File(tempPath, "pdf_"+this.hash+"_"+hash+".tmp");
         try (FileInputStream is = new FileInputStream(tempFile)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S_V2) {
                 return is.readAllBytes();
             } else {
-                byte[] buffer = new byte[is.available()];
-                is.read(buffer);
+                // 파일 크기로 버퍼 할당
+                int fileSize = (int) tempFile.length();
+                byte[] buffer = new byte[fileSize];
+
+                int offset = 0;
+                int numRead;
+                while (offset < buffer.length &&
+                        (numRead = is.read(buffer, offset, buffer.length - offset)) >= 0) {
+                    offset += numRead;
+                }
+
+                // 모든 데이터를 읽었는지 확인
+                if (offset < buffer.length) {
+                    Log.e(TAG,"Could not completely read file " + tempFile.getName());
+                }
                 return buffer;
             }
         }
     }
-    protected int getTemporaryLength() throws IOException {
+    protected long getTemporaryLength() {
         return getTemporaryLength(0);
     }
-    protected int getTemporaryLength(int hash) throws IOException {
-        File tempFile = File.createTempFile("pdf_image_"+this.hashCode(), hash+".tmp");
-        try (FileInputStream is = new FileInputStream(tempFile)) {
-            return is.available();
-        }
+    protected long getTemporaryLength(int hash) {
+        File tempFile = new File(tempPath, "pdf_"+this.hash+"_"+hash+".tmp");
+        return tempFile.length();
     }
     protected void deleteTemp(){
         deleteTemp(0);
     }
     protected void deleteTemp(int... hashes){
         for(int hash:hashes){
-            try {
-                File tempFile = File.createTempFile("pdf_image_" + this.hashCode(), hash + ".tmp");
-                if(tempFile.exists()){
-                    tempFile.delete();
-                }
-            } catch (IOException e){
-                Log.e(TAG, "Can not Delete Temp : pdf_image_" + this.hashCode() + (hash + ".tmp"));
+            File tempFile = new File(tempPath, "pdf_"+this.hash+"_"+hash+".tmp");
+            if(tempFile.exists()){
+                tempFile.delete();
             }
         }
     }

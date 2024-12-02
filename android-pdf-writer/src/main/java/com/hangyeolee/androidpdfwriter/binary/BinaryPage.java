@@ -8,8 +8,6 @@ import java.util.Locale;
  * Page 객체 (단일 페이지)
  */
 class BinaryPage extends BinaryDictionary {
-    private BinaryPages parent;
-    private BinaryResources resources;
     private StringBuilder contentStream ;
 
     public BinaryPage(int objectNumber) {
@@ -19,12 +17,10 @@ class BinaryPage extends BinaryDictionary {
     }
 
     public void setParent(BinaryPages parent) {
-        this.parent = parent;
         dictionary.put("/Parent", parent);
     }
 
     public void setResources(BinaryResources resources) {
-        this.resources = resources;
         dictionary.put("/Resources", resources);
     }
 
