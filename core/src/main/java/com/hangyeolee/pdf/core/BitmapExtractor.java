@@ -18,12 +18,13 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class BitmapExtractor {
     private static final String TAG = "BitmapExtractor";
 
     // 캐시: 경로/리소스ID -> {비트맵이름, 이미지} 매핑
-    private static final Map<String, BitmapInfo> bitmapCache = new HashMap<>();
+    private static final WeakHashMap<String, BitmapInfo> bitmapCache = new WeakHashMap<>();
 
     public static class BitmapInfo {
         public final Bitmap origin;

@@ -19,6 +19,8 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 public class BinarySerializer {
     private static final String TAG ="BinarySerializer";
@@ -36,8 +38,8 @@ public class BinarySerializer {
     // 특수문자, 숫자, 한글자모, 한글 완성형
 
     private final BinaryObjectManager manager;
-    private final Map<BitmapExtractor.BitmapInfo, String> imageResourceMap = new HashMap<>();
-    private final Map<FontExtractor.FontInfo, String> fontResourceMap = new HashMap<>();
+    private final WeakHashMap<BitmapExtractor.BitmapInfo, String> imageResourceMap = new WeakHashMap<>();
+    private final WeakHashMap<FontExtractor.FontInfo, String> fontResourceMap = new WeakHashMap<>();
     private int nextMaskNumber = 1;
     private int nextImageNumber = 1;
     private int nextFontNumber = 1;
@@ -158,39 +160,43 @@ public class BinarySerializer {
             fontDesc.setFontName(info.postScriptName);
             font.setFontDescriptor(fontDesc);
         }else {
-            // Font Subsetting
-            TTFSubsetter subsetter = new TTFSubsetter(info);
+            Integer macStyle = null;
+            BinaryContentStream fontfile2;
+            {
+                // Font Subsetting
+                TTFSubsetter subsetter = new TTFSubsetter(info);
 
-            String CIDName = "CIDFont+"+fontId; //info.postScriptName+"+"+fontId;
+                // Font 파일 생성
+                fontfile2 = manager.createObject(n ->
+                        new BinaryContentStream(n, subsetter.subset(), true));
+                fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
+
+                TTFSubsetter.HeadTableEntry head = (TTFSubsetter.HeadTableEntry) subsetter.findTable("head");
+                if (head != null) {
+                    macStyle = head.getMacStyle();
+                }
+            }
+
+
+            String CIDName = info.postScriptName+"+"+fontId;
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, "Identity-H"));
-            font.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
+            font.setBaseFont(CIDName);
             font.setSubtype("Type0");
 
             BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null));
             cidFont.setSubtype("CIDFontType2");
-            cidFont.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
+            cidFont.setBaseFont(CIDName);
             font.addDescendantFont(cidFont);
 
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
-            fontDesc.setFontName(CIDName);//info.postScriptName); // +"+fontId"
+            fontDesc.setFontName(CIDName);
             cidFont.setFontDescriptor(fontDesc);
-
-            // Font 파일 생성
-            BinaryContentStream fontfile2 = manager.createObject(n -> {
-                return new BinaryContentStream(n, subsetter.subset(), true);
-            });
-
-            Integer macStyle = null;
-            TTFSubsetter.HeadTableEntry head = (TTFSubsetter.HeadTableEntry)subsetter.findTable("head");
-            if(head != null) {
-                macStyle = head.getMacStyle();
-            }
             cidFont.setCIDSystemInfo(macStyle);
-            font.setCAMP(createToUnicode(info.usedGlyph));
             cidFont.setW(info.W, info.usedGlyph);
-            fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
+            font.setCAMP(createToUnicode(info.usedGlyph));
+
             fontDesc.setFontFile2(fontfile2);
         }
         fontDesc.setMetrics(metrics);

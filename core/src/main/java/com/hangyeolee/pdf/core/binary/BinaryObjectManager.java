@@ -51,60 +51,49 @@ class BinaryObjectManager {
     }
 
     private void writeObject(BinaryObject obj, OutputStream bufos) throws IOException {
-        byte[] data = addObject(obj);
-        bufos.write(data);
+        int length = addObject(obj, bufos);
         // xref 정보 추가
         addXRef((byte) 'n');
-        byteLength += data.length;
+        byteLength += length;
     }
 
-    private byte[] addObject(BinaryObject obj){
-        // 딕셔너리
-        byte[] dictionary = new byte[0];
-        // 스트림 데이터가 있다면 쓰기
-        byte[] streamData = obj.getStreamData();
-        byte[] data = dictionary;
-        int sum = 0;
-        if (streamData != null) {
-            byte[] streamHeader = BinaryConverter.toBytes("stream\r\n");
-            byte[] streamFooter = BinaryConverter.toBytes("\r\nendstream");
-            data = new byte[
-                    streamHeader.length +
-                    streamData.length +
-                    streamFooter.length
-            ];
-            System.arraycopy(streamHeader, 0, data, sum, streamHeader.length);
-            sum += streamHeader.length;
-            System.arraycopy(streamData, 0, data, sum, streamData.length);
-            sum += streamData.length;
-            System.arraycopy(streamFooter, 0, data, sum, streamFooter.length);
-        }
-        if(obj instanceof BinaryDictionary){
-            dictionary = BinaryConverter.toBytes(((BinaryDictionary)obj).toDictionaryString());
-        }
+    private int addObject(BinaryObject obj, OutputStream bufos) throws IOException {
+        int length = 0;
+        byte[] tmp;
 
         // {객체 번호} {세대 번호} obj
         // 객체 헤더
-        byte[] header = BinaryConverter.toBytes(obj.getObjectNumber() + " 0 obj\r\n");
+        tmp = BinaryConverter.toBytes(obj.getObjectNumber() + " 0 obj\r\n");
+        bufos.write(tmp);
+        length += tmp.length;
+        if(obj instanceof BinaryDictionary){
+            // 객체 딕셔너리
+            tmp = BinaryConverter.toBytes(((BinaryDictionary)obj).toDictionaryString());
+            bufos.write(tmp);
+            length += tmp.length;
+        }
+        // 스트림 데이터가 있다면 쓰기
+        {
+            byte[] streamData = obj.getStreamData();
+            if (streamData != null) {
+                tmp = BinaryConverter.toBytes("stream\r\n");
+                bufos.write(tmp);
+                length += tmp.length;
+                bufos.write(streamData);
+                length += streamData.length;
+
+                tmp = BinaryConverter.toBytes("\r\nendstream");
+                bufos.write(tmp);
+                length += tmp.length;
+            }
+        }
+
         // 객체 끝
-        byte[] footer = BinaryConverter.toBytes("\r\nendobj\r\n");
-        byte[] result = new byte[
-                header.length +
-                dictionary.length +
-                data.length +
-                footer.length
-        ];
+        tmp = BinaryConverter.toBytes("\r\nendobj\r\n");
+        bufos.write(tmp);
+        length += tmp.length;
 
-        sum = 0;
-        System.arraycopy(header, 0, result, sum, header.length);
-        sum += header.length;
-        System.arraycopy(dictionary, 0, result, sum, dictionary.length);
-        sum += dictionary.length;
-        System.arraycopy(data, 0, result, sum, data.length);
-        sum += data.length;
-        System.arraycopy(footer, 0, result, sum, footer.length);
-
-        return result;
+        return length;
     }
 
     public void addXRef(int value, byte b){
