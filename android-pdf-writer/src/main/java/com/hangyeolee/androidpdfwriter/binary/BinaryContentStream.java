@@ -2,10 +2,6 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import com.hangyeolee.androidpdfwriter.PDFBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-
 /**
  * PDF 콘텐츠 스트림을 위한 객체
  */
@@ -17,39 +13,55 @@ class BinaryContentStream extends BinaryDictionary {
     }
     public BinaryContentStream(int objectNumber, String content, boolean forceCompress) {
         super(objectNumber);
+        byte[] compressed;
 
         if(PDFBuilder.DEBUG && !forceCompress) {
-            this.compressedContent = BinaryConverter.toBytes(content);
-            dictionary.put("/Length", compressedContent.length);
+            compressed = BinaryConverter.toBytes(content);
+            dictionary.put("/Length", compressed.length);
         } else {
             // 컨텐츠 압축
             byte[] stream = BinaryConverter.toBytes(content);
-            dictionary.put("/Length1", stream.length);
-            this.compressedContent = compressContent(stream);
+            try {
+                compressed = compressContent(stream);
+                dictionary.put("/Length1", stream.length);
 
-            // 딕셔너리에 압축 관련 항목 추가
-            dictionary.put("/Filter", "/"+FLATE_DECODE);
-            dictionary.put("/Length", compressedContent.length);
+                // 딕셔너리에 압축 관련 항목 추가
+                dictionary.put("/Filter", "/" + FLATE_DECODE);
+                dictionary.put("/Length", compressed.length);
+            }catch (Throwable e){
+                // 압축 실패
+                compressed = BinaryConverter.toBytes(content);
+                dictionary.put("/Length", compressed.length);
+            }
         }
+        this.compressedContent = compressed;
     }
     public BinaryContentStream(int objectNumber, byte[] stream) {
         this(objectNumber, stream, false);
     }
     public BinaryContentStream(int objectNumber, byte[] stream, boolean forceCompress) {
         super(objectNumber);
+        byte[] compressed;
 
         if(PDFBuilder.DEBUG && !forceCompress) {
-            this.compressedContent = stream;
-            dictionary.put("/Length", compressedContent.length);
+            compressed = stream;
+            dictionary.put("/Length", compressed.length);
         } else {
-            // 컨텐츠 압축
-            dictionary.put("/Length1", stream.length);
-            this.compressedContent = compressContent(stream);
+            try {
+                // 컨텐츠 압축
+                compressed = compressContent(stream);
+                dictionary.put("/Length1", stream.length);
 
-            // 딕셔너리에 압축 관련 항목 추가
-            dictionary.put("/Filter", "/"+FLATE_DECODE);
-            dictionary.put("/Length", compressedContent.length);
+                // 딕셔너리에 압축 관련 항목 추가
+                dictionary.put("/Filter", "/" + FLATE_DECODE);
+                dictionary.put("/Length", compressed.length);
+            }catch (Throwable e){
+                // 압축 실패
+                compressed = stream;
+                dictionary.put("/Length", compressed.length);
+            }
         }
+        this.compressedContent = compressed;
     }
 
     @Override
