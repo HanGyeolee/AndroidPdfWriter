@@ -24,12 +24,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class FontExtractor {
     private static final String TAG = "FontExtractor";
 
     // 캐시: 경로/리소스ID -> {폰트이름, 폰트 정보} 매핑
-    private static final Map<String, FontInfo> fontCache = new HashMap<>();
+    private static final WeakHashMap<String, FontInfo> fontCache = new WeakHashMap<>();
 
     public static class FontInfo {
         public final String postScriptName;

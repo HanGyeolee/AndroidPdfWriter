@@ -12,7 +12,6 @@ public class TTFSubsetter {
     private static final String TAG = "TTFSubsetter";
     private final FontExtractor.FontInfo fontInfo;
     private final List<TableEntry> tables = new ArrayList<>();
-    private ByteBuffer input;
     private int numGlyphs;
 
     // 글리프 플래그 상수
@@ -158,19 +157,21 @@ public class TTFSubsetter {
     }
 
     public byte[] subset() {
-        byte[] originalFont = fontInfo.getFontData();
-        if (originalFont == null) {
-            Log.e(TAG, "Failed to get font data");
-            return null;
-        }
-
         try {
-            input = ByteBuffer.wrap(originalFont);
-            input.order(ByteOrder.BIG_ENDIAN);
+            {
+                byte[] originalFont = fontInfo.getFontData();
+                if (originalFont == null) {
+                    Log.e(TAG, "Failed to get font data");
+                    return null;
+                }
 
-            // 1. 기본 테이블 읽기
-            readMaxpTable();
-            readTableDirectory();
+                ByteBuffer input = ByteBuffer.wrap(originalFont);
+                input.order(ByteOrder.BIG_ENDIAN);
+
+                // 1. 기본 테이블 읽기
+                readMaxpTable(input);
+                readTableDirectory(input);
+            }
 
             // 3. 테이블 처리
             GlyphMapping glyphMapping = processRequiredTables();
@@ -310,7 +311,7 @@ public class TTFSubsetter {
         return referencedGlyphs;
     }
 
-    private void readMaxpTable() {
+    private void readMaxpTable(ByteBuffer input) {
         // maxp 테이블 위치 찾기
         input.position(4);
         int numTables = input.getShort() & 0xFFFF;
@@ -335,7 +336,7 @@ public class TTFSubsetter {
         }
     }
 
-    private void readTableDirectory() {
+    private void readTableDirectory(ByteBuffer input) {
         input.position(0);
         // sfnt 버전 확인
         int sfntVersion = input.getInt();
@@ -1054,9 +1055,6 @@ public class TTFSubsetter {
     @Override
     protected void finalize() throws Throwable {
         try {
-            if (input != null) {
-                input.clear();
-            }
             for (TableEntry entry : tables) {
                 entry.data = null;
                 entry.glyphOffsets.clear();

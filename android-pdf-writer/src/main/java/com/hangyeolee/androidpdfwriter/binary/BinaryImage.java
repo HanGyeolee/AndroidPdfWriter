@@ -7,6 +7,7 @@ import com.hangyeolee.androidpdfwriter.PDFBuilder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -14,8 +15,6 @@ import java.nio.ByteBuffer;
  */
 class BinaryImage extends BinaryXObject {
     private static final String TAG = "BinaryImage";
-    protected static final int CHUNK_SIZE = 4096;
-    private byte[] imageData;
 
     public BinaryImage(int objectNumber, Bitmap bitmap, int quality) {
         super(objectNumber);
@@ -26,8 +25,7 @@ class BinaryImage extends BinaryXObject {
         dictionary.put("/BitsPerComponent", 8);
         dictionary.put("/Filter", "/" + DCT_DECODE);
 
-        this.imageData = compressInChunks(bitmap, quality);
-        dictionary.put("/Length", this.imageData != null ? imageData.length : 0);
+        compressDirectly(bitmap, quality);
     }
     public BinaryImage(int objectNumber, byte[] binary, int width, int height) {
         super(objectNumber);
@@ -35,34 +33,54 @@ class BinaryImage extends BinaryXObject {
         dictionary.put("/Width", width);
         dictionary.put("/Height", height);
         dictionary.put("/BitsPerComponent", 8);
-        this.imageData = binary;
-        dictionary.put("/Length", this.imageData != null ? imageData.length : 0);
+        writeContent(binary, 1);
+        dictionary.put("/Length", binary != null ? binary.length : 0);
     }
 
     public void setFilter(String filter){
         if(filter != null && !filter.isBlank() && !filter.isEmpty()) {
-            if(filter.equals(FLATE_DECODE)){
-                byte[] compressed;
-                try {
-                    // 컨텐츠 압축
-                    compressed = compressContent(imageData);
-                    dictionary.put("/Length1", imageData.length);
+            try {
+                if (filter.equals(FLATE_DECODE)) {
+                    byte[] compressed;
+                    try {
+                        {
+                            byte[] imageData = readTemporaryStream(1);
+                            // 컨텐츠 압축
+                            compressContent(imageData);
+                            dictionary.put("/Length1", imageData.length);
+                        }
 
-                    // 딕셔너리에 압축 관련 항목 추가
-                    dictionary.put("/Filter", "/" + FLATE_DECODE);
-                    dictionary.put("/Length", compressed.length);
-                }catch (Throwable e){
-                    // 압축 실패
-                    compressed = imageData;
-                    dictionary.put("/Length", compressed.length);
+                        int length = getTemporaryLength();
+                        // 딕셔너리에 압축 관련 항목 추가
+                        dictionary.put("/Filter", "/" + FLATE_DECODE);
+                        dictionary.put("/Length", length);
+                    } catch (Throwable e) {
+                        // 압축 실패
+                        compressed = readTemporaryStream(1);
+                        dictionary.put("/Length", compressed.length);
+                        writeContent(compressed);
+                    }
+                    deleteTemp(1);
                 }
+            } catch (IOException e){
+                Log.e(TAG, "Can not Read Temporary File", e);
             }
         }
     }
 
     @Override
     public byte[] getStreamData() {
-        return imageData;
+        try {
+            byte[] imageData = readTemporaryStream();
+            deleteTemp();
+            if (!dictionary.containsKey("/Length")) {
+                dictionary.put("/Length", imageData != null ? imageData.length : 0);
+            }
+            return imageData;
+        } catch (IOException e){
+            Log.e(TAG, "Can not Read Temporary File", e);
+        }
+        return null;
     }
 
     public void setColorSpace(String colorSpace){
@@ -76,91 +94,19 @@ class BinaryImage extends BinaryXObject {
         }
     }
 
-    private byte[] compressDirectly(Bitmap bitmap, int quality) throws OutOfMemoryError {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
-        return stream.toByteArray();
+    private void compressDirectly(Bitmap bitmap, int quality) throws OutOfMemoryError {
+        try {
+            OutputStream stream = createTemporaryStream();
+            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream);
+            stream.close();
+        } catch (IOException e){
+            Log.e(TAG, "Can not Create Temporary File", e);
+        }
     }
 
-    private byte[] compressInChunks(Bitmap sourceBitmap, int quality){
-        int width = sourceBitmap.getWidth();
-        int height = sourceBitmap.getHeight();
-
-        try {
-            // 둘 다 chunkSize보다 작으면 한 번에 처리
-            if (width <= CHUNK_SIZE && height <= CHUNK_SIZE) {
-                return compressDirectly(sourceBitmap, quality);
-            }
-
-            // 결과를 저장할 스트림
-            ByteArrayOutputStream finalStream = new ByteArrayOutputStream();
-
-            try {
-                // 청크 단위로 처리
-                for (int y = 0; y < height; y += CHUNK_SIZE) {
-                    for (int x = 0; x < width; x += CHUNK_SIZE) {
-                        // 현재 청크의 실제 크기 계산
-                        int chunkWidth = Math.min(CHUNK_SIZE, width - x);
-                        int chunkHeight = Math.min(CHUNK_SIZE, height - y);
-
-                        Bitmap chunk = null;
-                        ByteArrayOutputStream chunkStream = null;
-
-                        try {
-                            // 현재 청크 추출
-                            chunk = Bitmap.createBitmap(
-                                    sourceBitmap,
-                                    x, y,
-                                    chunkWidth, chunkHeight
-                            );
-
-                            // 청크 압축
-                            chunkStream = new ByteArrayOutputStream();
-                            if (!chunk.compress(Bitmap.CompressFormat.JPEG, quality, chunkStream)) {
-                                Log.w(TAG, "Chunk compression failed at x=" + x + ", y=" + y);
-                                return null;
-                            }
-
-                            // 결과 합치기
-                            finalStream.write(chunkStream.toByteArray());
-                        } finally {
-                            if(chunk != null && !chunk.isRecycled()){
-                                // 청크 정리
-                                chunk.recycle();
-                            }
-                            if(chunkStream != null){
-                                try {
-                                    chunkStream.close();
-                                } catch (IOException e) {
-                                    Log.e(TAG, "Failed to close chunk stream", e);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return finalStream.toByteArray();
-            } catch (Exception e) {
-                Log.e(TAG, "Error during chunk processing", e);
-                return null;
-            } finally {
-                try {
-                    finalStream.close();
-                } catch (IOException e) {
-                    Log.e(TAG, "Can't close finalStream.", e);
-                }
-            }
-        }
-        catch (OutOfMemoryError e){
-            Log.e(TAG, "Out of Memory: return original", e);
-            try {
-                ByteBuffer buffer = ByteBuffer.allocate(sourceBitmap.getByteCount());
-                sourceBitmap.copyPixelsToBuffer(buffer);
-                return buffer.array();
-            } catch (OutOfMemoryError e1){
-                Log.e(TAG, "Out of Memory: nothing can do, return nothing", e1);
-                return null;
-            }
-        }
+    @Override
+    protected void finalize() throws Throwable {
+        deleteTemp(0 ,1);
+        super.finalize();
     }
 }

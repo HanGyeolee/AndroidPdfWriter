@@ -1,11 +1,19 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.util.Log;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,15 +39,11 @@ class BinaryObject {
     /**
      * 문자열 컨텐츠를 FlateDecode로 압축
      */
-    protected byte[] compressContent(byte[] content) throws OutOfMemoryError, IOException {
-        if(content.length < CHUNK_SIZE) {
-            return compressContentDirectly(content);
-        }
-        return compressContentInChunks(content);
+    protected void compressContent(byte[] content) throws OutOfMemoryError, IOException {
+        compressContent(content, 0);
     }
-
-    private byte[] compressContentDirectly(byte[] content) throws OutOfMemoryError, IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream(content.length);
+    protected void compressContent(byte[] content, int hash) throws OutOfMemoryError, IOException {
+        OutputStream outputStream = createTemporaryStream(hash);
 
         // DeflaterOutputStream 사용 - zlib 형식 준수
         Deflater deflater = new Deflater(5);
@@ -53,37 +57,68 @@ class BinaryObject {
         // 리소스 정리
         deflater.end();
 
-        return outputStream.toByteArray();
+        outputStream.close();
     }
-    private byte[] compressContentInChunks(byte[] content) throws OutOfMemoryError, IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        // 중간 압축 데이터를 위한 작은 크기의 버퍼
-        ByteArrayOutputStream tempStream = new ByteArrayOutputStream(CHUNK_SIZE);
-        // DeflaterOutputStream 사용 - zlib 형식 준수
-        Deflater deflater = new Deflater(Deflater.BEST_SPEED);
-        DeflaterOutputStream zlibStream = new DeflaterOutputStream(tempStream, deflater);
 
-        // 청크 단위로 쓰고 flush
-        for (int offset = 0; offset < content.length; offset += CHUNK_SIZE) {
-            int length = Math.min(CHUNK_SIZE, content.length - offset);
-            zlibStream.write(content, offset, length);
-
-            // tempStream의 데이터를 finalStream으로 이동
-            zlibStream.flush();
-            tempStream.writeTo(outputStream);
-            tempStream.reset();
+    protected void writeContent(byte[] content) throws OutOfMemoryError {
+        writeContent(content, 0);
+    }
+    protected void writeContent(byte[] content, int hash) throws OutOfMemoryError {
+        try {
+            OutputStream outputStream = createTemporaryStream(hash);
+            outputStream.write(content);
+            outputStream.close();
+        } catch (IOException e){
+            Log.e(TAG, "Can not Create Temporary File", e);
         }
+    }
 
-        // 남은 데이터 처리
-        zlibStream.finish();
-        tempStream.writeTo(outputStream);
-
-        // 리소스 정리
-        zlibStream.close();
-        tempStream.close();
-        deflater.end();
-
-        return outputStream.toByteArray();
+    protected OutputStream createTemporaryStream() throws IOException {
+        return createTemporaryStream(0);
+    }
+    protected OutputStream createTemporaryStream(int hash) throws IOException {
+        File tempFile = File.createTempFile("pdf_image_"+this.hashCode(), hash+".tmp");
+        tempFile.delete();
+        return new BufferedOutputStream(new FileOutputStream(tempFile));
+    }
+    protected byte[] readTemporaryStream() throws IOException{
+        return readTemporaryStream(0);
+    }
+    protected byte[] readTemporaryStream(int hash) throws IOException {
+        File tempFile = File.createTempFile("pdf_image_"+this.hashCode(), hash+".tmp");
+        try (FileInputStream is = new FileInputStream(tempFile)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                return is.readAllBytes();
+            } else {
+                byte[] buffer = new byte[is.available()];
+                is.read(buffer);
+                return buffer;
+            }
+        }
+    }
+    protected int getTemporaryLength() throws IOException {
+        return getTemporaryLength(0);
+    }
+    protected int getTemporaryLength(int hash) throws IOException {
+        File tempFile = File.createTempFile("pdf_image_"+this.hashCode(), hash+".tmp");
+        try (FileInputStream is = new FileInputStream(tempFile)) {
+            return is.available();
+        }
+    }
+    protected void deleteTemp(){
+        deleteTemp(0);
+    }
+    protected void deleteTemp(int... hashes){
+        for(int hash:hashes){
+            try {
+                File tempFile = File.createTempFile("pdf_image_" + this.hashCode(), hash + ".tmp");
+                if(tempFile.exists()){
+                    tempFile.delete();
+                }
+            } catch (IOException e){
+                Log.e(TAG, "Can not Delete Temp : pdf_image_" + this.hashCode() + (hash + ".tmp"));
+            }
+        }
     }
 
     /**
