@@ -39,7 +39,7 @@ Embedding fonts are only supported for the `.ttf` extension.
 ### Gradle Setup
 ``` gradle
 dependencies {
-  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.2'
+  implementation 'io.github.hangyeolee:androidpdfwriter:1.1.3'
 }
 ```
 
@@ -48,7 +48,7 @@ dependencies {
 <dependency>
     <groupId>io.github.hangyeolee</groupId>
     <artifactId>androidpdfwriter</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
 </dependency>
 ```
 
