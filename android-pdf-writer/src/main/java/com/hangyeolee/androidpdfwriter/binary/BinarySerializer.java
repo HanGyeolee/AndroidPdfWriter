@@ -2,6 +2,7 @@ package com.hangyeolee.androidpdfwriter.binary;
 
 import android.graphics.Bitmap;
 import android.graphics.RectF;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 
@@ -10,7 +11,7 @@ import com.hangyeolee.androidpdfwriter.components.PDFLayout;
 import com.hangyeolee.androidpdfwriter.components.FontExtractor;
 import com.hangyeolee.androidpdfwriter.font.FontMetrics;
 import com.hangyeolee.androidpdfwriter.font.TTFSubsetter;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+import com.hangyeolee.androidpdfwriter.utils.PageLayout;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -19,8 +20,10 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 public class BinarySerializer {
+    private static final String TAG ="BinarySerializer";
     private static final String HEADER = "%PDF-1.4\r\n%âãÏÓ\r\n";
     private static final String TO_UNICODE_CMAP_TEMPLATE = """
                     /CIDInit/ProcSet findresource begin 12 dict begin\r
@@ -35,8 +38,9 @@ public class BinarySerializer {
     // 특수문자, 숫자, 한글자모, 한글 완성형
 
     private final BinaryObjectManager manager;
-    private final Map<BitmapExtractor.BitmapInfo, String> imageResourceMap = new HashMap<>();
-    private final Map<FontExtractor.FontInfo, String> fontResourceMap = new HashMap<>();
+    private final WeakHashMap<BitmapExtractor.BitmapInfo, String> imageResourceMap = new WeakHashMap<>();
+    private final WeakHashMap<FontExtractor.FontInfo, String> fontResourceMap = new WeakHashMap<>();
+    private int nextMaskNumber = 1;
     private int nextImageNumber = 1;
     private int nextFontNumber = 1;
 
@@ -54,11 +58,11 @@ public class BinarySerializer {
      * BinaryPage 생성자
      * @param root 페이지의 루트 컴포넌트
      */
-    public BinarySerializer(PDFLayout root){
+    public BinarySerializer(PDFLayout root, PageLayout pageLayout){
         this.rootComponent = root;
         mediaBox = new RectF(
-                0, Zoomable.getInstance().getPageRect().bottom,
-                Zoomable.getInstance().getPageRect().right, 0);
+                0, pageLayout.getPageRect().bottom,
+                pageLayout.getPageRect().right, 0);
         this.manager = new BinaryObjectManager();
     }
 
@@ -91,7 +95,7 @@ public class BinarySerializer {
         }
     }
 
-    public StringBuilder newPage(){
+    private StringBuilder newPage(){
         // 페이지 생성 및 리소스 설정
         currentPage = manager.createObject(BinaryPage::new);
         currentPage.setMediaBox(mediaBox);
@@ -156,35 +160,43 @@ public class BinarySerializer {
             fontDesc.setFontName(info.postScriptName);
             font.setFontDescriptor(fontDesc);
         }else {
-            String CIDName = "CIDFont+"+fontId; //info.postScriptName+"+"+fontId;
+            Integer macStyle = null;
+            BinaryContentStream fontfile2;
+            {
+                // Font Subsetting
+                TTFSubsetter subsetter = new TTFSubsetter(info);
+
+                // Font 파일 생성
+                fontfile2 = manager.createObject(n ->
+                        new BinaryContentStream(n, subsetter.subset(), true));
+                fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
+
+                TTFSubsetter.HeadTableEntry head = (TTFSubsetter.HeadTableEntry) subsetter.findTable("head");
+                if (head != null) {
+                    macStyle = head.getMacStyle();
+                }
+            }
+
+
+            String CIDName = info.postScriptName+"+"+fontId;
             // Font 객체 생성
             font = manager.createObject(n -> new BinaryFont(n, "Identity-H"));
-            font.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
+            font.setBaseFont(CIDName);
             font.setSubtype("Type0");
-//            font.setWidths(metrics.charWidths);
 
             BinaryFont cidFont = manager.createObject(n -> new BinaryFont(n, null));
             cidFont.setSubtype("CIDFontType2");
-            cidFont.setBaseFont(CIDName);//info.postScriptName); // +"+fontId"
-            cidFont.dictionary.put("/CIDSystemInfo", "<</Registry(Adobe)/Ordering(Identity)/Supplement 0>>");
-//            cidFont.dictionary.put("/CMapName", "/Identity-H");
-            cidFont.dictionary.put("/CIDToGIDMap", "/Identity");
+            cidFont.setBaseFont(CIDName);
             font.addDescendantFont(cidFont);
 
             // FontDescriptor 객체 생성
             fontDesc = manager.createObject(BinaryFontDescriptor::new);
-            fontDesc.setFontName(CIDName);//info.postScriptName); // +"+fontId"
+            fontDesc.setFontName(CIDName);
             cidFont.setFontDescriptor(fontDesc);
-
-            // Font 파일 생성
-            BinaryContentStream fontfile2 = manager.createObject(n -> {
-                // Font Subsetting
-                TTFSubsetter subsetter = new TTFSubsetter(info);
-                return new BinaryContentStream(n, subsetter.subset(), true);
-            });
-            font.setCAMP(createToUnicode(info.usedGlyph));
+            cidFont.setCIDSystemInfo(macStyle);
             cidFont.setW(info.W, info.usedGlyph);
-            fontfile2.setSubtype("TrueType"); // Type1C를 TrueType으로 변경
+            font.setCAMP(createToUnicode(info.usedGlyph));
+
             fontDesc.setFontFile2(fontfile2);
         }
         fontDesc.setMetrics(metrics);
@@ -213,13 +225,58 @@ public class BinarySerializer {
         imageId = "Im" + nextImageNumber++;
         imageResourceMap.put(info, imageId);
 
-        // 이미지 객체 생성
-        BinaryImage image = manager.createObject(n -> new BinaryImage(n, info.resize, quality));
-
-        // Resources에 이미지 추가
-        resources.addXObject(imageId, image);
+        // 이미지 알파 체크
+        checkAlpha(imageId, info.resize);
 
         return imageId;
+    }
+
+    private void checkAlpha(String imageId, Bitmap bitmap){
+        boolean hasAlpha = bitmap.hasAlpha();
+        // 이미지 객체 생성
+        BinaryImage image = manager.createObject(n -> new BinaryImage(n, bitmap, quality));
+        if (hasAlpha) {
+            try {
+                String maskId = "Ms" + nextMaskNumber++;
+                // 알파 채널 추출 및 Soft Mask 생성
+                byte[] alphaData = extractAlphaChannel(bitmap);
+                if(alphaData != null) {
+                    BinaryImage sMask = manager.createObject(n -> new BinaryImage(n, alphaData, bitmap.getWidth(), bitmap.getHeight()));
+                    sMask.setColorSpace("DeviceGray");
+                    sMask.setFilter("FlateDecode");
+
+                    image.setSMask(sMask);
+                    // Resources에 마스크 추가
+                    resources.addXObject(maskId, sMask);
+                }
+            } catch (OutOfMemoryError e){
+                Log.e(TAG, "Failed to process image due to memory constraints", e);
+            }
+        }
+        // Resources에 이미지 추가
+        resources.addXObject(imageId, image);
+    }
+
+    private byte[] extractAlphaChannel(Bitmap bitmap) {
+        try {
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            byte[] alphaData = new byte[width * height];
+
+            // 메모리 효율을 위해 행 단위로 처리
+            int[] pixels = new int[width];
+            for (int y = 0; y < height; y++) {
+                bitmap.getPixels(pixels, 0, width, 0, y, width, 1);
+                for (int x = 0; x < width; x++) {
+                    alphaData[y * width + x] = (byte) ((pixels[x] >> 24) & 0xFF);
+                }
+            }
+
+            return alphaData;
+        } catch (OutOfMemoryError e) {
+            Log.e(TAG, "Failed to extract alpha channel", e);
+            return null;
+        }
     }
 
     private BinaryObject createToUnicode(Map<Character, Integer> fontBytes) {

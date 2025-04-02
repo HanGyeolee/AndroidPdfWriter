@@ -1,7 +1,9 @@
 package com.hangyeolee.androidpdfwriter.components;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -21,10 +23,19 @@ import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Fit;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+import com.hangyeolee.androidpdfwriter.utils.FloatComparison;
 
 import java.util.Locale;
 
+/**
+ * 이미지 컴포넌트.<br>
+ * 모든 이미지는 {@link Bitmap}에서 {@link android.graphics.Bitmap.CompressFormat#JPEG}로 압축되며
+ * 컴포넌트의 크기가 이미지의 크기보다 5배 이상 작다면 압축을 시도 합니다.<br>
+ * Image components.<br>
+ * All images are compressed from {@link Bitmap} to {@link android.graphics.Bitmap.CompressFormat#JPEG}
+ * If the component is more than 5 times smaller than the size of the image, try compressing.<br>
+ * @see PDFText
+ */
 public class  PDFImage extends PDFResourceComponent{
     BitmapExtractor.BitmapInfo info = null;
 
@@ -71,7 +82,7 @@ public class  PDFImage extends PDFResourceComponent{
         // 높이가 명시적으로 지정된 경우, 부모 크기 업데이트
         if (height > 0) {
             float _height = getTotalHeight();
-            while (height > _height) {
+            while (FloatComparison.isGreater(height,_height)) {
                 updateHeight(height - _height);
                 _height = getTotalHeight();
 
@@ -84,19 +95,8 @@ public class  PDFImage extends PDFResourceComponent{
         // 항상 원본 비트맵으로 크기 계산
         measureSize(info.origin, availableWidth, availableHeight);
 
-        // 계산된 크기가 가용 공간보다 큰 경우 부모 크기 업데이트
-        while (resizedHeight > availableHeight) {
-            updateHeight(resizedHeight - availableHeight);
-            availableHeight = measureHeight - border.size.top - padding.top
-                    - border.size.bottom - padding.bottom;
-
-            // 새로운 가용 공간으로 다시 크기 계산
-            measureSize(info.origin, availableWidth, availableHeight);
-        }
-
         // 최종 높이 설정
-        float updatedHeight = resizedHeight;
-        height = updatedHeight + border.size.top + padding.top
+        height = availableHeight + border.size.top + padding.top
                 + border.size.bottom + padding.bottom + margin.top + margin.bottom;
 
         // Anchor에 따른 여백 계산
@@ -215,29 +215,43 @@ public class  PDFImage extends PDFResourceComponent{
 
         // 부모 클래스의 draw 호출 (리소스 등록 포함)
         super.draw(serializer);
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
 
-        // 시작 페이지
-        int currentPage = calculatePageIndex(measureY, measureHeight);
+        // 시작 페이지와 끝 페이지 계산
+        int startPage = calculatePageIndex(measureY);
+        int endPage = calculatePageIndex(measureY, getTotalHeight());
 
         // 첫 페이지의 Y 좌표 조정
-        float currentY = measureY - currentPage * pageHeight;
+        float currentY = measureY - startPage * pageHeight;
         if(currentY < 0) currentY = 0;
 
-        // PDF 좌표계로 변환하여 실제 그리기 위치 계산
-        float x = Zoomable.getInstance().transform2PDFWidth(measureX + border.size.left + padding.left + gapX);
-        float y = Zoomable.getInstance().transform2PDFHeight(currentY + border.size.top + padding.top + gapY + resizedHeight);
+        // 페이지별로 분할하여 그리기
+        for (int currentPage = startPage; currentPage <= endPage; currentPage++) {
+            StringBuilder content = serializer.getPage(currentPage);
 
-        StringBuilder content = serializer.getPage(currentPage);
-        // 지정된 크기에 맞게 늘리기
-        content.append(String.format(Locale.getDefault(),
-                "%s 0 0 %s %s %s cm\r\n",
-                BinaryConverter.formatNumber(resizedWidth),
-                BinaryConverter.formatNumber(resizedHeight),
-                BinaryConverter.formatNumber(x),
-                BinaryConverter.formatNumber(y))
-        );
-        content.append("/").append(resourceId).append(" Do\r\n");
+            // PDF 좌표계로 변환하여 실제 그리기 위치 계산
+            float x = pageLayout.transform2PDFWidth(
+                    measureX + border.size.left + padding.left + gapX
+            );
+            float y = pageLayout.transform2PDFHeight(
+                    currentY + border.size.top + padding.top + gapY + resizedHeight
+            );
+
+            // 지정된 크기에 맞게 늘리기
+            content.append(String.format(Locale.getDefault(),
+                    "%s 0 0 %s %s %s cm\r\n",
+                    BinaryConverter.formatNumber(resizedWidth),
+                    BinaryConverter.formatNumber(resizedHeight),
+                    BinaryConverter.formatNumber(x),
+                    BinaryConverter.formatNumber(y))
+            );
+
+            // 이미지 그리기
+            content.append("/").append(resourceId).append(" Do\n");
+
+            // 다음 섹션 준비
+            currentY -= pageHeight;
+        }
     }
 
     private void compressBitmap(BinarySerializer serializer){
@@ -286,6 +300,8 @@ public class  PDFImage extends PDFResourceComponent{
                     }
                 }
             }
+        }else{
+            info.resize = info.origin;
         }
     }
 
@@ -437,21 +453,74 @@ public class  PDFImage extends PDFResourceComponent{
         super.finalize();
     }
 
+    /**
+     * {@link Context#getAssets()}을 통해 {@link PDFImage}를 만듭니다.<br/>
+     * Create an {@link PDFImage} via {@link Context#getAssets()}.
+     * @see PDFImage#fromFile(String)
+     * @see PDFImage#fromResource(Context, int)
+     * @param context AppContext
+     * @param assetPath 에셋 주소
+     */
     public static PDFImage fromAsset(@NonNull Context context, @NonNull String assetPath){
         return new PDFImage(BitmapExtractor.loadFromAsset(context, assetPath));
     }
+    /**
+     * {@link BitmapFactory#decodeFile(String)}을 통해 {@link PDFImage}를 만듭니다.<br/>
+     * Create an {@link PDFImage} via {@link BitmapFactory#decodeFile(String)}.
+     * @see PDFImage#fromAsset(Context, String)
+     * @see PDFImage#fromResource(Context, int)
+     * @param path 파일 주소
+     */
     public static PDFImage fromFile(@NonNull String path){
         return new PDFImage(BitmapExtractor.loadFromFile(path));
     }
+    /**
+     * {@link BitmapFactory#decodeResource(Resources, int)}을 통해 {@link PDFImage}를 만듭니다.<br/>
+     * Create an {@link PDFImage} via {@link BitmapFactory#decodeResource(Resources, int)}.
+     * @see PDFImage#fromAsset(Context, String)
+     * @see PDFImage#fromFile(String)
+     * @param context AppContext
+     * @param resourceId 리소스 아이디<br>
+     *                   xml drawable은 v1.1.1에서 지원하지 않습니다.<br>
+     *                   xml drawable is not supported in v1.1.1.
+     */
     public static PDFImage fromResource(@NonNull Context context, @RawRes int resourceId){
         return new PDFImage(BitmapExtractor.loadFromResource(context, resourceId));
     }
+    /**
+     * {@link Context#getAssets()}을 통해 {@link PDFImage}를 만듭니다.<br/>
+     * Create an {@link PDFImage} via {@link Context#getAssets()}.
+     * @see PDFImage#fromFile(String, int) 
+     * @see PDFImage#fromResource(Context, int, int)
+     * @param context AppContext
+     * @param assetPath 에셋 주소
+     * @param fit 이미지 맞춤
+     */
     public static PDFImage fromAsset(@NonNull Context context, @NonNull String assetPath, @Fit.FitInt int fit){
         return new PDFImage(BitmapExtractor.loadFromAsset(context, assetPath), fit);
     }
+    /**
+     * {@link BitmapFactory#decodeFile(String)}을 통해 {@link PDFImage}를 만듭니다.<br/>
+     * Create an {@link PDFImage} via {@link BitmapFactory#decodeFile(String)}.
+     * @see PDFImage#fromAsset(Context, String, int)
+     * @see PDFImage#fromResource(Context, int, int)
+     * @param path 파일 주소
+     * @param fit 이미지 맞춤
+     */
     public static PDFImage fromFile(@NonNull String path, @Fit.FitInt int fit){
         return new PDFImage(BitmapExtractor.loadFromFile(path), fit);
     }
+    /**
+     * {@link BitmapFactory#decodeResource(Resources, int)}을 통해 {@link PDFImage}를 만듭니다.<br/>
+     * Create an {@link PDFImage} via {@link BitmapFactory#decodeResource(Resources, int)}.
+     * @see PDFImage#fromAsset(Context, String, int)
+     * @see PDFImage#fromFile(String, int)
+     * @param context AppContext
+     * @param resourceId 리소스 아이디<br>
+     *                   xml drawable은 v1.1.1에서 지원하지 않습니다.<br>
+     *                   xml drawable is not supported in v1.1.1.
+     * @param fit 이미지 맞춤
+     */
     public static PDFImage fromResource(@NonNull Context context, @RawRes int resourceId, @Fit.FitInt int fit){
         return new PDFImage(BitmapExtractor.loadFromResource(context, resourceId), fit);
     }
@@ -459,7 +528,7 @@ public class  PDFImage extends PDFResourceComponent{
     /**
      * {@link Bitmap}을 통해서 {@link PDFImage} 를 생성합니다.<br>
      * {@link Bitmap}으로 키값을 생성하는 데, 시간이 오래 걸릴 수 있습니다.<br>
-     * Create PDFimage via {@link Bitmap}.<br>
+     * Create {@link PDFImage} via {@link Bitmap}.<br>
      * Generating a key value with {@link Bitmap} can take a long time.<br>
      * @deprecated 추후 업데이트에서 삭제될 예정입니다.<br>It will be removed from future updates.
      * @see PDFImage#fromAsset(Context, String)
@@ -476,7 +545,7 @@ public class  PDFImage extends PDFResourceComponent{
     /**
      * {@link Bitmap}을 통해서 {@link PDFImage} 를 생성합니다.<br>
      * {@link Bitmap}으로 키값을 생성하는 데, 시간이 오래 걸릴 수 있습니다.<br>
-     * Create PDFimage via {@link Bitmap}.<br>
+     * Create {@link PDFImage} via {@link Bitmap}.<br>
      * Generating a key value with {@link Bitmap} can take a long time.<br>
      * @deprecated 추후 업데이트에서 삭제될 예정입니다.<br>It will be removed from future updates.
      * @see PDFImage#fromAsset(Context, String, int)

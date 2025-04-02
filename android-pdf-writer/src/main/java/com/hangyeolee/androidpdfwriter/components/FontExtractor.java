@@ -24,12 +24,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class FontExtractor {
     private static final String TAG = "FontExtractor";
 
     // 캐시: 경로/리소스ID -> {폰트이름, 폰트 정보} 매핑
-    private static final Map<String, FontInfo> fontCache = new HashMap<>();
+    private static final WeakHashMap<String, FontInfo> fontCache = new WeakHashMap<>();
 
     public static class FontInfo {
         public final String postScriptName;
@@ -425,47 +426,37 @@ public class FontExtractor {
 
         bb.position(bb.position() + 6); // searchRange, entrySelector, rangeShift 스킵
 
-        // 세그먼트 배열 읽기
         int[] endCodes = new int[segCount];
         int[] startCodes = new int[segCount];
         int[] idDeltas = new int[segCount];
         int[] idRangeOffsets = new int[segCount];
 
-        for (int i = 0; i < segCount; i++) {
-            endCodes[i] = bb.getShort() & 0xFFFF;
-        }
-
+        // 각 배열 읽기
+        for (int i = 0; i < segCount; i++) endCodes[i] = bb.getShort() & 0xFFFF;
         bb.getShort(); // reservedPad 스킵
-
-        for (int i = 0; i < segCount; i++) {
-            startCodes[i] = bb.getShort() & 0xFFFF;
-        }
-
-        for (int i = 0; i < segCount; i++) {
-            idDeltas[i] = bb.getShort();
-        }
-
+        for (int i = 0; i < segCount; i++) startCodes[i] = bb.getShort() & 0xFFFF;
+        for (int i = 0; i < segCount; i++) idDeltas[i] = bb.getShort();
         int idRangeOffsetPosition = bb.position();
+        for (int i = 0; i < segCount; i++) idRangeOffsets[i] = bb.getShort() & 0xFFFF;
 
-        for (int i = 0; i < segCount; i++) {
-            idRangeOffsets[i] = bb.getShort() & 0xFFFF;
-        }
-
-        // 문자 매핑 구성
+        // 매핑 처리
         for (int i = 0; i < segCount; i++) {
             for (int charCode = startCodes[i]; charCode <= endCodes[i] && charCode != 0xFFFF; charCode++) {
                 int glyphIndex;
                 if (idRangeOffsets[i] == 0) {
                     glyphIndex = (charCode + idDeltas[i]) & 0xFFFF;
                 } else {
-                    offset = idRangeOffsetPosition + i * 2 + idRangeOffsets[i] +
+                    // idRangeOffset이 현재 위치로부터의 상대적 오프셋임을 고려
+                    int glyphIndexOffset = idRangeOffsetPosition + i * 2 + idRangeOffsets[i] +
                             2 * (charCode - startCodes[i]);
-                    bb.position(offset);
+                    bb.position(glyphIndexOffset);
                     glyphIndex = bb.getShort() & 0xFFFF;
                     if (glyphIndex != 0) {
                         glyphIndex = (glyphIndex + idDeltas[i]) & 0xFFFF;
                     }
                 }
+
+                // glyphIndex가 0이 아닌 경우에만 매핑 추가
                 if (glyphIndex != 0) {
                     glyphIndexMap.put((char)charCode, glyphIndex);
                 }

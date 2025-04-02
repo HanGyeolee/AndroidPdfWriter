@@ -4,6 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -15,12 +18,13 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 public class BitmapExtractor {
     private static final String TAG = "BitmapExtractor";
 
     // 캐시: 경로/리소스ID -> {비트맵이름, 이미지} 매핑
-    private static final Map<String, BitmapInfo> bitmapCache = new HashMap<>();
+    private static final WeakHashMap<String, BitmapInfo> bitmapCache = new WeakHashMap<>();
 
     public static class BitmapInfo {
         public final Bitmap origin;
@@ -76,6 +80,30 @@ public class BitmapExtractor {
 
         // 1. Bitmap 생성
         Bitmap origin = BitmapFactory.decodeResource(context.getResources(), resourceId);
+
+        // BitmapFactory가 실패한 경우 (XML drawable 등)
+        if (origin == null) {
+            Drawable drawable = context.getResources().getDrawable(resourceId);
+            if (drawable != null) {
+                // 이미 BitmapDrawable인 경우
+                if (drawable instanceof BitmapDrawable) {
+                    origin = ((BitmapDrawable) drawable).getBitmap();
+                } else {
+                    // 다른 종류의 Drawable인 경우 Bitmap으로 변환
+                    int width = drawable.getIntrinsicWidth();
+                    int height = drawable.getIntrinsicHeight();
+
+                    // 크기가 정의되지 않은 경우 기본값 설정
+                    if (width < 256) width = 256;
+                    if (height < 256) height = 256;
+
+                    origin = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                    Canvas canvas = new Canvas(origin);
+                    drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                    drawable.draw(canvas);
+                }
+            }
+        }
 
         // 2. 결과 캐싱
         BitmapInfo info = new BitmapInfo(origin);

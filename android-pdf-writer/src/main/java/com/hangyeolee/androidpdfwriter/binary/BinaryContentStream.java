@@ -1,35 +1,45 @@
 package com.hangyeolee.androidpdfwriter.binary;
 
+import android.util.Log;
+
 import com.hangyeolee.androidpdfwriter.PDFBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
+import java.io.IOException;
 
 /**
  * PDF 콘텐츠 스트림을 위한 객체
  */
 class BinaryContentStream extends BinaryDictionary {
-    private final byte[] compressedContent;
-
+    private static final String TAG = "BinaryContentStream";
     public BinaryContentStream(int objectNumber, String content) {
         this(objectNumber, content, false);
     }
     public BinaryContentStream(int objectNumber, String content, boolean forceCompress) {
         super(objectNumber);
+        byte[] compressed;
 
         if(PDFBuilder.DEBUG && !forceCompress) {
-            this.compressedContent = BinaryConverter.toBytes(content);
-            dictionary.put("/Length", compressedContent.length);
+            compressed = BinaryConverter.toBytes(content);
+            dictionary.put("/Length", compressed.length);
+            writeContent(compressed);
         } else {
-            // 컨텐츠 압축
-            byte[] stream = BinaryConverter.toBytes(content);
-            dictionary.put("/Length1", stream.length);
-            this.compressedContent = compressContent(stream);
+            try {
+                {// 컨텐츠 압축
+                    byte[] stream = BinaryConverter.toBytes(content);
+                    compressContent(stream);
+                    dictionary.put("/Length1", stream.length);
+                }
 
-            // 딕셔너리에 압축 관련 항목 추가
-            dictionary.put("/Filter", "/FlateDecode");
-            dictionary.put("/Length", compressedContent.length);
+                long length = getTemporaryLength();
+                // 딕셔너리에 압축 관련 항목 추가
+                dictionary.put("/Filter", "/" + FLATE_DECODE);
+                dictionary.put("/Length", length);
+            }catch (Throwable e){
+                // 압축 실패
+                compressed = BinaryConverter.toBytes(content);
+                dictionary.put("/Length", compressed.length);
+                writeContent(compressed);
+            }
         }
     }
     public BinaryContentStream(int objectNumber, byte[] stream) {
@@ -39,48 +49,41 @@ class BinaryContentStream extends BinaryDictionary {
         super(objectNumber);
 
         if(PDFBuilder.DEBUG && !forceCompress) {
-            this.compressedContent = stream;
-            dictionary.put("/Length", compressedContent.length);
+            dictionary.put("/Length", stream.length);
+            writeContent(stream);
         } else {
-            // 컨텐츠 압축
-            dictionary.put("/Length1", stream.length);
-            this.compressedContent = compressContent(stream);
+            try {
+                compressContent(stream);
+                // 컨텐츠 압축
+                dictionary.put("/Length1", stream.length);
 
-            // 딕셔너리에 압축 관련 항목 추가
-            dictionary.put("/Filter", "/FlateDecode");
-            dictionary.put("/Length", compressedContent.length);
-        }
-    }
-
-    /**
-     * 문자열 컨텐츠를 FlateDecode로 압축
-     */
-    private byte[] compressContent(byte[] content) {
-        try {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream(content.length);
-
-            // DeflaterOutputStream 사용 - zlib 형식 준수
-            Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-            DeflaterOutputStream zlibStream = new DeflaterOutputStream(outputStream, deflater);
-
-            // 데이터 쓰기
-            zlibStream.write(content);
-            zlibStream.finish();
-            zlibStream.close();
-
-            // 리소스 정리
-            deflater.end();
-
-            return outputStream.toByteArray();
-        } catch (Exception e) {
-            e.printStackTrace();
-            // 압축 실패시 원본 반환
-            return content;
+                long length = getTemporaryLength();
+                // 딕셔너리에 압축 관련 항목 추가
+                dictionary.put("/Filter", "/" + FLATE_DECODE);
+                dictionary.put("/Length", length);
+            }catch (Throwable e){
+                // 압축 실패
+                dictionary.put("/Length", stream.length);
+                writeContent(stream);
+            }
         }
     }
 
     @Override
     public byte[] getStreamData() {
-        return compressedContent;
+        try {
+            byte[] content = readTemporaryStream();
+            deleteTemp();
+            return content;
+        } catch (IOException e){
+            Log.e(TAG, "Can not Read Temporary File", e);
+        }
+        return null;
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        deleteTemp();
+        super.finalize();
     }
 }

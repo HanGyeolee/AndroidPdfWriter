@@ -12,11 +12,12 @@ import com.hangyeolee.androidpdfwriter.utils.Anchor;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 
 import com.hangyeolee.androidpdfwriter.listener.Action;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+import com.hangyeolee.androidpdfwriter.utils.PageLayout;
 
 import java.util.Locale;
 
 public abstract class PDFComponent{
+    protected PageLayout pageLayout;
     // 부모 컴포넌트 참조
     PDFComponent parent = null;
 
@@ -76,8 +77,11 @@ public abstract class PDFComponent{
         if(width < 0) {
             width = 0;
         }
-        if(height < 0) {
-            height = 0;
+        if(height <= 0) {
+            height = (border.size.top + border.size.bottom
+                    + padding.top + padding.bottom
+                    + margin.top + margin.bottom);
+            updateHeight(height);
         }
 
         relativeX = x;
@@ -100,11 +104,11 @@ public abstract class PDFComponent{
         else{
             // 하위 구성 요소인 경우
             // 부모의 사용 가능한 최대 크기 계산
-            float maxW = parent.measureWidth
+            float maxW = parent.measureWidth - relativeX
                     - parent.border.size.left - parent.border.size.right
                     - parent.padding.left - parent.padding.right
                     - left - right;
-            float maxH = parent.measureHeight
+            float maxH = parent.measureHeight - relativeY
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - top - bottom;
@@ -112,11 +116,11 @@ public abstract class PDFComponent{
             if(maxH < 0) maxH = 0;
 
             // 설정된 크기와 최대 크기 중 적절한 값 선택
-            if(0 < width && width + relativeX <= maxW) measureWidth = width;
+            if(0 < width && width <= maxW) measureWidth = width;
                 // 설정한 Width 나 Height 가 최대값을 넘으면, 최대 값으로 Width 나 Height를 설정
-            else measureWidth =  (maxW - relativeX);
-            if(0 < height && height + relativeY <= maxH) measureHeight = height;
-            else measureHeight =  (maxH - relativeY);
+            else measureWidth =  maxW;
+            if(0 < height && height <= maxH) measureHeight = height;
+            else measureHeight =  maxH;
 
             gapX = maxW - measureWidth;
             gapY = maxH - measureHeight;
@@ -141,8 +145,8 @@ public abstract class PDFComponent{
     protected void drawBackground(StringBuilder content,
                                   float x, float y, float width, float height) {
         // PDF 좌표계로 변환 (좌하단 기준)
-        float pdfX = Zoomable.getInstance().transform2PDFWidth(x);
-        float pdfY = Zoomable.getInstance().transform2PDFHeight(y + height);
+        float pdfX = pageLayout.transform2PDFWidth(x);
+        float pdfY = pageLayout.transform2PDFHeight(y + height);
         content.append(String.format(Locale.getDefault(), "%s %s %s %s re\r\n",
                 BinaryConverter.formatNumber(pdfX),
                 BinaryConverter.formatNumber(pdfY),
@@ -192,7 +196,7 @@ public abstract class PDFComponent{
             sectionBorder.setBottom(0, Color.TRANSPARENT);
         }
 
-        sectionBorder.draw(content, x, y,
+        sectionBorder.draw(pageLayout, content, x, y,
                 width, height);
     }
 
@@ -200,7 +204,7 @@ public abstract class PDFComponent{
     protected void pagenationDrawStart(
             BinarySerializer serializer, PDFComponent component, PDFLayout.Pagenation pagenation
     ){
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
         float remainingHeight = component.measureHeight;
 
         // 시작 페이지와 끝 페이지 계산
@@ -263,13 +267,13 @@ public abstract class PDFComponent{
             parent.updateHeight(heightGap);
 
             // 부모의 새로운 크기에 맞춰 자신의 크기 재조정
-            float maxHeight = parent.measureHeight
+            float maxHeight = parent.measureHeight - relativeY
                     - parent.border.size.top - parent.border.size.bottom
                     - parent.padding.top - parent.padding.bottom
                     - verticalMargins;
 
-            if(0 < height && height + relativeY <= maxHeight) measureHeight = height;
-            else measureHeight = maxHeight - relativeY;
+            if(0 < height && height <= maxHeight) measureHeight = height;
+            else measureHeight = maxHeight;
         }
     }
 
@@ -470,13 +474,13 @@ public abstract class PDFComponent{
 
     // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
     public int calculatePageIndex(float measureY, float componentHeight) {
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
         return (int) Math.floor((measureY + componentHeight) / pageHeight);
     }
 
     // 현재 컴포넌트가 몇 번째 페이지에 그려져야 하는지 계산
     public int calculatePageIndex(float measureY) {
-        float pageHeight = Zoomable.getInstance().getContentHeight();
+        float pageHeight = pageLayout.getContentHeight();
         return (int) Math.floor((measureY) / pageHeight);
     }
 
@@ -488,5 +492,9 @@ public abstract class PDFComponent{
     protected interface Pagenation{
         void draw(StringBuilder content, PDFComponent component, float x, float y, float width, float height,
                   int currentPage, int startPage, int endPage);
+    }
+
+    public void setPageLayout(PageLayout pageLayout) {
+        this.pageLayout = pageLayout;
     }
 }

@@ -11,7 +11,7 @@ import com.hangyeolee.androidpdfwriter.exceptions.LayoutSizeException;
 import com.hangyeolee.androidpdfwriter.listener.Action;
 import com.hangyeolee.androidpdfwriter.utils.Border;
 import com.hangyeolee.androidpdfwriter.utils.Orientation;
-import com.hangyeolee.androidpdfwriter.utils.Zoomable;
+import com.hangyeolee.androidpdfwriter.utils.PageLayout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -188,10 +188,10 @@ public class PDFGridLayout extends PDFLayout{
             pagenationDrawStart(serializer, child,
                     (content, component, x, y, width, height, currentPage, startPage, endPage) -> {
                         // 현재 페이지 내에서의 좌표 계산
-                        float pdfX = Zoomable.getInstance().transform2PDFWidth(
+                        float pdfX = pageLayout.transform2PDFWidth(
                                 x
                         );
-                        float pdfY = Zoomable.getInstance().transform2PDFHeight(
+                        float pdfY = pageLayout.transform2PDFHeight(
                                 y + height
                         );
 
@@ -533,6 +533,14 @@ public class PDFGridLayout extends PDFLayout{
     protected PDFGridLayout setParent(PDFComponent parent) {
         super.setParent(parent);
         return this;
+    }
+
+    @Override
+    public void setPageLayout(PageLayout pageLayout) {
+        super.setPageLayout(pageLayout);
+        for(PDFComponent component : cells){
+            component.setPageLayout(pageLayout);
+        }
     }
 
     public static PDFGridLayout horizontal(int columnCount){return new PDFGridLayout(columnCount).setHorizontal();}
